@@ -97,13 +97,14 @@ O banco de dados está no Supabase com as seguintes tabelas:
 ```ts
 // Cadastro de owner
 await supabase.auth.signUp({
-  email, password,
-  options: { data: { role: 'barbershop' } }
-})
+  email,
+  password,
+  options: { data: { role: "barbershop" } },
+});
 
 // Login
-await supabase.auth.signInWithPassword({ email, password })
+await supabase.auth.signInWithPassword({ email, password });
 
 // Logout
-await supabase.auth.signOut()
+await supabase.auth.signOut();
 ```

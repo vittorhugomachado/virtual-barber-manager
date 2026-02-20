@@ -1,47 +1,16 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-
-import { supabase } from "./lib/supabase";
-
-const supabaseTest = async () => {
-  const { data, error } = await supabase
-    .from("barbershops")
-    .select("*");
-
-  console.log("DATA:", data);
-  console.log("ERROR:", error);
-};
-
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 function App() {
-  const [count, setCount] = useState(0);
-
-  supabaseTest()
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <main className="w-full h-full px-4">
+      <Alert className="max-w-150 m-auto">
+        <AlertTitle>Página em construção</AlertTitle>
+        <AlertDescription>
+          Esse projeto está em desenvolvimento e ainda não possui uma interface
+          de usuário na branch main (atual). Mude para branch develop.
+        </AlertDescription>
+      </Alert>
+    </main>
   );
 }
 

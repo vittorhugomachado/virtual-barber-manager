@@ -114,6 +114,13 @@
   --sidebar-ring: oklch(0.552 0.016 285.938);
 }
 
+.antonio {
+  font-family: "Antonio", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: <weight>;
+  font-style: normal;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

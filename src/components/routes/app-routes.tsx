@@ -1,9 +1,10 @@
 import { Routes, Route } from "react-router";
-import { PublicRoute } from "./public-route";
-import { ProtectedRoute } from "./protected-route";
+import { PublicRoute } from "../common/public-route";
+import { ProtectedRoute } from "../common/protected-route";
 import { DashboardPage } from "@/pages/dashboard-page";
 import { SignupPage } from "@/pages/signup-page";
 import { LoginPage } from "@/pages/login-page";
+import { DashboardSkeleton } from "../skeleton/dashboard";
 
 export function AppRoutes() {
   return (
@@ -27,7 +28,7 @@ export function AppRoutes() {
       <Route
         path="/"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute skeleton={<DashboardSkeleton />}>
             <DashboardPage />
           </ProtectedRoute>
         }

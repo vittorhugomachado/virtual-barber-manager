@@ -1,4 +1,4 @@
-export const Logo = ({ style }: { style?: string }) => {
+export function Logo({ style }: { style?: string }) {
   return (
     <div className={`${style} flex items-center gap-2`}>
       <img
@@ -13,4 +13,4 @@ export const Logo = ({ style }: { style?: string }) => {
       />
     </div>
   );
-};
+}

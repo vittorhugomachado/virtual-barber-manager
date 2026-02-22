@@ -1,0 +1,254 @@
+import { supabase } from "@/lib/supabase";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { useNavigate } from "react-router";
+import * as z from "zod";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
+
+const formSchema = z.object({
+  name: z.string().min(1, "Digite seu nome"),
+  phone: z.string().min(10, "Celular inválido"),
+  barbershopName: z.string().min(1, "Digite o nome da barbearia"),
+  email: z.email("Email inválido"),
+  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+});
+
+const mensagens: Record<string, string> = {
+  "User already registered": "Este email já está cadastrado",
+  "Password should be at least 6 characters":
+    "Senha deve ter no mínimo 6 caracteres",
+  "email rate limit exceeded": "Muitas tentativas, aguarde alguns minutos",
+};
+
+export function SignupForm() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      phone: "",
+      barbershopName: "",
+      email: "",
+      password: "",
+    },
+  });
+
+  async function onSubmit(data: z.infer<typeof formSchema>) {
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (authError) {
+        const mensagem =
+          Object.entries(mensagens).find(([key]) =>
+            authError.message.includes(key),
+          )?.[1] ?? "Erro ao criar conta";
+        toast.error(mensagem);
+        return;
+      }
+
+      if (authData.user?.identities?.length === 0) {
+        toast.error("Este email já está cadastrado");
+        return;
+      }
+
+      const userId = authData.user!.id;
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          role: "barbershop",
+          name: data.name,
+          phone: data.phone,
+        })
+        .eq("id", userId);
+
+      if (profileError) {
+        toast.error("Erro ao criar perfil", {
+          description: profileError.message,
+        });
+        return;
+      }
+
+      const { error: barbershopError } = await supabase
+        .from("barbershops")
+        .insert({
+          owner_id: userId,
+          name: data.barbershopName,
+          slug: data.barbershopName.toLowerCase().replace(/\s+/g, "-"),
+          email: data.email,
+        });
+
+      if (barbershopError) {
+        toast.error("Erro ao criar barbearia", {
+          description: barbershopError.message,
+        });
+        return;
+      }
+
+      toast.success("Conta criada com sucesso!");
+      navigate("/");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+  return (
+    <div className="w-full max-w-lg pt-24 lg:max-w-285 lg:flex lg:items-center justify-center lg:min-h-screen lg:w-[50vw] lg:bg-card text-card-foreground lg:border-l border-zinc-300">
+      <Card className="w-full max-w-lg lg:border-none lg:rounded-none lg:shadow-none">
+        <CardHeader>
+          <CardTitle className="lg:text-3xl lg:-translate-y-20">
+            Criar conta na Virtual
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form id="signup-form" onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="flex flex-col gap-6">
+              <div className="grid gap-2">
+                <FieldGroup>
+                  <Controller
+                    name="barbershopName"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="signup-form-barbershop">
+                          Nome da barbearia
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="signup-form-barbershop"
+                          aria-invalid={fieldState.invalid}
+                          placeholder="Barbearia do João"
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    name="name"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="signup-form-name">
+                          Nome do proprietário
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="signup-form-name"
+                          aria-invalid={fieldState.invalid}
+                          placeholder="Seu nome"
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    name="phone"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="signup-form-phone">
+                          Celular
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="signup-form-phone"
+                          aria-invalid={fieldState.invalid}
+                          placeholder="(00) 00000-0000"
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    name="email"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="signup-form-email">
+                          Email
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="signup-form-email"
+                          aria-invalid={fieldState.invalid}
+                          placeholder="barbearia@email.com"
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    name="password"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="signup-form-password">
+                          Senha
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="signup-form-password"
+                          type="password"
+                          aria-invalid={fieldState.invalid}
+                          placeholder="mínimo 6 caracteres"
+                          autoComplete="off"
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                </FieldGroup>
+              </div>
+            </div>
+          </form>
+        </CardContent>
+        <CardFooter className="flex-col gap-2">
+          <Button
+            type="submit"
+            form="signup-form"
+            disabled={isLoading}
+            className="w-full max-w-xs"
+          >
+            {isLoading ? "Criando conta..." : "Criar conta"}
+          </Button>
+          <Button variant="link" onClick={() => navigate("/entrar")}>
+            Já tenho conta
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+}

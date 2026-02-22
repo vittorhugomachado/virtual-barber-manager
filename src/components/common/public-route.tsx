@@ -7,7 +7,7 @@ export function PublicRoute({ children }: { children: React.ReactNode }) {
 
   if (loading)
     return (
-      <div className="w-screen h-scren flex justify-center items-center gap-6">
+      <div className="max-w-screen min-h-scren flex justify-center items-center gap-6">
         <Spinner className="size-10" />
       </div>
     );

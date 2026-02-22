@@ -123,7 +123,9 @@ export function LoginForm() {
           <Button type="submit" form="login-form" className="w-full max-w-xs">
             Login
           </Button>
-          <Button variant="link">Criar conta</Button>
+          <Button variant="link" onClick={() => navigate("/cadastro")}>
+            Criar conta
+          </Button>
         </CardFooter>
       </Card>
     </div>

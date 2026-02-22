@@ -57,6 +57,15 @@ export function SignupForm() {
     setIsLoading(true);
 
     try {
+      const { data: existingPhone } = await supabase.rpc("check_phone_exists", {
+        p_phone: data.phone,
+      });
+
+      if (existingPhone) {
+        toast.error("Este celular já está cadastrado");
+        return;
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -77,35 +86,25 @@ export function SignupForm() {
       }
 
       const userId = authData.user!.id;
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          role: "barbershop",
-          name: data.name,
-          phone: data.phone,
-        })
-        .eq("id", userId);
 
-      if (profileError) {
-        toast.error("Erro ao criar perfil", {
-          description: profileError.message,
-        });
-        return;
-      }
+      const { error: rpcError } = await supabase.rpc("register_barbershop", {
+        p_user_id: userId,
+        p_name: data.name,
+        p_phone: data.phone,
+        p_barbershop_name: data.barbershopName,
+        p_barbershop_slug: data.barbershopName
+          .toLowerCase()
+          .replace(/\s+/g, "-"),
+        p_email: data.email,
+      });
 
-      const { error: barbershopError } = await supabase
-        .from("barbershops")
-        .insert({
-          owner_id: userId,
-          name: data.barbershopName,
-          slug: data.barbershopName.toLowerCase().replace(/\s+/g, "-"),
-          email: data.email,
-        });
-
-      if (barbershopError) {
-        toast.error("Erro ao criar barbearia", {
-          description: barbershopError.message,
-        });
+      if (rpcError) {
+        await supabase.auth.signOut();
+        if (rpcError.message.includes("phone_already_exists")) {
+          toast.error("Este celular já está cadastrado");
+        } else {
+          toast.error("Erro ao criar conta", { description: rpcError.message });
+        }
         return;
       }
 
@@ -116,7 +115,7 @@ export function SignupForm() {
     }
   }
   return (
-    <div className="w-full max-w-lg pt-24 lg:max-w-285 lg:flex lg:items-center justify-center lg:min-h-screen lg:w-[50vw] lg:bg-card text-card-foreground lg:border-l border-zinc-300">
+    <div className="w-full max-w-lg pt-24 pb-16 lg:max-w-285 lg:flex lg:items-center justify-center lg:min-h-screen lg:w-[50vw] lg:bg-card text-card-foreground lg:border-l border-zinc-300 dark:border-none">
       <Card className="w-full max-w-lg lg:border-none lg:rounded-none lg:shadow-none">
         <CardHeader>
           <CardTitle className="lg:text-3xl lg:-translate-y-20">

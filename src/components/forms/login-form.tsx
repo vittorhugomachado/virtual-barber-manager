@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -28,6 +29,7 @@ const formSchema = z.object({
 
 export function LoginForm() {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,25 +40,29 @@ export function LoginForm() {
   });
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
-    const { error } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
+    if (isLoading) return;
+    setIsLoading(true);
 
-    if (error) {
-      const mensagens: Record<string, string> = {
-        "Invalid login credentials": "Email ou senha incorretos",
-        "Email not confirmed": "Email não confirmado",
-        "Too many requests": "Muitas tentativas, aguarde um momento",
-      };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
 
-      const mensagem = mensagens[error.message] ?? "Erro ao fazer login";
+      if (error) {
+        const mensagens: Record<string, string> = {
+          "Invalid login credentials": "Email ou senha incorretos",
+          "Email not confirmed": "Email não confirmado",
+          "Too many requests": "Muitas tentativas, aguarde um momento",
+        };
+        toast.error(mensagens[error.message] ?? "Erro ao fazer login");
+        return;
+      }
 
-      toast.error(mensagem);
-      return;
+      navigate("/painel");
+    } finally {
+      setIsLoading(false);
     }
-
-    navigate("/painel");
   }
 
   return (
@@ -120,9 +126,15 @@ export function LoginForm() {
           </form>
         </CardContent>
         <CardFooter className="flex-col gap-2">
-          <Button type="submit" form="login-form" className="w-full max-w-xs">
-            Login
+          <Button
+            type="submit"
+            form="login-form"
+            disabled={isLoading}
+            className="w-full max-w-xs"
+          >
+            {isLoading ? "Entrando..." : "Login"}
           </Button>
+
           <Button variant="link" onClick={() => navigate("/cadastro")}>
             Criar conta
           </Button>

@@ -18,6 +18,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/common/logo";
@@ -37,12 +38,12 @@ const configItems = [
 
 export function SidebarComponent() {
   const location = useLocation();
-  const { state } = useSidebar();
+  const { state, isMobile } = useSidebar();
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex items-center justify-between">
-        {state === "expanded" ? (
+        {state === "expanded" || isMobile ? (
           <Logo style="w-full px-8 pt-2 pb-4.5 m-2 mb-4 border-b" />
         ) : (
           <img
@@ -51,6 +52,11 @@ export function SidebarComponent() {
             className="w-6 mx-auto pb-4 pt-3 border-b"
           />
         )}
+        <div
+          className={` flex items-center absolute top-0 -right-12 gap-2 p-4`}
+        >
+          <SidebarTrigger />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

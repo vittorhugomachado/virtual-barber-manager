@@ -92,9 +92,8 @@ export function SignupForm() {
         p_name: data.name,
         p_phone: data.phone,
         p_barbershop_name: data.barbershopName,
-        p_barbershop_slug: data.barbershopName
-          .toLowerCase()
-          .replace(/\s+/g, "-"),
+        p_barbershop_slug:
+          data.barbershopName.toLowerCase().replace(/\s+/g, "-") + userId,
         p_email: data.email,
       });
 

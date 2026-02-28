@@ -197,7 +197,7 @@ function Sidebar({
         <div
           data-slot="sidebar-container"
           className={cn(
-            "fixed inset-y-0 z-50 h-svh transition-transform duration-200 ease-linear md:hidden",
+            "fixed h-full inset-y-0 z-50 transition-transform duration-200 ease-linear md:hidden",
             side === "left" ? "left-0" : "right-0",
             !openMobile &&
               (side === "left" ? "-translate-x-full" : "translate-x-full"),
@@ -248,7 +248,7 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         className={cn(
-          "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
+          "fixed inset-y-0 z-10 hidden h-screen w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex",
           side === "left"
             ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
             : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",

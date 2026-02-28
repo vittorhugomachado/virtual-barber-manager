@@ -5,9 +5,12 @@ export function BarbershopSettingsMain() {
   const { barbershop } = useBarbershopStore();
 
   return (
-    <>
-      <h3>{barbershop?.name}</h3>
+    <main className="w-full flex flex-col items-center">
+      <h3 className="w-full max-w-screen text-3xl text-center mx-8 mt-12 md:text-start md:mt-3 md:ml-33">
+        {barbershop?.name} |{" "}
+        <span className="text-xl font-extralight">Configurações</span>
+      </h3>
       <BarbershopSettingsForm barbershop={barbershop} />
-    </>
+    </main>
   );
 }

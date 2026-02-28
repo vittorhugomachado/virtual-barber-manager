@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { ImageCropper } from "../ui/image-cropped";
 import { supabase } from "@/lib/supabase/supabase";
 import { handleUploadBanner } from "@/lib/supabase/storage/handle-upload-banner";
 import { handleUploadLogo } from "@/lib/supabase/storage/handle-upload-logo";
@@ -40,8 +41,11 @@ interface BarbershopSettingsFormProps {
 export function BarbershopSettingsForm({
   barbershop,
 }: BarbershopSettingsFormProps) {
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperImageUrl, setCropperImageUrl] = useState("");
+  const [cropperType, setCropperType] = useState<"logo" | "banner">("logo");
   const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [, setUploadingBanner] = useState(false);
   const { setBarbershop } = useBarbershopStore();
 
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -198,7 +202,7 @@ export function BarbershopSettingsForm({
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="mx-16 mt-8 mb-18 flex flex-col gap-8"
+      className="w-full max-w-180 mx-16 mt-8 mb-18 flex flex-col gap-8"
     >
       {/* ── SEÇÃO: Dados da Barbearia ── */}
       <Card className="bg-transparent border-none">
@@ -207,7 +211,7 @@ export function BarbershopSettingsForm({
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
           {/* Banner */}
-          <div className="relative h-40 w-full rounded-lg bg-muted">
+          {/* <div className="relative aspect-[4/1] w-full rounded-lg bg-muted">
             {barbershop?.banner_url && (
               <img
                 src={barbershop.banner_url}
@@ -231,14 +235,18 @@ export function BarbershopSettingsForm({
               className="hidden"
               onChange={e => {
                 const file = e.target.files?.[0];
-                if (file) handleImageUpload(file, "banner");
+                if (!file) return;
+                setCropperImageUrl(URL.createObjectURL(file));
+                setCropperType("banner");
+                setCropperOpen(true);
+                e.target.value = "";
               }}
             />
-          </div>
+          </div> */}
 
           {/* Logo */}
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
+          <div className="w-full flex items-center gap-4">
+            <Avatar className="h-30 w-30">
               <AvatarImage src={barbershop?.logo_url ?? undefined} />
               <AvatarFallback>
                 {barbershop?.name?.slice(0, 2).toUpperCase() ?? "BB"}
@@ -249,7 +257,6 @@ export function BarbershopSettingsForm({
               <Button
                 type="button"
                 size="sm"
-                variant="outline"
                 disabled={uploadingLogo}
                 onClick={() => logoInputRef.current?.click()}
               >
@@ -262,7 +269,11 @@ export function BarbershopSettingsForm({
                 className="hidden"
                 onChange={e => {
                   const file = e.target.files?.[0];
-                  if (file) handleImageUpload(file, "logo");
+                  if (!file) return;
+                  setCropperImageUrl(URL.createObjectURL(file));
+                  setCropperType("logo");
+                  setCropperOpen(true);
+                  e.target.value = "";
                 }}
               />
             </div>
@@ -407,10 +418,21 @@ export function BarbershopSettingsForm({
       <Button
         type="submit"
         disabled={form.formState.isSubmitting || !form.formState.isDirty}
-        className="w-full max-w-xs"
+        className="w-full max-w-xs mx-auto"
       >
         {form.formState.isSubmitting ? "Salvando..." : "Salvar alterações"}
       </Button>
+      <ImageCropper
+        open={cropperOpen}
+        imageUrl={cropperImageUrl}
+        aspect={cropperType === "logo" ? 1 : 4}
+        cropShape={cropperType === "logo" ? "round" : "rect"}
+        onConfirm={(croppedFile: File) => {
+          setCropperOpen(false);
+          handleImageUpload(croppedFile, cropperType);
+        }}
+        onCancel={() => setCropperOpen(false)}
+      />
     </form>
   );
 }

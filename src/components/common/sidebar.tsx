@@ -25,7 +25,7 @@ import { Logo } from "@/components/common/logo";
 
 const menuItems = [
   { title: "Visão Geral", url: "/", icon: ChartLine },
-  { title: "Agendamentos", url: "/agendamentos", icon: CalendarDays },
+  { title: "agenda", url: "/agenda", icon: CalendarDays },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Equipe", url: "/equipe", icon: UserSquare },
   { title: "Serviços", url: "/servicos", icon: Scissors },

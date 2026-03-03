@@ -8,6 +8,10 @@ import { DashboardSkeleton } from "../components/skeleton/dashboard";
 import { SettingPage } from "@/pages/settings-page";
 import { ManageServicePage } from "@/pages/manage-service-page";
 import { SettingsSkeleton } from "../components/skeleton/settings-skeleton";
+import { ManageTeamPage } from "@/pages/manage-team-page";
+import { ReportsPage } from "@/pages/reports-page";
+import { AppointmentsPage } from "@/pages/appointments-page";
+import { CustomersPage } from "@/pages/customers-page";
 
 export function AppRoutes() {
   return (
@@ -37,10 +41,26 @@ export function AppRoutes() {
         }
       />
       <Route
-        path="/configuracoes"
+        path="/agenda"
         element={
-          <ProtectedRoute skeleton={<SettingsSkeleton />}>
-            <SettingPage />
+          <ProtectedRoute skeleton={<DashboardSkeleton />}>
+            <AppointmentsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clientes"
+        element={
+          <ProtectedRoute skeleton={<DashboardSkeleton />}>
+            <CustomersPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/equipe"
+        element={
+          <ProtectedRoute skeleton={<DashboardSkeleton />}>
+            <ManageTeamPage />
           </ProtectedRoute>
         }
       />
@@ -49,6 +69,22 @@ export function AppRoutes() {
         element={
           <ProtectedRoute skeleton={<DashboardSkeleton />}>
             <ManageServicePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/relatorios"
+        element={
+          <ProtectedRoute skeleton={<DashboardSkeleton />}>
+            <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracoes"
+        element={
+          <ProtectedRoute skeleton={<SettingsSkeleton />}>
+            <SettingPage />
           </ProtectedRoute>
         }
       />

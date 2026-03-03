@@ -33,7 +33,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function BarbershopSettingsForm() {
+export function SettingsForm() {
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageUrl, setCropperImageUrl] = useState("");
   const [cropperType, setCropperType] = useState<"logo" | "banner">("logo");

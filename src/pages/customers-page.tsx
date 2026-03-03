@@ -1,15 +1,15 @@
-import { SidebarComponent } from "@/components/common/sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { BarbershopDashboardMain } from "@/components/main/dashboard-main";
 import { HeaderPage } from "@/components/common/header-page";
+import { SidebarComponent } from "@/components/common/sidebar";
+import { CustomersMain } from "@/components/main/customers-main";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
-export function DashboardPage() {
+export function CustomersPage() {
   return (
     <SidebarProvider>
       <SidebarComponent />
       <SidebarInset>
-        <HeaderPage page="Visão geral" />
-        <BarbershopDashboardMain />
+        <HeaderPage page="Clientes" />
+        <CustomersMain />
       </SidebarInset>
     </SidebarProvider>
   );

@@ -1,6 +1,6 @@
 # Virtual Barber - Frontend
 
-Interface web do sistema de agendamentos para barbearias **Virtual Barber**, construída com React + TypeScript e integrada ao Supabase.
+Interface web do sistema de agenda para barbearias **Virtual Barber**, construída com React + TypeScript e integrada ao Supabase.
 
 ---
 
@@ -88,7 +88,7 @@ O banco de dados está no Supabase com as seguintes tabelas:
 - `service_barbers` — relação barbeiro x serviço
 - `opening_hours` — horários de funcionamento
 - `customers` — clientes por barbearia
-- `appointments` — agendamentos com controle de conflito
+- `appointments` — agenda com controle de conflito
 
 ---
 

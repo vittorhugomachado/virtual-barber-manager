@@ -41,7 +41,7 @@ export function SidebarComponent() {
   const { state, isMobile } = useSidebar();
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="h-screen">
       <SidebarHeader className="flex items-center justify-between">
         {state === "expanded" || isMobile ? (
           <Logo style="w-full px-8 pt-2 pb-4.5 m-2 mb-4 border-b" />

@@ -42,11 +42,6 @@ export async function uploadImage({
 
         if (removeError) {
           console.warn("Erro ao remover arquivos antigos:", removeError);
-        } else {
-          console.log(
-            `🗑️ Removidos ${filesToRemove.length} arquivo(s) antigo(s):`,
-            filesToRemove,
-          );
         }
       }
     }

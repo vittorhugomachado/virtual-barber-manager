@@ -15,7 +15,6 @@ import { handleUploadBanner } from "@/lib/supabase/storage/handle-upload-banner"
 import { handleUploadLogo } from "@/lib/supabase/storage/handle-upload-logo";
 import { toast } from "sonner";
 import { useBarbershopStore } from "@/store/barbershop.store";
-import type { Barbershop } from "@/types/barbershop";
 import {
   Field,
   FieldError,
@@ -34,19 +33,13 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface BarbershopSettingsFormProps {
-  barbershop: Barbershop | null;
-}
-
-export function BarbershopSettingsForm({
-  barbershop,
-}: BarbershopSettingsFormProps) {
+export function BarbershopSettingsForm() {
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageUrl, setCropperImageUrl] = useState("");
   const [cropperType, setCropperType] = useState<"logo" | "banner">("logo");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [, setUploadingBanner] = useState(false);
-  const { setBarbershop } = useBarbershopStore();
+  const { barbershop, setBarbershop } = useBarbershopStore();
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -202,7 +195,7 @@ export function BarbershopSettingsForm({
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="w-full max-w-180 mx-16 mt-8 mb-18 flex flex-col gap-8"
+      className="w-full max-w-180 mx-16 mt-2 mb-18 flex flex-col gap-8"
     >
       {/* ── SEÇÃO: Dados da Barbearia ── */}
       <Card className="bg-transparent border-none">
@@ -418,7 +411,7 @@ export function BarbershopSettingsForm({
       <Button
         type="submit"
         disabled={form.formState.isSubmitting || !form.formState.isDirty}
-        className="w-full max-w-xs mx-auto"
+        className="w-60 mx-auto"
       >
         {form.formState.isSubmitting ? "Salvando..." : "Salvar alterações"}
       </Button>

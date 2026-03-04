@@ -73,6 +73,7 @@ export function SidebarComponent() {
                     isActive={location.pathname === item.url}
                     tooltip={item.title}
                     onClick={() => handleNavigate(item.url)}
+                    className="cursor-pointer"
                   >
                     <item.icon />
                     <span>{item.title}</span>
@@ -92,6 +93,7 @@ export function SidebarComponent() {
                 isActive={location.pathname === item.url}
                 tooltip={item.title}
                 onClick={() => handleNavigate(item.url)}
+                className="cursor-pointer"
               >
                 <item.icon />
                 <span>{item.title}</span>

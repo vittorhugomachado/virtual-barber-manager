@@ -7,7 +7,6 @@ import { LoginPage } from "@/pages/login-page";
 import { DashboardSkeleton } from "../components/skeleton/dashboard";
 import { SettingPage } from "@/pages/settings-page";
 import { ManageServicePage } from "@/pages/manage-service-page";
-import { SettingsSkeleton } from "../components/skeleton/settings-skeleton";
 import { ManageTeamPage } from "@/pages/manage-team-page";
 import { ReportsPage } from "@/pages/reports-page";
 import { AppointmentsPage } from "@/pages/appointments-page";
@@ -16,6 +15,7 @@ import { CustomersPage } from "@/pages/customers-page";
 export function AppRoutes() {
   return (
     <Routes>
+      {/* Rotas públicas */}
       <Route
         path="/entrar"
         element={
@@ -33,61 +33,18 @@ export function AppRoutes() {
         }
       />
       <Route
-        path="/"
         element={
-          <ProtectedRoute skeleton={<DashboardSkeleton />}>
-            <DashboardPage />
-          </ProtectedRoute>
+          <ProtectedRoute withSidebar skeleton={<DashboardSkeleton />} />
         }
-      />
-      <Route
-        path="/agenda"
-        element={
-          <ProtectedRoute skeleton={<DashboardSkeleton />}>
-            <AppointmentsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/clientes"
-        element={
-          <ProtectedRoute skeleton={<DashboardSkeleton />}>
-            <CustomersPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/equipe"
-        element={
-          <ProtectedRoute skeleton={<DashboardSkeleton />}>
-            <ManageTeamPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/servicos"
-        element={
-          <ProtectedRoute skeleton={<DashboardSkeleton />}>
-            <ManageServicePage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/relatorios"
-        element={
-          <ProtectedRoute skeleton={<DashboardSkeleton />}>
-            <ReportsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/configuracoes"
-        element={
-          <ProtectedRoute skeleton={<SettingsSkeleton />}>
-            <SettingPage />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route path="/" element={<DashboardPage />} />
+        <Route path="/agenda" element={<AppointmentsPage />} />
+        <Route path="/clientes" element={<CustomersPage />} />
+        <Route path="/equipe" element={<ManageTeamPage />} />
+        <Route path="/servicos" element={<ManageServicePage />} />
+        <Route path="/relatorios" element={<ReportsPage />} />
+        <Route path="/configuracoes" element={<SettingPage />} />
+      </Route>
     </Routes>
   );
 }

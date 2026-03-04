@@ -1,14 +1,21 @@
-import { Navigate } from "react-router";
+import { Navigate, Outlet } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Spinner } from "@/components/ui/spinner";
 import { useBarbershopData } from "@/hooks/use-barber-shop-data";
+import { SidebarComponent } from "@/components/common/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   skeleton?: React.ReactNode;
+  withSidebar?: boolean;
 }
 
-export function ProtectedRoute({ children, skeleton }: ProtectedRouteProps) {
+export function ProtectedRoute({
+  children,
+  skeleton,
+  withSidebar = false,
+}: ProtectedRouteProps) {
   const { isLogged, loading } = useAuth();
   useBarbershopData();
 
@@ -22,6 +29,17 @@ export function ProtectedRoute({ children, skeleton }: ProtectedRouteProps) {
     );
 
   if (!isLogged) return <Navigate to="/entrar" />;
+
+  if (withSidebar) {
+    return (
+      <SidebarProvider>
+        <SidebarComponent />
+        <SidebarInset>
+          <Outlet />
+        </SidebarInset>
+      </SidebarProvider>
+    );
+  }
 
   return children;
 }

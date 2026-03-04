@@ -34,7 +34,7 @@ export function HeaderPage({ page }: HeaderPageProps) {
           {page}
         </span>
       </div>
-      <div className="ml-auto absolute right-3 top-1">
+      <div className="ml-auto absolute right-4 top-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none">

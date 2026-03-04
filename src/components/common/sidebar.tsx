@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import {
   CalendarDays,
   ChartLine,
@@ -25,7 +25,7 @@ import { Logo } from "@/components/common/logo";
 
 const menuItems = [
   { title: "Visão Geral", url: "/", icon: ChartLine },
-  { title: "agenda", url: "/agenda", icon: CalendarDays },
+  { title: "Agenda", url: "/agenda", icon: CalendarDays },
   { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Equipe", url: "/equipe", icon: UserSquare },
   { title: "Serviços", url: "/servicos", icon: Scissors },
@@ -38,7 +38,13 @@ const configItems = [
 
 export function SidebarComponent() {
   const location = useLocation();
-  const { state, isMobile } = useSidebar();
+  const navigate = useNavigate();
+  const { state, isMobile, setOpenMobile } = useSidebar();
+
+  function handleNavigate(url: string) {
+    if (isMobile) setOpenMobile(false);
+    navigate(url);
+  }
 
   return (
     <Sidebar collapsible="icon" className="h-screen">
@@ -52,12 +58,11 @@ export function SidebarComponent() {
             className="w-6 mx-auto pb-4 pt-3 border-b"
           />
         )}
-        <div
-          className={` flex items-center absolute top-0 -right-12 gap-2 p-4`}
-        >
+        <div className="flex items-center absolute top-0 -right-12 gap-2 p-4">
           <SidebarTrigger />
         </div>
       </SidebarHeader>
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -65,14 +70,12 @@ export function SidebarComponent() {
               {menuItems.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
-                    asChild
                     isActive={location.pathname === item.url}
                     tooltip={item.title}
+                    onClick={() => handleNavigate(item.url)}
                   >
-                    <Link to={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
+                    <item.icon />
+                    <span>{item.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -86,14 +89,12 @@ export function SidebarComponent() {
           {configItems.map(item => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
-                asChild
                 isActive={location.pathname === item.url}
                 tooltip={item.title}
+                onClick={() => handleNavigate(item.url)}
               >
-                <Link to={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </Link>
+                <item.icon />
+                <span>{item.title}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

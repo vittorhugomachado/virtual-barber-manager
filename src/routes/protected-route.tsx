@@ -17,7 +17,10 @@ export function ProtectedRoute({
   withSidebar = false,
 }: ProtectedRouteProps) {
   const { isLogged, loading } = useAuth();
-  useBarbershopData();
+
+  const { barbershop } = useBarbershopData();
+
+  console.log(barbershop);
 
   if (loading)
     return skeleton ? (

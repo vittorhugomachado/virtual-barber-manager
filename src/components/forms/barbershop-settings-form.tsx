@@ -239,7 +239,7 @@ export function SettingsForm() {
 
           {/* Logo */}
           <div className="w-full flex items-center gap-4">
-            <Avatar className="h-30 w-30">
+            <Avatar className="h-23 w-23 md:h-35 md:w-35">
               <AvatarImage src={barbershop?.logo_url ?? undefined} />
               <AvatarFallback>
                 {barbershop?.name?.slice(0, 2).toUpperCase() ?? "BB"}

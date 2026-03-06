@@ -6,6 +6,7 @@ export type Barbershop = {
   slug: string;
   email: string;
   phone: string;
+  plan: "iniciante" | "profissional" | "master";
   description: string | null;
   logo_url: string | null;
   banner_url: string | null;

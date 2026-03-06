@@ -1,0 +1,330 @@
+import { useEffect, useState } from "react";
+import { useForm, Controller, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ImageCropper } from "@/components/ui/image-cropped";
+import { updateBarber } from "@/lib/supabase/barbers/update-barber";
+import { deleteBarber } from "@/lib/supabase/barbers/delete-barber";
+import { useBarbershopServices } from "@/hooks/use-barbershop-services";
+import { useBarbershopStore } from "@/store/barbershop.store";
+import { supabase } from "@/lib/supabase/supabase";
+import type { Barber } from "@/types/barber";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
+
+const formSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  serviceIds: z.array(z.string()),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+interface UpdateBarberModalProps {
+  open: boolean;
+  barber: Barber | null;
+  onClose: () => void;
+  onUpdated: (barber: Barber) => void;
+  onDeleted: (id: string) => void;
+}
+
+export function UpdateBarberModal({
+  open,
+  barber,
+  onClose,
+  onUpdated,
+  onDeleted,
+}: UpdateBarberModalProps) {
+  const { barbershop } = useBarbershopStore();
+  const { services } = useBarbershopServices();
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [cropperImageUrl, setCropperImageUrl] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { name: "", serviceIds: [] },
+  });
+
+  const watchedName = useWatch({ control: form.control, name: "name" });
+
+  useEffect(() => {
+    if (!barber) return;
+
+    supabase
+      .from("barber_services")
+      .select("service_id")
+      .eq("barber_id", barber.id)
+      .then(({ data }) => {
+        form.reset({
+          name: barber.name,
+          serviceIds: data?.map(d => d.service_id) ?? [],
+        });
+        setAvatarPreview(barber.avatar_url);
+        setAvatarFile(null);
+      });
+  }, [barber, form]);
+
+  async function onSubmit(data: FormValues) {
+    if (!barber || !barbershop?.id) return;
+
+    let avatarUrl = barber.avatar_url;
+
+    if (avatarFile) {
+      const fileExt = avatarFile.name.split(".").pop();
+      const filePath = `${barbershop.owner_id}/barbers/${barber.id}.${fileExt}`;
+      const { data: uploaded } = await supabase.storage
+        .from("barbershop-assets")
+        .upload(filePath, avatarFile, { upsert: true });
+
+      if (uploaded) {
+        const { data: urlData } = await supabase.storage
+          .from("barbershop-assets")
+          .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+        if (urlData) {
+          avatarUrl = urlData.signedUrl;
+          await supabase
+            .from("barbers")
+            .update({ avatar_url: avatarUrl })
+            .eq("id", barber.id);
+        }
+      }
+    }
+
+    const success = await updateBarber({
+      id: barber.id,
+      name: data.name,
+      serviceIds: data.serviceIds,
+    });
+
+    if (!success) {
+      toast.error("Erro ao atualizar barbeiro");
+      return;
+    }
+
+    toast.success("Barbeiro atualizado!");
+    onUpdated({ ...barber, name: data.name, avatar_url: avatarUrl });
+    onClose();
+  }
+
+  async function handleDelete() {
+    if (!barber) return;
+    setDeleting(true);
+    const success = await deleteBarber(barber.id);
+    setDeleting(false);
+
+    if (!success) {
+      toast.error("Erro ao excluir barbeiro");
+      return;
+    }
+
+    toast.success("Barbeiro excluído!");
+    onDeleted(barber.id);
+    onClose();
+  }
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={o => !o && onClose()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="mb-4">Editar barbeiro</DialogTitle>
+          </DialogHeader>
+
+          <form
+            id="update-barber-form"
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-6 mb-4"
+          >
+            {/* Avatar */}
+            <div className="flex items-center gap-4">
+              <Avatar className="h-23 w-23 md:h-35 md:w-35">
+                <AvatarImage src={avatarPreview ?? undefined} />
+                <AvatarFallback>
+                  {watchedName?.slice(0, 2).toUpperCase() || "BB"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-1">
+                <Label>Foto</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    document.getElementById("update-barber-avatar")?.click()
+                  }
+                >
+                  Alterar foto
+                </Button>
+                <input
+                  id="update-barber-avatar"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setCropperImageUrl(URL.createObjectURL(file));
+                    setCropperOpen(true);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Nome */}
+            <FieldGroup>
+              <Controller
+                name="name"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="update-barber-name">Nome</FieldLabel>
+                    <Input
+                      {...field}
+                      id="update-barber-name"
+                      placeholder="Nome do barbeiro"
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </FieldGroup>
+
+            {/* Serviços */}
+            {services.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <Label>Serviços</Label>
+                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
+                  {services.map(service => (
+                    <Controller
+                      key={service.id}
+                      name="serviceIds"
+                      control={form.control}
+                      render={({ field }) => (
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id={`update-service-${service.id}`}
+                            checked={field.value.includes(service.id)}
+                            onCheckedChange={checked => {
+                              field.onChange(
+                                checked
+                                  ? [...field.value, service.id]
+                                  : field.value.filter(id => id !== service.id),
+                              );
+                            }}
+                          />
+                          <label
+                            htmlFor={`update-service-${service.id}`}
+                            className="text-sm cursor-pointer"
+                          >
+                            {service.name}
+                          </label>
+                        </div>
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </form>
+
+          <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
+            {/* Botão excluir */}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Excluir
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir barbeiro?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Essa ação não pode ser desfeita. O barbeiro será removido
+                    permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    {deleting ? "Excluindo..." : "Excluir"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                form="update-barber-form"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ImageCropper
+        open={cropperOpen}
+        imageUrl={cropperImageUrl}
+        aspect={1}
+        cropShape="round"
+        onConfirm={file => {
+          setAvatarFile(file);
+          setAvatarPreview(URL.createObjectURL(file));
+          setCropperOpen(false);
+        }}
+        onCancel={() => setCropperOpen(false)}
+      />
+    </>
+  );
+}

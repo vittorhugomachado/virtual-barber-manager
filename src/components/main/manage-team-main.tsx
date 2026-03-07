@@ -6,11 +6,11 @@ import { Pencil, Plus, Lock } from "lucide-react";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { toggleActiveBarber } from "@/lib/supabase/barbers/toggle-active-barber";
 import { useBarbers } from "@/hooks/use-barbers";
-import { ManageTeamSkeleton } from "../skeleton/manage-team";
+import { ManageTeamSkeleton } from "../skeleton/manage-team-skeleton";
 import { useState } from "react";
-import { CreateBarberModal } from "../modals/create-barber-modal";
-import { UpdateBarberModal } from "../modals/update-barber-modal";
-import { PlansModal } from "../modals/plans-modal";
+import { CreateBarberModal } from "../modals/manage-team/create-barber-modal";
+import { UpdateBarberModal } from "../modals/manage-team/update-barber-modal";
+import { PlansModal } from "../modals/plans/plans-modal";
 import type { Barber } from "@/types/barber";
 
 const planLimits: Record<string, number> = {

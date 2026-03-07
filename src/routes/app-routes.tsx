@@ -10,16 +10,17 @@ import { ManageTeamPage } from "@/pages/manage-team-page";
 import { ReportsPage } from "@/pages/reports-page";
 import { AppointmentsPage } from "@/pages/appointments-page";
 import { CustomersPage } from "@/pages/customers-page";
-import { DashboardSkeleton } from "@/components/skeleton/dashboard";
+import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
 import { SettingsSkeleton } from "@/components/skeleton/settings-skeleton";
-import { ManageTeamSkeleton } from "@/components/skeleton/manage-team";
+import { ManageTeamSkeleton } from "@/components/skeleton/manage-team-skeleton";
+import { ServicesSkeleton } from "@/components/skeleton/services-skeleton";
 
 const skeletons: Record<string, React.ReactNode> = {
   "/": <DashboardSkeleton />,
   "/agenda": <DashboardSkeleton />,
   "/clientes": <DashboardSkeleton />,
   "/equipe": <ManageTeamSkeleton />,
-  "/servicos": <DashboardSkeleton />,
+  "/servicos": <ServicesSkeleton />,
   "/relatorios": <DashboardSkeleton />,
   "/configuracoes": <SettingsSkeleton />,
 };

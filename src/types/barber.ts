@@ -6,10 +6,3 @@ export type Barber = {
   avatar_url: string | null;
   is_active: boolean;
 };
-
-export type Service = {
-  id: string;
-  name: string;
-  price: number | null;
-  duration_min: number | null;
-};

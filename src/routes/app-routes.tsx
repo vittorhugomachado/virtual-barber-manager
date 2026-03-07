@@ -14,11 +14,12 @@ import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
 import { SettingsSkeleton } from "@/components/skeleton/settings-skeleton";
 import { ManageTeamSkeleton } from "@/components/skeleton/manage-team-skeleton";
 import { ServicesSkeleton } from "@/components/skeleton/services-skeleton";
+import { CustomersSkeleton } from "@/components/skeleton/customers-skeleton";
 
 const skeletons: Record<string, React.ReactNode> = {
   "/": <DashboardSkeleton />,
   "/agenda": <DashboardSkeleton />,
-  "/clientes": <DashboardSkeleton />,
+  "/clientes": <CustomersSkeleton />,
   "/equipe": <ManageTeamSkeleton />,
   "/servicos": <ServicesSkeleton />,
   "/relatorios": <DashboardSkeleton />,

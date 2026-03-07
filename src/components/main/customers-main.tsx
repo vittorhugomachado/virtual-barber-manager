@@ -146,7 +146,7 @@ export function CustomersMain() {
           </span>
         </div>
       ) : (
-        <div className="rounded-lg border overflow-x-clip">
+        <div className="rounded-lg border overflow-x-clip [&_tr:last-child_td:first-child]:rounded-bl-md [&_tr:last-child_td:last-child]:rounded-br-md">
           <Table>
             <TableHeader className="bg-zinc-900">
               <TableRow>

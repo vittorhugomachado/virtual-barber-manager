@@ -148,9 +148,9 @@ export function CustomersMain() {
       ) : (
         <div className="rounded-lg border overflow-x-clip">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-zinc-900">
               <TableRow>
-                <TableHead className="w-full min-w-0 md:pl-6">
+                <TableHead className="w-full min-w-0 md:pl-6 rounded-tl-md">
                   Cliente
                 </TableHead>
                 <TableHead className="hidden text-center md:table-cell w-36">
@@ -182,7 +182,7 @@ export function CustomersMain() {
                     />
                   </span>
                 </TableHead>
-                <TableHead className="w-20 md:w-48" />
+                <TableHead className="w-20 md:w-48  rounded-tr-md" />
               </TableRow>
             </TableHeader>
             <TableBody>

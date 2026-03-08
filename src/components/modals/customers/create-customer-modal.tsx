@@ -21,6 +21,9 @@ import { createCustomer } from "@/lib/supabase/customers/create-customer";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import type { Customer } from "@/types/customer";
 import { maskPhone } from "@/utils/masked-input-phone";
+import { useState } from "react";
+import { CustomerConflictModal } from "./customer-conflict-modal";
+import { deleteCustomer } from "@/lib/supabase/customers/delete-customer";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -33,12 +36,14 @@ interface CreateCustomerModalProps {
   open: boolean;
   onClose: () => void;
   onCreated: (customer: Customer) => void;
+  onEditExisting?: (customer: Customer) => void;
 }
 
 export function CreateCustomerModal({
   open,
   onClose,
   onCreated,
+  onEditExisting,
 }: CreateCustomerModalProps) {
   const { barbershop } = useBarbershopStore();
 
@@ -46,6 +51,10 @@ export function CreateCustomerModal({
     resolver: zodResolver(formSchema) as Resolver<FormValues>,
     defaultValues: { name: "", phone: "" },
   });
+  const [conflictCustomer, setConflictCustomer] = useState<Customer | null>(
+    null,
+  );
+  const [conflictOpen, setConflictOpen] = useState(false);
 
   async function onSubmit(data: FormValues) {
     if (!barbershop?.id) return;
@@ -56,95 +65,120 @@ export function CreateCustomerModal({
       phone: data.phone,
     });
 
-    if (!result) {
-      toast.error(
-        "Erro ao criar cliente. Verifique se o telefone já está cadastrado.",
-      );
+    if (result.status === "conflict") {
+      setConflictCustomer(result.existing);
+      setConflictOpen(true);
+      return;
+    }
+
+    if (result.status === "error") {
+      toast.error("Erro ao criar cliente.");
       return;
     }
 
     toast.success("Cliente criado!");
-    onCreated({
-      id: result.id,
-      barbershop_id: barbershop.id,
-      name: data.name,
-      phone: data.phone,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    onCreated(result.customer);
     form.reset();
     onClose();
   }
 
   return (
-    <Dialog open={open} onOpenChange={o => !o && onClose()}>
-      <DialogContent className="max-w-md w-[calc(100%-2rem)]">
-        <DialogHeader>
-          <DialogTitle className="mb-4">Novo cliente</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={o => !o && onClose()}>
+        <DialogContent className="max-w-md w-[calc(100%-2rem)]">
+          <DialogHeader>
+            <DialogTitle className="mb-4">Novo cliente</DialogTitle>
+          </DialogHeader>
 
-        <form
-          id="create-customer-form"
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-6 mb-4"
-        >
-          <FieldGroup>
-            <Controller
-              name="name"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="create-customer-name">Nome</FieldLabel>
-                  <Input
-                    {...field}
-                    id="create-customer-name"
-                    placeholder="Nome do cliente"
-                    aria-invalid={fieldState.invalid}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="phone"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="create-customer-phone">
-                    Telefone
-                  </FieldLabel>
-                  <Input
-                    {...field}
-                    id="create-customer-phone"
-                    placeholder="(51) 99999-9999"
-                    aria-invalid={fieldState.invalid}
-                    onChange={e => field.onChange(maskPhone(e.target.value))}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-          </FieldGroup>
-        </form>
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            form="create-customer-form"
-            disabled={form.formState.isSubmitting}
+          <form
+            id="create-customer-form"
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-6 mb-4"
           >
-            {form.formState.isSubmitting ? "Criando..." : "Criar cliente"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <FieldGroup>
+              <Controller
+                name="name"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="create-customer-name">Nome</FieldLabel>
+                    <Input
+                      {...field}
+                      id="create-customer-name"
+                      placeholder="Nome do cliente"
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+
+              <Controller
+                name="phone"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="create-customer-phone">
+                      Telefone
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="create-customer-phone"
+                      placeholder="(51) 99999-9999"
+                      aria-invalid={fieldState.invalid}
+                      onChange={e => field.onChange(maskPhone(e.target.value))}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </FieldGroup>
+          </form>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="create-customer-form"
+              disabled={form.formState.isSubmitting}
+            >
+              {form.formState.isSubmitting ? "Criando..." : "Criar cliente"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <CustomerConflictModal
+        open={conflictOpen}
+        customer={conflictCustomer}
+        onClose={() => {
+          setConflictOpen(false);
+          setConflictCustomer(null);
+        }}
+        onEdit={customer => {
+          setConflictOpen(false);
+          setConflictCustomer(null);
+          onClose();
+          onEditExisting?.(customer);
+        }}
+        onDelete={async customer => {
+          const success = await deleteCustomer(customer.id);
+          if (success) {
+            setConflictOpen(false);
+            setConflictCustomer(null);
+            toast.success(
+              "Cliente excluído. Agora você pode cadastrar novamente.",
+            );
+          } else {
+            toast.error("Erro ao excluir cliente.");
+          }
+        }}
+      />
+    </>
   );
 }

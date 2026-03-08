@@ -265,6 +265,10 @@ export function CustomersMain() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={customer => setCustomers(prev => [customer, ...prev])}
+        onEditExisting={customer => {
+          setCreateOpen(false);
+          setEditCustomer(customer);
+        }}
       />
       <UpdateCustomerModal
         open={!!editCustomer}

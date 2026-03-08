@@ -35,6 +35,8 @@ import { deleteCustomer } from "@/lib/supabase/customers/delete-customer";
 import { useState } from "react";
 import type { Customer } from "@/types/customer";
 import { maskPhone } from "@/utils/masked-input-phone";
+import { CustomerConflictModal } from "./customer-conflict-modal";
+import { useBarbershopStore } from "@/store/barbershop.store";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -52,6 +54,7 @@ interface UpdateCustomerModalProps {
   onClose: () => void;
   onUpdated: (customer: Customer) => void;
   onDeleted: (id: string) => void;
+  onEditExisting?: (customer: Customer) => void;
 }
 
 export function UpdateCustomerModal({
@@ -60,8 +63,14 @@ export function UpdateCustomerModal({
   onClose,
   onUpdated,
   onDeleted,
+  onEditExisting,
 }: UpdateCustomerModalProps) {
+  const { barbershop } = useBarbershopStore();
   const [deleting, setDeleting] = useState(false);
+  const [conflictCustomer, setConflictCustomer] = useState<Customer | null>(
+    null,
+  );
+  const [conflictOpen, setConflictOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as Resolver<FormValues>,
@@ -75,19 +84,25 @@ export function UpdateCustomerModal({
     });
   }, [customer, form]);
 
+  // atualiza o onSubmit:
   async function onSubmit(data: FormValues) {
-    if (!customer) return;
+    if (!customer || !barbershop?.id) return;
 
-    const success = await updateCustomer({
+    const result = await updateCustomer({
       id: customer.id,
+      barbershopId: barbershop.id,
       name: data.name,
       phone: data.phone,
     });
 
-    if (!success) {
-      toast.error(
-        "Erro ao atualizar cliente. Verifique se o telefone já está cadastrado.",
-      );
+    if (result.status === "conflict") {
+      setConflictCustomer(result.existing);
+      setConflictOpen(true);
+      return;
+    }
+
+    if (result.status === "error") {
+      toast.error("Erro ao atualizar cliente.");
       return;
     }
 
@@ -113,108 +128,136 @@ export function UpdateCustomerModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={o => !o && onClose()}>
-      <DialogContent className="max-w-md w-[calc(100%-2rem)]">
-        <DialogHeader>
-          <DialogTitle className="mb-4">Editar cliente</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={o => !o && onClose()}>
+        <DialogContent className="max-w-md w-[calc(100%-2rem)]">
+          <DialogHeader>
+            <DialogTitle className="mb-4">Editar cliente</DialogTitle>
+          </DialogHeader>
 
-        <form
-          id="update-customer-form"
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-6 mb-4"
-        >
-          <FieldGroup>
-            <Controller
-              name="name"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="update-customer-name">Nome</FieldLabel>
-                  <Input
-                    {...field}
-                    id="update-customer-name"
-                    placeholder="Nome do cliente"
-                    aria-invalid={fieldState.invalid}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
+          <form
+            id="update-customer-form"
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-6 mb-4"
+          >
+            <FieldGroup>
+              <Controller
+                name="name"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="update-customer-name">Nome</FieldLabel>
+                    <Input
+                      {...field}
+                      id="update-customer-name"
+                      placeholder="Nome do cliente"
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
 
-            <Controller
-              name="phone"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="create-customer-phone">
-                    Telefone
-                  </FieldLabel>
-                  <Input
-                    {...field}
-                    id="create-customer-phone"
-                    placeholder="(51) 99999-9999"
-                    aria-invalid={fieldState.invalid}
-                    onChange={e => field.onChange(maskPhone(e.target.value))}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-          </FieldGroup>
-        </form>
-        <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:text-destructive cursor-pointer"
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                Excluir
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Essa ação não pode ser desfeita. O cliente será removido
-                  permanentemente.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="bg-destructive hover:bg-destructive/90"
+              <Controller
+                name="phone"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="create-customer-phone">
+                      Telefone
+                    </FieldLabel>
+                    <Input
+                      {...field}
+                      id="create-customer-phone"
+                      placeholder="(51) 99999-9999"
+                      aria-invalid={fieldState.invalid}
+                      onChange={e => field.onChange(maskPhone(e.target.value))}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+            </FieldGroup>
+          </form>
+          <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive cursor-pointer"
                 >
-                  {deleting ? "Excluindo..." : "Excluir"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Excluir
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Essa ação não pode ser desfeita. O cliente será removido
+                    permanentemente.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    {deleting ? "Excluindo..." : "Excluir"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-          <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              form="update-customer-form"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                form="update-customer-form"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <CustomerConflictModal
+        open={conflictOpen}
+        customer={conflictCustomer}
+        onClose={() => {
+          setConflictOpen(false);
+          setConflictCustomer(null);
+        }}
+        onEdit={existing => {
+          setConflictOpen(false);
+          setConflictCustomer(null);
+          onClose();
+          onEditExisting?.(existing);
+        }}
+        onDelete={async existing => {
+          const success = await deleteCustomer(existing.id);
+          if (success) {
+            setConflictOpen(false);
+            setConflictCustomer(null);
+            toast.success(
+              "Cliente excluído. Agora você pode salvar novamente.",
+            );
+          } else {
+            toast.error("Erro ao excluir cliente.");
+          }
+        }}
+      />
+    </>
   );
 }

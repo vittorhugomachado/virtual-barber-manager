@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import type { Customer } from "@/types/customer";
 
 type CreateCustomerParams = {
   barbershopId: string;
@@ -6,21 +7,35 @@ type CreateCustomerParams = {
   phone: string;
 };
 
+type CreateCustomerResult =
+  | { status: "created"; customer: Customer }
+  | { status: "conflict"; existing: Customer }
+  | { status: "error" };
+
 export async function createCustomer({
   barbershopId,
   name,
   phone,
-}: CreateCustomerParams): Promise<{ id: string } | null> {
+}: CreateCustomerParams): Promise<CreateCustomerResult> {
   const { data, error } = await supabase
     .from("customers")
-    .insert({
-      barbershop_id: barbershopId,
-      name,
-      phone,
-    })
-    .select("id")
+    .insert({ barbershop_id: barbershopId, name, phone })
+    .select("*")
     .single();
 
-  if (error) return null;
-  return data;
+  if (error) {
+    if (error.code === "23505") {
+      const { data: existing } = await supabase
+        .from("customers")
+        .select("*")
+        .eq("barbershop_id", barbershopId)
+        .eq("phone", phone)
+        .single();
+
+      if (existing) return { status: "conflict", existing };
+    }
+    return { status: "error" };
+  }
+
+  return { status: "created", customer: data };
 }

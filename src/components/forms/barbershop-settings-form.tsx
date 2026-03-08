@@ -195,48 +195,19 @@ export function SettingsForm() {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="w-full max-w-180 mx-16 mt-2 mb-18 flex flex-col gap-8"
+      className="w-full max-w-180 md:px-16 mt-2 mb-18 flex flex-col gap-8"
     >
       {/* ── SEÇÃO: Dados da Barbearia ── */}
       <Card className="bg-transparent border-none">
-        <CardHeader>
-          <CardTitle>Dados da Barbearia</CardTitle>
+        <CardHeader className="mt-3">
+          <div className="flex flex-col w-fit">
+            <CardTitle className="font-semibold text-2xl">
+              Dados da Barbearia
+            </CardTitle>
+            <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          {/* Banner */}
-          {/* <div className="relative aspect-[4/1] w-full rounded-lg bg-muted">
-            {barbershop?.banner_url && (
-              <img
-                src={barbershop.banner_url}
-                alt="banner"
-                className="h-full w-full rounded-lg object-cover"
-              />
-            )}
-            <Button
-              type="button"
-              size="sm"
-              disabled={uploadingBanner}
-              className="absolute bottom-2 right-2"
-              onClick={() => bannerInputRef.current?.click()}
-            >
-              {uploadingBanner ? "Enviando..." : "Alterar banner"}
-            </Button>
-            <Input
-              ref={bannerInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={e => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setCropperImageUrl(URL.createObjectURL(file));
-                setCropperType("banner");
-                setCropperOpen(true);
-                e.target.value = "";
-              }}
-            />
-          </div> */}
-
           {/* Logo */}
           <div className="w-full flex items-center gap-4">
             <Avatar className="h-23 w-23 md:h-35 md:w-35">
@@ -360,8 +331,13 @@ export function SettingsForm() {
 
       {/* ── SEÇÃO: Dados do Proprietário ── */}
       <Card className="bg-transparent border-none">
-        <CardHeader>
-          <CardTitle>Dados do Proprietário</CardTitle>
+        <CardHeader className="mt-3">
+          <div className="flex flex-col w-fit">
+            <CardTitle className="font-semibold text-2xl">
+              Dados do Proprietário
+            </CardTitle>
+            <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
+          </div>
         </CardHeader>
         <CardContent>
           <FieldGroup>

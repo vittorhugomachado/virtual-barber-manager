@@ -10,4 +10,5 @@ export type Barbershop = {
   description: string | null;
   logo_url: string | null;
   banner_url: string | null;
+  slot_interval: number;
 };

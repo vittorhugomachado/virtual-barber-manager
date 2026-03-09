@@ -11,7 +11,6 @@ import {
   Scissors,
   User,
 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 import {
   APPOINTMENT_STATUS_COLORS,
   APPOINTMENT_STATUS_LABELS,
@@ -319,7 +318,7 @@ export function AppointmentsMain() {
   }, [calendarOpen]);
 
   return (
-    <main className="w-full max-w-325 flex flex-col gap-6 px-6 md:px-12 pb-12 mx-auto mt-8">
+    <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col w-fit">
@@ -333,28 +332,24 @@ export function AppointmentsMain() {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-wrap items-center gap-2">
-        {(["week", "month", "year"] as FilterType[]).map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border ${
-              filter === f
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-            }`}
-          >
-            {FILTER_LABELS[f]}
-          </button>
-        ))}
+      <div className="flex flex-col items-center md:items-start gap-3">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {(["week", "month", "year"] as FilterType[]).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border ${
+                filter === f
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+              }`}
+            >
+              {FILTER_LABELS[f]}
+            </button>
+          ))}
 
-        <div ref={calendarRef} className="relative">
-          <div
-            role="button"
-            onClick={() => {
-              setFilter("custom");
-              setCalendarOpen(o => !o);
-            }}
+          <button
+            onClick={() => setFilter("custom")}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border inline-flex items-center gap-1.5 ${
               filter === "custom"
                 ? "bg-primary text-primary-foreground border-primary"
@@ -362,34 +357,68 @@ export function AppointmentsMain() {
             }`}
           >
             <CalendarDays className="h-3.5 w-3.5" />
-            {filter === "custom" && customRange.from
-              ? customRange.to
-                ? `${customRange.from.toLocaleDateString("pt-BR")} - ${customRange.to.toLocaleDateString("pt-BR")}`
-                : customRange.from.toLocaleDateString("pt-BR")
-              : "Data específica"}
-          </div>
-
-          {calendarOpen && (
-            <div className="absolute top-10 left-0 z-50 rounded-md border bg-popover shadow-md">
-              <Calendar
-                mode="range"
-                selected={{ from: customRange.from, to: customRange.to }}
-                onSelect={range => {
-                  setCustomRange({ from: range?.from, to: range?.to });
-                  setFilter("custom");
-                  // só fecha se from e to forem DIAS DIFERENTES
-                  if (
-                    range?.from &&
-                    range?.to &&
-                    range.from.getTime() !== range.to.getTime()
-                  ) {
-                    setCalendarOpen(false);
-                  }
-                }}
-              />
-            </div>
-          )}
+            Data específica
+          </button>
         </div>
+
+        {filter === "custom" && (
+          <div className="flex flex-wrap items-center justify-center gap-3 px-1">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                De
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="date"
+                  value={
+                    customRange.from
+                      ? customRange.from.toISOString().split("T")[0]
+                      : ""
+                  }
+                  onChange={e => {
+                    const d = e.target.value
+                      ? new Date(e.target.value + "T00:00:00")
+                      : undefined;
+                    setCustomRange(r => ({ ...r, from: d }));
+                  }}
+                  style={{ colorScheme: "light" }}
+                  className="h-8 rounded-md border border-border bg-background pl-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-text [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                />
+                <CalendarDays className="absolute right-2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                Até
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="date"
+                  value={
+                    customRange.to
+                      ? customRange.to.toISOString().split("T")[0]
+                      : ""
+                  }
+                  min={
+                    customRange.from
+                      ? customRange.from.toISOString().split("T")[0]
+                      : undefined
+                  }
+                  onChange={e => {
+                    const d = e.target.value
+                      ? new Date(e.target.value + "T00:00:00")
+                      : undefined;
+                    setCustomRange(r => ({ ...r, to: d }));
+                  }}
+                  style={{ colorScheme: "light" }}
+                  className="h-8 rounded-md border border-border bg-background pl-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-text [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                />
+                <CalendarDays className="absolute right-2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Dias */}

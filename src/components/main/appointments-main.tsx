@@ -17,7 +17,7 @@ import {
 } from "@/types/appointment";
 import type { AppointmentWithRelations } from "@/types/appointment";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CreateAppointmentModal } from "../modals/appointments/create-appointment-modal";
+import { CreateAppointmentModal } from "../modals/appointments/create-appointmend-modal/create-appointment-modal";
 import { UpdateAppointmentModal } from "../modals/appointments/update-appointment-modal";
 import { DeleteAppointmentModal } from "../modals/appointments/delete-appointment-appointment";
 

@@ -25,6 +25,13 @@ import { ImageCropper } from "@/components/ui/image-cropped";
 import { createBarber } from "@/lib/supabase/barbers/create-barber";
 import { useBarbershopServices } from "@/hooks/use-barbershop-services";
 import { useBarbershopStore } from "@/store/barbershop.store";
+import {
+  defaultAvailability,
+  saveBarberAvailability,
+} from "@/hooks/use-barber-availability";
+import type { DayAvailability } from "@/hooks/use-barber-availability";
+import { AvailabilitySection } from "@/components/sections/manage-team/availability-section";
+import { validateAvailability } from "@/components/sections/manage-team/availability-section.constants";
 import type { Barber } from "@/types/barber";
 
 const formSchema = z.object({
@@ -51,14 +58,39 @@ export function CreateBarberModal({
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageUrl, setCropperImageUrl] = useState("");
+  const [availability, setAvailability] =
+    useState<DayAvailability[]>(defaultAvailability);
+  const [availabilityErrors, setAvailabilityErrors] = useState<
+    Record<string, string>
+  >({});
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: "", serviceIds: [] },
   });
 
+  function handleAvailabilityChange(next: DayAvailability[]) {
+    setAvailability(next);
+    setAvailabilityErrors(validateAvailability(next));
+  }
+
+  function clearError(key: string) {
+    setAvailabilityErrors(prev => {
+      const e = { ...prev };
+      delete e[key];
+      return e;
+    });
+  }
+
   async function onSubmit(data: FormValues) {
     if (!barbershop?.id) return;
+
+    const errors = validateAvailability(availability);
+    if (Object.keys(errors).length > 0) {
+      setAvailabilityErrors(errors);
+      toast.error("Corrija os horários destacados em vermelho.");
+      return;
+    }
 
     const result = await createBarber({
       barbershopId: barbershop.id,
@@ -71,7 +103,6 @@ export function CreateBarberModal({
       return;
     }
 
-    // Upload da foto se tiver
     if (avatarFile) {
       const { supabase } = await import("@/lib/supabase/supabase");
       const fileExt = avatarFile.name.split(".").pop();
@@ -84,7 +115,6 @@ export function CreateBarberModal({
         const { data: urlData } = await supabase.storage
           .from("barbershop-assets")
           .createSignedUrl(filePath, 60 * 60 * 24 * 365);
-
         if (urlData) {
           await supabase
             .from("barbers")
@@ -93,6 +123,8 @@ export function CreateBarberModal({
         }
       }
     }
+
+    await saveBarberAvailability(result.id, barbershop.id, availability);
 
     toast.success("Barbeiro criado!");
     onCreated({
@@ -106,13 +138,15 @@ export function CreateBarberModal({
     form.reset();
     setAvatarFile(null);
     setAvatarPreview(null);
+    setAvailability(defaultAvailability());
+    setAvailabilityErrors({});
     onClose();
   }
 
   return (
     <>
       <Dialog open={open} onOpenChange={o => !o && onClose()}>
-        <DialogContent className="max-w-md w-[calc(100%-2rem)]">
+        <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="mb-4">Novo barbeiro</DialogTitle>
           </DialogHeader>
@@ -216,6 +250,14 @@ export function CreateBarberModal({
                 </div>
               </div>
             )}
+
+            {/* Disponibilidade */}
+            <AvailabilitySection
+              availability={availability}
+              onChange={handleAvailabilityChange}
+              errors={availabilityErrors}
+              onClearError={clearError}
+            />
           </form>
 
           <DialogFooter>

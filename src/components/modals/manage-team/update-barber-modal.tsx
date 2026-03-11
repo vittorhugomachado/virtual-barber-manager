@@ -22,11 +22,18 @@ import {
 } from "@/components/ui/field";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ImageCropper } from "@/components/ui/image-cropped";
+import { Trash2 } from "lucide-react";
 import { updateBarber } from "@/lib/supabase/barbers/update-barber";
 import { deleteBarber } from "@/lib/supabase/barbers/delete-barber";
 import { useBarbershopServices } from "@/hooks/use-barbershop-services";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { supabase } from "@/lib/supabase/supabase";
+import {
+  useBarberAvailability,
+  saveBarberAvailability,
+} from "@/hooks/use-barber-availability";
+import { AvailabilitySection } from "@/components/sections/manage-team/availability-section";
+import { validateAvailability } from "@/components/sections/manage-team/availability-section.constants";
 import type { Barber } from "@/types/barber";
 import {
   AlertDialog,
@@ -39,7 +46,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Trash2 } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -70,6 +76,15 @@ export function UpdateBarberModal({
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageUrl, setCropperImageUrl] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [availabilityErrors, setAvailabilityErrors] = useState<
+    Record<string, string>
+  >({});
+
+  const {
+    availability,
+    setAvailability,
+    loading: loadingAvailability,
+  } = useBarberAvailability(open ? (barber?.id ?? null) : null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -80,7 +95,6 @@ export function UpdateBarberModal({
 
   useEffect(() => {
     if (!barber) return;
-
     supabase
       .from("barber_services")
       .select("service_id")
@@ -95,8 +109,28 @@ export function UpdateBarberModal({
       });
   }, [barber, form]);
 
+  function handleAvailabilityChange(next: typeof availability) {
+    setAvailability(next);
+    setAvailabilityErrors(validateAvailability(next));
+  }
+
+  function clearError(key: string) {
+    setAvailabilityErrors(prev => {
+      const e = { ...prev };
+      delete e[key];
+      return e;
+    });
+  }
+
   async function onSubmit(data: FormValues) {
     if (!barber || !barbershop?.id) return;
+
+    const errors = validateAvailability(availability);
+    if (Object.keys(errors).length > 0) {
+      setAvailabilityErrors(errors);
+      toast.error("Corrija os horários destacados em vermelho.");
+      return;
+    }
 
     let avatarUrl = barber.avatar_url;
 
@@ -132,6 +166,8 @@ export function UpdateBarberModal({
       return;
     }
 
+    await saveBarberAvailability(barber.id, barbershop.id, availability);
+
     toast.success("Barbeiro atualizado!");
     onUpdated({ ...barber, name: data.name, avatar_url: avatarUrl });
     onClose();
@@ -156,7 +192,7 @@ export function UpdateBarberModal({
   return (
     <>
       <Dialog open={open} onOpenChange={o => !o && onClose()}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="mb-4">Editar barbeiro</DialogTitle>
           </DialogHeader>
@@ -260,10 +296,23 @@ export function UpdateBarberModal({
                 </div>
               </div>
             )}
+
+            {/* Disponibilidade */}
+            {loadingAvailability ? (
+              <span className="text-xs text-muted-foreground">
+                Carregando disponibilidade...
+              </span>
+            ) : (
+              <AvailabilitySection
+                availability={availability}
+                onChange={handleAvailabilityChange}
+                errors={availabilityErrors}
+                onClearError={clearError}
+              />
+            )}
           </form>
 
           <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
-            {/* Botão excluir */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button

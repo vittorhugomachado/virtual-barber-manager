@@ -14,8 +14,8 @@ import {
 import {
   APPOINTMENT_STATUS_COLORS,
   APPOINTMENT_STATUS_LABELS,
-} from "@/types/appointment";
-import type { AppointmentWithRelations } from "@/types/appointment";
+} from "@/types/create-appointment";
+import type { AppointmentWithRelations } from "@/types/create-appointment";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CreateAppointmentModal } from "../modals/appointments/create-appointmend-modal/create-appointment-modal";
 import { UpdateAppointmentModal } from "../modals/appointments/update-appointment-modal";

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useAppointments } from "@/hooks/use-appointments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,9 @@ import {
 } from "@/types/appointment";
 import type { AppointmentWithRelations } from "@/types/appointment";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CreateAppointmentModal } from "../modals/appointments/create-appointment-modal";
+import { UpdateAppointmentModal } from "../modals/appointments/update-appointment-modal";
+import { DeleteAppointmentModal } from "../modals/appointments/delete-appointment-appointment";
 
 type FilterType = "week" | "month" | "year" | "custom";
 
@@ -152,12 +155,17 @@ function isSameDay(date: Date, isoString: string): boolean {
   );
 }
 
+// ─── DaySection recebe callbacks para abrir os modais ────────────────────────
 function DaySection({
   date,
   appointments,
+  onEdit,
+  onCancel,
 }: {
   date: Date;
   appointments: AppointmentWithRelations[];
+  onEdit: (apt: AppointmentWithRelations) => void;
+  onCancel: (apt: AppointmentWithRelations) => void;
 }) {
   const [open, setOpen] = useState(false);
   const label = formatDayLabel(date);
@@ -165,7 +173,6 @@ function DaySection({
 
   return (
     <div className="rounded-lg border overflow-hidden">
-      {/* Header do dia */}
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -200,7 +207,6 @@ function DaySection({
         </div>
       </button>
 
-      {/* Tabela de agendamentos */}
       {open && (
         <div className="border-t">
           {appointments.length === 0 ? (
@@ -217,7 +223,6 @@ function DaySection({
                   key={apt.id}
                   className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 px-4 py-3"
                 >
-                  {/* Horário */}
                   <div className="flex items-center gap-1.5 text-sm shrink-0 w-24">
                     <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <span className="font-medium">
@@ -229,7 +234,6 @@ function DaySection({
                     </span>
                   </div>
 
-                  {/* Cliente */}
                   <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
                     <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <span className="truncate font-medium">
@@ -237,7 +241,6 @@ function DaySection({
                     </span>
                   </div>
 
-                  {/* Barbeiro */}
                   <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
                     <Scissors className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     <span className="truncate text-muted-foreground">
@@ -245,14 +248,12 @@ function DaySection({
                     </span>
                   </div>
 
-                  {/* Serviço */}
                   <div className="hidden lg:flex items-center gap-1.5 text-sm flex-1 min-w-0">
                     <span className="truncate text-muted-foreground">
                       {apt.service.name}
                     </span>
                   </div>
 
-                  {/* Status */}
                   <div className="shrink-0">
                     <span
                       className={`text-xs px-2 py-1 rounded-full font-medium ${APPOINTMENT_STATUS_COLORS[apt.status]}`}
@@ -261,12 +262,12 @@ function DaySection({
                     </span>
                   </div>
 
-                  {/* Ações */}
                   <div className="flex items-center gap-2 shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
                       className="cursor-pointer text-xs h-7"
+                      onClick={() => onEdit(apt)}
                     >
                       Editar
                     </Button>
@@ -274,6 +275,7 @@ function DaySection({
                       size="sm"
                       variant="outline"
                       className="cursor-pointer text-xs h-7 text-destructive hover:text-destructive"
+                      onClick={() => onCancel(apt)}
                     >
                       Cancelar
                     </Button>
@@ -288,34 +290,27 @@ function DaySection({
   );
 }
 
+// ─── AppointmentsMain ─────────────────────────────────────────────────────────
 export function AppointmentsMain() {
-  const calendarRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState<FilterType>("week");
+
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>(
     {},
   );
-  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const { start, end } = getRangeForFilter(filter, customRange);
-  const { appointments, loading } = useAppointments(start, end);
+  const { appointments, loading, refetch } = useAppointments(start, end);
 
   const days = getDaysForFilter(filter, customRange).filter(day =>
     appointments.some(apt => isSameDay(day, apt.starts_at)),
   );
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        calendarRef.current &&
-        !calendarRef.current.contains(e.target as Node)
-      ) {
-        setCalendarOpen(false);
-      }
-    }
-    if (calendarOpen)
-      document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [calendarOpen]);
+  // ── Estados dos modais ──────────────────────────────────────────────────────
+  const [newModalOpen, setNewModalOpen] = useState(false);
+  const [editAppointment, setEditAppointment] =
+    useState<AppointmentWithRelations | null>(null);
+  const [cancelAppointment, setCancelAppointment] =
+    useState<AppointmentWithRelations | null>(null);
 
   return (
     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
@@ -325,7 +320,10 @@ export function AppointmentsMain() {
           <h1 className="text-2xl font-semibold">Agenda</h1>
           <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
         </div>
-        <Button className="cursor-pointer">
+        <Button
+          className="cursor-pointer"
+          onClick={() => setNewModalOpen(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Novo agendamento
         </Button>
@@ -444,10 +442,33 @@ export function AppointmentsMain() {
               appointments={appointments.filter(apt =>
                 isSameDay(day, apt.starts_at),
               )}
+              onEdit={apt => setEditAppointment(apt)}
+              onCancel={apt => setCancelAppointment(apt)}
             />
           ))}
         </div>
       )}
+
+      {/* Modais */}
+      <CreateAppointmentModal
+        open={newModalOpen}
+        onClose={() => setNewModalOpen(false)}
+        onSuccess={refetch}
+      />
+
+      <UpdateAppointmentModal
+        open={!!editAppointment}
+        appointment={editAppointment}
+        onClose={() => setEditAppointment(null)}
+        onSuccess={refetch} // ✅
+      />
+
+      <DeleteAppointmentModal
+        open={!!cancelAppointment}
+        appointment={cancelAppointment}
+        onClose={() => setCancelAppointment(null)}
+        onSuccess={refetch} // ✅
+      />
     </main>
   );
 }

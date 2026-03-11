@@ -192,7 +192,7 @@ export function UpdateBarberModal({
   return (
     <>
       <Dialog open={open} onOpenChange={o => !o && onClose()}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="mb-4">Editar barbeiro</DialogTitle>
           </DialogHeader>

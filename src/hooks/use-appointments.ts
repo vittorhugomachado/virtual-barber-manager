@@ -9,6 +9,7 @@ export function useAppointments(startDate?: Date, endDate?: Date) {
     [],
   );
   const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0);
 
   const startIso =
     startDate?.toISOString() ??
@@ -30,8 +31,6 @@ export function useAppointments(startDate?: Date, endDate?: Date) {
   useEffect(() => {
     if (!barbershop?.id) return;
 
-    Promise.resolve().then(() => setLoading(true));
-
     supabase
       .from("appointments")
       .select(
@@ -42,10 +41,15 @@ export function useAppointments(startDate?: Date, endDate?: Date) {
       .lte("starts_at", endIso)
       .order("starts_at")
       .then(({ data }) => {
-        if (data) setAppointments(data as AppointmentWithRelations[]);
+        setAppointments(data ? (data as AppointmentWithRelations[]) : []);
         setLoading(false);
       });
-  }, [barbershop?.id, startIso, endIso]);
+  }, [barbershop?.id, startIso, endIso, tick]);
 
-  return { appointments, setAppointments, loading };
+  return {
+    appointments,
+    setAppointments,
+    loading,
+    refetch: () => setTick(t => t + 1),
+  };
 }

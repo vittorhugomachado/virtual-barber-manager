@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
   FieldError,
@@ -23,6 +24,7 @@ import {
 import { ImageCropper } from "@/components/ui/image-cropped";
 import { createService } from "@/lib/supabase/services/create-service";
 import { useBarbershopStore } from "@/store/barbershop.store";
+import { useBarbers } from "@/hooks/use-barbers";
 import { supabase } from "@/lib/supabase/supabase";
 import type { Service } from "@/types/services";
 
@@ -39,6 +41,9 @@ const formSchema = z.object({
       val === "" || val === undefined || val === null ? undefined : Number(val),
     z.number({ error: "Duração é obrigatória" }).min(1, "Duração inválida"),
   ),
+  barberIds: z
+    .array(z.string())
+    .min(1, "Selecione pelo manos um barbeiro que realize o serviço"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -55,6 +60,7 @@ export function CreateServiceModal({
   onCreated,
 }: CreateServiceModalProps) {
   const { barbershop } = useBarbershopStore();
+  const { barbers } = useBarbers();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -67,8 +73,16 @@ export function CreateServiceModal({
       description: "",
       price: undefined,
       duration_min: undefined,
+      barberIds: barbers.map(barber => barber.id),
     },
   });
+
+  useEffect(() => {
+    if (barbers.length > 0) {
+      const allBarberIds = barbers.map(barber => barber.id);
+      form.setValue("barberIds", allBarberIds);
+    }
+  }, [barbers, form]);
 
   async function onSubmit(data: FormValues) {
     if (!barbershop?.id) return;
@@ -84,6 +98,16 @@ export function CreateServiceModal({
     if (!result) {
       toast.error("Erro ao criar serviço");
       return;
+    }
+
+    // Vincula barbeiros ao serviço
+    if (data.barberIds.length > 0) {
+      await supabase.from("barber_services").insert(
+        data.barberIds.map(barberId => ({
+          barber_id: barberId,
+          service_id: result.id,
+        })),
+      );
     }
 
     let imageUrl: string | null = null;
@@ -130,7 +154,7 @@ export function CreateServiceModal({
   return (
     <>
       <Dialog open={open} onOpenChange={o => !o && onClose()}>
-        <DialogContent className="max-w-md w-[calc(100%-2rem)]">
+        <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="mb-4">Novo serviço</DialogTitle>
           </DialogHeader>
@@ -276,6 +300,48 @@ export function CreateServiceModal({
                 />
               </div>
             </FieldGroup>
+
+            {/* Barbeiros */}
+            {barbers.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <Label>Barbeiros</Label>
+                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
+                  {barbers.map(barber => (
+                    <Controller
+                      key={barber.id}
+                      name="barberIds"
+                      control={form.control}
+                      render={({ field }) => (
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id={`create-barber-${barber.id}`}
+                            checked={field.value.includes(barber.id)}
+                            onCheckedChange={checked => {
+                              field.onChange(
+                                checked
+                                  ? [...field.value, barber.id]
+                                  : field.value.filter(id => id !== barber.id),
+                              );
+                            }}
+                          />
+                          <label
+                            htmlFor={`create-barber-${barber.id}`}
+                            className="text-sm cursor-pointer"
+                          >
+                            {barber.name}
+                          </label>
+                        </div>
+                      )}
+                    />
+                  ))}
+                </div>
+                {form.formState.errors.barberIds && (
+                  <p className="text-sm text-destructive mt-1">
+                    {form.formState.errors.barberIds.message}
+                  </p>
+                )}
+              </div>
+            )}
           </form>
 
           <DialogFooter>

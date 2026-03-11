@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
   FieldError,
@@ -24,6 +25,7 @@ import { ImageCropper } from "@/components/ui/image-cropped";
 import { updateService } from "@/lib/supabase/services/update-service";
 import { deleteService } from "@/lib/supabase/services/delete-service";
 import { useBarbershopStore } from "@/store/barbershop.store";
+import { useBarbers } from "@/hooks/use-barbers";
 import { supabase } from "@/lib/supabase/supabase";
 import type { Service } from "@/types/services";
 import {
@@ -52,6 +54,9 @@ const formSchema = z.object({
       val === "" || val === undefined || val === null ? undefined : Number(val),
     z.number({ error: "Duração é obrigatória" }).min(1, "Duração inválida"),
   ),
+  barberIds: z
+    .array(z.string())
+    .min(1, "Selecione pelo manos um barbeiro que realize o serviço"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -72,6 +77,7 @@ export function UpdateServiceModal({
   onDeleted,
 }: UpdateServiceModalProps) {
   const { barbershop } = useBarbershopStore();
+  const { barbers } = useBarbers();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -85,22 +91,28 @@ export function UpdateServiceModal({
       description: "",
       price: undefined,
       duration_min: undefined,
+      barberIds: [],
     },
   });
 
   useEffect(() => {
     if (!service) return;
 
-    Promise.resolve().then(() => {
-      form.reset({
-        name: service.name,
-        description: service.description ?? "",
-        price: service.price ?? undefined,
-        duration_min: service.duration_min ?? undefined,
+    supabase
+      .from("barber_services")
+      .select("barber_id")
+      .eq("service_id", service.id)
+      .then(({ data }) => {
+        form.reset({
+          name: service.name,
+          description: service.description ?? "",
+          price: service.price ?? undefined,
+          duration_min: service.duration_min ?? undefined,
+          barberIds: data?.map(d => d.barber_id) ?? [],
+        });
+        setImagePreview(service.image_url);
+        setImageFile(null);
       });
-      setImagePreview(service.image_url);
-      setImageFile(null);
-    });
   }, [service, form]);
 
   async function onSubmit(data: FormValues) {
@@ -142,6 +154,21 @@ export function UpdateServiceModal({
       return;
     }
 
+    // Atualiza vínculos de barbeiros: delete todos e reinsere
+    await supabase
+      .from("barber_services")
+      .delete()
+      .eq("service_id", service.id);
+
+    if (data.barberIds.length > 0) {
+      await supabase.from("barber_services").insert(
+        data.barberIds.map(barberId => ({
+          barber_id: barberId,
+          service_id: service.id,
+        })),
+      );
+    }
+
     toast.success("Serviço atualizado!");
     onUpdated({
       ...service,
@@ -173,7 +200,7 @@ export function UpdateServiceModal({
   return (
     <>
       <Dialog open={open} onOpenChange={o => !o && onClose()}>
-        <DialogContent className="max-w-md w-[calc(100%-2rem)] my-4">
+        <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="mb-4">Editar serviço</DialogTitle>
           </DialogHeader>
@@ -319,6 +346,48 @@ export function UpdateServiceModal({
                 />
               </div>
             </FieldGroup>
+
+            {/* Barbeiros */}
+            {barbers.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <Label>Barbeiros</Label>
+                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
+                  {barbers.map(barber => (
+                    <Controller
+                      key={barber.id}
+                      name="barberIds"
+                      control={form.control}
+                      render={({ field }) => (
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id={`update-barber-${barber.id}`}
+                            checked={field.value.includes(barber.id)}
+                            onCheckedChange={checked => {
+                              field.onChange(
+                                checked
+                                  ? [...field.value, barber.id]
+                                  : field.value.filter(id => id !== barber.id),
+                              );
+                            }}
+                          />
+                          <label
+                            htmlFor={`update-barber-${barber.id}`}
+                            className="text-sm cursor-pointer"
+                          >
+                            {barber.name}
+                          </label>
+                        </div>
+                      )}
+                    />
+                  ))}
+                </div>
+                {form.formState.errors.barberIds && (
+                  <p className="text-sm text-destructive mt-1">
+                    {form.formState.errors.barberIds.message}
+                  </p>
+                )}
+              </div>
+            )}
           </form>
 
           <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">

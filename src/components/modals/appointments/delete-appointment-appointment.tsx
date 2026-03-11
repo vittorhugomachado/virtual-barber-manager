@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
-import type { AppointmentWithRelations } from "@/types/appointment";
+import type { AppointmentWithRelations } from "@/types/create-appointment";
 
 interface CancelAppointmentModalProps {
   open: boolean;

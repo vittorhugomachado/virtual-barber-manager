@@ -13,7 +13,7 @@ import { supabase } from "@/lib/supabase/supabase";
 import { useCustomers } from "@/hooks/use-customers";
 import { useBarbers } from "@/hooks/use-barbers";
 import { useServices } from "@/hooks/use-service";
-import type { AppointmentWithRelations } from "@/types/appointment";
+import type { AppointmentWithRelations } from "@/types/create-appointment";
 
 interface EditAppointmentModalProps {
   open: boolean;

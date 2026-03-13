@@ -38,11 +38,22 @@ export function Step1Customer({
   const [error, setError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
-  const filtered = customers.filter(
-    c =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone?.replace(/\D/g, "").includes(search.replace(/\D/g, "")),
-  );
+  const normalizeStr = (s: string) =>
+    s
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+
+  const searchDigits = search.replace(/\D/g, "");
+
+  const filtered = customers.filter(c => {
+    if (!search.trim()) return true;
+    const nameMatch = normalizeStr(c.name).includes(normalizeStr(search));
+    const phoneMatch =
+      searchDigits.length > 0 &&
+      (c.phone?.replace(/\D/g, "") ?? "").includes(searchDigits);
+    return nameMatch || phoneMatch;
+  });
 
   async function handleCreateCustomer() {
     if (!newName.trim() || !newPhone.trim()) return;
@@ -149,7 +160,9 @@ export function Step1Customer({
             type="text"
             placeholder="Buscar por nome ou telefone…"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => {
+              setSearch(e.target.value);
+            }}
             className="h-9 w-full rounded-md border border-border bg-background pl-8 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60"
             autoFocus
           />

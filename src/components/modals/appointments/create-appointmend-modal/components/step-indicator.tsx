@@ -25,7 +25,7 @@ export function StepIndicator({ current }: { current: Step }) {
               {current > s.n ? <Check className="h-3.5 w-3.5" /> : s.n}
             </div>
             <span
-              className={`text-[10px] font-medium whitespace-nowrap minx-w-36 ${
+              className={`text-[13px] font-medium whitespace-nowrap minx-w-36 ${
                 current === s.n ? "text-primary" : "text-muted-foreground"
               }`}
             >
@@ -34,7 +34,7 @@ export function StepIndicator({ current }: { current: Step }) {
           </div>
           {i < steps.length - 1 && (
             <div
-              className={`h-px min-w-18 mx-2 mb-4 transition-all duration-300 ${
+              className={`h-px min-w-12 mx-2 mb-4 transition-all duration-300 ${
                 current > s.n ? "bg-primary" : "bg-border"
               }`}
             />

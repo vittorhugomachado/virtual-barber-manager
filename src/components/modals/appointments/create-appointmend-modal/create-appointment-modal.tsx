@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, ChevronLeft } from "lucide-react";
+import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
 import { useServices } from "@/hooks/use-service";
 import { useBarbershopStore } from "@/store/barbershop.store";
@@ -58,16 +58,6 @@ export function CreateAppointmentModal({
     if (!open) reset();
   }, [open]);
 
-  function handleBack() {
-    if (showConfirm) {
-      // Back from confirm → re-show step 3, reset date/time
-      setShowConfirm(false);
-      setDate(null);
-      setTime(null);
-    } else {
-      setStep(s => (s - 1) as Step);
-    }
-  }
 
   async function handleConfirm() {
     if (!customer || !serviceId || !barberId || !date || !time || !barbershop)
@@ -103,8 +93,6 @@ export function CreateAppointmentModal({
 
   if (!open) return null;
 
-  const canGoBack = (step > 1 && !showConfirm) || showConfirm;
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
@@ -116,14 +104,6 @@ export function CreateAppointmentModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 shrink-0">
           <div className="flex items-center gap-2">
-            {canGoBack && (
-              <button
-                onClick={handleBack}
-                className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer mr-1"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-            )}
             <h2 className="text-lg font-semibold">
               {showConfirm ? "Confirmar agendamento" : "Novo agendamento"}
             </h2>
@@ -152,6 +132,7 @@ export function CreateAppointmentModal({
 
           {!showConfirm && step === 2 && (
             <Step2ServiceBarber
+              onBack={() => setStep(1)}
               onSelect={(sId, bId) => {
                 setServiceId(sId);
                 setBarberId(bId);

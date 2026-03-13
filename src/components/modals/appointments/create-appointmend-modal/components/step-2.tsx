@@ -2,12 +2,14 @@ import { Button } from "@/components/ui/button";
 import { useBarbers } from "@/hooks/use-barbers";
 import { useServices } from "@/hooks/use-service";
 import { supabase } from "@/lib/supabase/supabase";
-import { Scissors, Sparkles, User } from "lucide-react";
-import { useState } from "react";
+import { ChevronLeft, Scissors, Sparkles, User, Users } from "lucide-react";
+import { useRef, useState } from "react";
 
 export function Step2ServiceBarber({
+  onBack,
   onSelect,
 }: {
+  onBack: () => void;
   onSelect: (serviceId: string, barberId: string) => void;
 }) {
   const { services, loading: loadingServices } = useServices();
@@ -19,6 +21,8 @@ export function Step2ServiceBarber({
     null,
   );
   const [loadingEligible, setLoadingEligible] = useState(false);
+
+  const barberSectionRef = useRef<HTMLDivElement>(null);
 
   async function handleSelectService(id: string) {
     setSelectedService(id);
@@ -33,6 +37,13 @@ export function Step2ServiceBarber({
 
     setEligibleBarberIds(data ? data.map(r => r.barber_id) : []);
     setLoadingEligible(false);
+
+    setTimeout(() => {
+      barberSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
   }
 
   const activeBarbers = barbers.filter(b => b.is_active);
@@ -43,15 +54,26 @@ export function Step2ServiceBarber({
 
   return (
     <div className="flex flex-col gap-5 px-6 py-5">
+      <button
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer w-fit"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        Voltar
+      </button>
       {/* Services */}
       <div className="flex flex-col gap-2">
-        <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <label className="flex items-center gap-1.5 text-md font-medium text-muted-foreground">
           <Sparkles className="h-3.5 w-3.5" />
           Serviço
         </label>
 
         {loadingServices ? (
           <p className="text-sm text-muted-foreground">Carregando…</p>
+        ) : services.filter(s => s.is_active).length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Nenhum serviço disponível.
+          </p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {services
@@ -60,20 +82,33 @@ export function Step2ServiceBarber({
                 <button
                   key={s.id}
                   onClick={() => handleSelectService(s.id)}
-                  className={`flex flex-col items-start gap-0.5 px-4 py-3 rounded-xl border-2 text-left transition-all cursor-pointer ${
+                  className={`w-36 flex flex-col items-start gap-0.5 rounded-xl border-2 text-left transition-all cursor-pointer overflow-hidden ${
                     selectedService === s.id
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/40 hover:bg-muted/40"
                   }`}
                 >
-                  <span className="text-sm font-semibold">{s.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {s.duration_min ? `${s.duration_min} min` : ""}
-                    {s.duration_min && s.price ? " · " : ""}
-                    {s.price
-                      ? `R$ ${Number(s.price).toFixed(2).replace(".", ",")}`
-                      : ""}
-                  </span>
+                  {s.image_url !== null ? (
+                    <img
+                      src={s.image_url}
+                      alt={s.name}
+                      className="h-20 w-full"
+                    />
+                  ) : (
+                    <div className="h-20 w-full flex items-center justify-center bg-muted">
+                      <Scissors className="h-8 w-8 text-muted-foreground/30" />
+                    </div>
+                  )}
+                  <div className="flex flex-col px-3 py-2">
+                    <span className="text-sm font-semibold">{s.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {s.duration_min ? `${s.duration_min} min` : ""}
+                      {s.duration_min && s.price ? " · " : ""}
+                      {s.price
+                        ? `R$ ${Number(s.price).toFixed(2).replace(".", ",")}`
+                        : ""}
+                    </span>
+                  </div>
                 </button>
               ))}
           </div>
@@ -82,10 +117,10 @@ export function Step2ServiceBarber({
 
       {/* Barbers — appear after service chosen */}
       {selectedService && (
-        <div className="flex flex-col gap-2">
-          <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+        <div ref={barberSectionRef} className="flex flex-col gap-2">
+          <label className="flex items-center gap-1.5 text-md font-medium text-muted-foreground">
             <Scissors className="h-3.5 w-3.5" />
-            Barbeiro
+            Profissional
           </label>
 
           {loadingBarbers || loadingEligible ? (
@@ -96,17 +131,31 @@ export function Step2ServiceBarber({
             </p>
           ) : (
             <div className="flex flex-wrap gap-2">
+              {visibleBarbers.length > 1 && (
+                <button
+                  onClick={() => setSelectedBarber("any")}
+                  className={`min-w-46 flex justify-center items-center px-4 py-2.5 rounded-xl border-2 transition-all cursor-pointer ${
+                    selectedBarber === "any"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/40 hover:bg-muted/40"
+                  }`}
+                >
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium">Sem preferência</span>
+                  </div>
+                </button>
+              )}
               {visibleBarbers.map(b => (
                 <button
                   key={b.id}
                   onClick={() => setSelectedBarber(b.id)}
-                  className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 transition-all cursor-pointer ${
+                  className={`min-w-46 flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 transition-all cursor-pointer ${
                     selectedBarber === b.id
                       ? "border-primary bg-primary/5"
                       : "border-border hover:border-primary/40 hover:bg-muted/40"
                   }`}
                 >
-                  <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                  <div className="w-11 h-11 rounded-full bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                     {b.avatar_url ? (
                       <img
                         src={b.avatar_url}

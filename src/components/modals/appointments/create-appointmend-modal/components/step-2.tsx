@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useBarbers } from "@/hooks/use-barbers";
 import { useServices } from "@/hooks/use-service";
 import { supabase } from "@/lib/supabase/supabase";
-import { ChevronLeft, Scissors, Sparkles, User, Users } from "lucide-react";
+import { ChevronLeft, Scissors, Sparkles, User } from "lucide-react";
 import { useRef, useState } from "react";
 
 export function Step2ServiceBarber({

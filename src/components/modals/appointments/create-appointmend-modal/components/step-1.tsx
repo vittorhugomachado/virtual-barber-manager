@@ -55,7 +55,8 @@ export function Step1Customer({
     return nameMatch || phoneMatch;
   });
 
-  async function handleCreateCustomer() {
+  async function handleCreateCustomer(e: React.SubmitEvent) {
+    e.preventDefault();
     if (!newName.trim() || !newPhone.trim()) return;
     setSubmitting(true);
     setError(null);
@@ -214,46 +215,49 @@ export function Step1Customer({
         <ChevronLeft className="h-3.5 w-3.5" />
         Voltar
       </button>
+      <form onSubmit={handleCreateCustomer} className="flex flex-col gap-4">
+        <Field label="Nome completo" icon={<User className="h-3.5 w-3.5" />}>
+          <input
+            type="text"
+            placeholder="Ex: João Silva"
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            className={INPUT_CLS}
+            autoFocus
+          />
+        </Field>
 
-      <Field label="Nome completo" icon={<User className="h-3.5 w-3.5" />}>
-        <input
-          type="text"
-          placeholder="Ex: João Silva"
-          value={newName}
-          onChange={e => setNewName(e.target.value)}
-          className={INPUT_CLS}
-          autoFocus
-        />
-      </Field>
+        <Field
+          label="Telefone / WhatsApp"
+          icon={<Phone className="h-3.5 w-3.5" />}
+          error={phoneError}
+        >
+          <input
+            type="text"
+            placeholder="(11) 99999-9999"
+            value={newPhone}
+            onChange={e => {
+              setNewPhone(maskPhone(e.target.value));
+              setPhoneError(null);
+            }}
+            className={INPUT_CLS}
+            maxLength={15}
+          />
+        </Field>
 
-      <Field
-        label="Telefone / WhatsApp"
-        icon={<Phone className="h-3.5 w-3.5" />}
-        error={phoneError}
-      >
-        <input
-          type="text"
-          placeholder="(11) 99999-9999"
-          value={newPhone}
-          onChange={e => setNewPhone(maskPhone(e.target.value))}
-          className={INPUT_CLS}
-          maxLength={15}
-        />
-      </Field>
+        {error && (
+          <p className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+            {error}
+          </p>
+        )}
 
-      {error && (
-        <p className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
-          {error}
-        </p>
-      )}
-
-      <Button
-        onClick={handleCreateCustomer}
-        disabled={!newName.trim() || !newPhone.trim() || submitting}
-        className="cursor-pointer w-full"
-      >
-        {submitting ? "Cadastrando…" : "Cadastrar e continuar"}
-      </Button>
+        <Button
+          disabled={!newName.trim() || !newPhone.trim() || submitting}
+          className="cursor-pointer w-full"
+        >
+          {submitting ? "Cadastrando…" : "Cadastrar e continuar"}
+        </Button>
+      </form>
     </div>
   );
 }

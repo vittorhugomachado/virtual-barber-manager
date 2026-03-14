@@ -4,12 +4,14 @@ import { supabase } from "@/lib/supabase/supabase";
 import { useServices } from "@/hooks/use-service";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import type { SelectedCustomer } from "@/types/create-appointment";
-import type { Step } from "@/types/create-appointment";
 import { Step1Customer } from "./components/step-1";
-import { StepIndicator } from "./components/step-indicator";
-import { Step2ServiceBarber } from "./components/step-2";
-import { Step3DateTime } from "./components/step-3";
+import { Step2Service } from "./components/step-2";
+import { Step3Date } from "./components/step-3";
+import { Step4BarberTime } from "./components/step-4";
 import { ConfirmStep } from "./components/confirm-step";
+import { StepIndicator } from "./components/step-indicator";
+
+type Step = 1 | 2 | 3 | 4;
 
 interface CreateAppointmentModalProps {
   open: boolean;
@@ -30,8 +32,9 @@ export function CreateAppointmentModal({
 
   const [customer, setCustomer] = useState<SelectedCustomer | null>(null);
   const [serviceId, setServiceId] = useState<string | null>(null);
-  const [barberId, setBarberId] = useState<string | null>(null);
   const [date, setDate] = useState<string | null>(null);
+  const [dateObj, setDateObj] = useState<Date | null>(null);
+  const [barberId, setBarberId] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
@@ -42,8 +45,9 @@ export function CreateAppointmentModal({
     setShowConfirm(false);
     setCustomer(null);
     setServiceId(null);
-    setBarberId(null);
     setDate(null);
+    setDateObj(null);
+    setBarberId(null);
     setTime(null);
     setSubmitting(false);
     setSubmitError(null);
@@ -58,7 +62,6 @@ export function CreateAppointmentModal({
     if (!open) reset();
   }, [open]);
 
-
   async function handleConfirm() {
     if (!customer || !serviceId || !barberId || !date || !time || !barbershop)
       return;
@@ -68,20 +71,59 @@ export function CreateAppointmentModal({
     try {
       const service = services.find(s => s.id === serviceId);
       const durationMin = service?.duration_min ?? 30;
-      const startsAt = new Date(`${date}T${time}:00`);
+      const startsAt = new Date(`${date}T${time}:00Z`);
       const endsAt = new Date(startsAt.getTime() + durationMin * 60 * 1000);
+
+      // Resolve "any" → pick random available barber
+      let resolvedBarberId = barberId;
+      if (barberId === "any") {
+        const { data: eligible } = await supabase
+          .from("barber_services")
+          .select("barber_id")
+          .eq("service_id", serviceId);
+
+        const available: string[] = [];
+        for (const { barber_id } of eligible ?? []) {
+          const { data: conflicts } = await supabase
+            .from("appointments")
+            .select("id, status")
+            .eq("barber_id", barber_id)
+            .lt("starts_at", endsAt.toISOString())
+            .gt("ends_at", startsAt.toISOString());
+
+          const activeConflicts = (conflicts ?? []).filter(
+            c => c.status !== "cancelled",
+          );
+
+          if (activeConflicts.length === 0) available.push(barber_id);
+        }
+
+        if (available.length === 0) {
+          setSubmitError(
+            "Nenhum barbeiro disponível neste horário. Tente outro.",
+          );
+          setSubmitting(false);
+          return;
+        }
+
+        resolvedBarberId =
+          available[Math.floor(Math.random() * available.length)];
+      }
 
       const { error: err } = await supabase.from("appointments").insert({
         barbershop_id: barbershop.id,
         customer_id: customer.id,
-        barber_id: barberId,
+        barber_id: resolvedBarberId,
         service_id: serviceId,
         starts_at: startsAt.toISOString(),
         ends_at: endsAt.toISOString(),
         status: "scheduled",
       });
 
-      if (err) throw err;
+      if (err) {
+        console.log("Erro detalhado:", JSON.stringify(err, null, 2));
+        throw err;
+      }
 
       onSuccess?.();
       handleClose();
@@ -103,11 +145,9 @@ export function CreateAppointmentModal({
       <div className="relative z-10 w-full max-w-xl mx-4 rounded-xl border bg-background shadow-2xl flex flex-col overflow-hidden max-h-[92vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 shrink-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold">
-              {showConfirm ? "Confirmar agendamento" : "Novo agendamento"}
-            </h2>
-          </div>
+          <h2 className="text-lg font-semibold">
+            {showConfirm ? "Confirmar agendamento" : "Novo agendamento"}
+          </h2>
           <button
             onClick={handleClose}
             className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
@@ -116,10 +156,8 @@ export function CreateAppointmentModal({
           </button>
         </div>
 
-        {/* Step indicator (hidden on confirm screen) */}
         {!showConfirm && <StepIndicator current={step} />}
 
-        {/* Body */}
         <div className="overflow-y-auto">
           {!showConfirm && step === 1 && (
             <Step1Customer
@@ -131,22 +169,38 @@ export function CreateAppointmentModal({
           )}
 
           {!showConfirm && step === 2 && (
-            <Step2ServiceBarber
+            <Step2Service
               onBack={() => setStep(1)}
-              onSelect={(sId, bId) => {
+              onSelect={sId => {
                 setServiceId(sId);
-                setBarberId(bId);
                 setStep(3);
               }}
             />
           )}
 
-          {!showConfirm && step === 3 && barberId && serviceId && (
-            <Step3DateTime
-              barberId={barberId}
-              serviceId={serviceId}
-              onSelect={(d, t) => {
+          {!showConfirm && step === 3 && (
+            <Step3Date
+              onBack={() => setStep(2)}
+              onSelect={(d, dObj) => {
                 setDate(d);
+                setDateObj(dObj);
+                setStep(4);
+              }}
+            />
+          )}
+
+          {!showConfirm && step === 4 && serviceId && date && dateObj && (
+            <Step4BarberTime
+              serviceId={serviceId}
+              date={date}
+              dateObj={dateObj}
+              onBack={() => setStep(3)}
+              onDateChange={(d, dObj) => {
+                setDate(d);
+                setDateObj(dObj);
+              }}
+              onSelect={(bId, t) => {
+                setBarberId(bId);
                 setTime(t);
                 setShowConfirm(true);
               }}

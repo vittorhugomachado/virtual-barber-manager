@@ -65,7 +65,7 @@ export function ConfirmStep({
     },
     {
       icon: <Scissors className="h-3.5 w-3.5" />,
-      label: "Barbeiro",
+      label: "Profissional",
       value: barber?.name ?? "—",
     },
     {
@@ -77,7 +77,7 @@ export function ConfirmStep({
   ];
 
   return (
-    <div className="flex flex-col gap-4 px-6 py-5">
+    <div className="flex flex-col gap-4 px-4 py-5">
       <div className="rounded-xl border border-border overflow-hidden divide-y divide-border">
         {rows.map((row, i) => (
           <div key={i} className="flex items-center gap-3 px-4 py-3">
@@ -97,7 +97,7 @@ export function ConfirmStep({
         </p>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           variant="outline"
           onClick={onClose}

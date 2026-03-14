@@ -1,20 +1,20 @@
-import type { Step } from "@/types/create-appointment";
 import { Check } from "lucide-react";
 
-export function StepIndicator({ current }: { current: Step }) {
+export function StepIndicator({ current }: { current: 1 | 2 | 3 | 4 }) {
   const steps = [
     { n: 1, label: "Cliente" },
     { n: 2, label: "Serviço" },
-    { n: 3, label: "Horário" },
+    { n: 3, label: "Data" },
+    { n: 4, label: "Profissional" },
   ] as const;
 
   return (
-    <div className="flex items-center justify-center px-6 py-4 bg-muted/20 shrink-0">
-      {steps.map((s, i) => (
-        <div key={s.n} className="flex items-center">
-          <div className="flex flex-col items-center gap-1">
+    <div className="flex items-center justify-center px-4 py-4 gap-8 md:gap-12 bg-muted/20 shrink-0">
+      {steps.map(s => (
+        <div key={s.n} className="flex items-center gap-3">
+          <div className="flex w-8 flex-col items-center gap-1">
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+              className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                 current > s.n
                   ? "bg-primary text-primary-foreground"
                   : current === s.n
@@ -25,20 +25,13 @@ export function StepIndicator({ current }: { current: Step }) {
               {current > s.n ? <Check className="h-3.5 w-3.5" /> : s.n}
             </div>
             <span
-              className={`text-[13px] font-medium whitespace-nowrap minx-w-36 ${
+              className={`text-[13px] font-medium whitespace-nowrap ${
                 current === s.n ? "text-primary" : "text-muted-foreground"
               }`}
             >
               {s.label}
             </span>
           </div>
-          {i < steps.length - 1 && (
-            <div
-              className={`h-px min-w-12 mx-2 mb-4 transition-all duration-300 ${
-                current > s.n ? "bg-primary" : "bg-border"
-              }`}
-            />
-          )}
         </div>
       ))}
     </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
-import type { AppointmentWithRelations } from "@/types/appointment";
+import type { AppointmentWithRelations } from "@/types/create-appointment";
 
 export function useAppointments(startDate?: Date, endDate?: Date) {
   const { barbershop } = useBarbershopStore();

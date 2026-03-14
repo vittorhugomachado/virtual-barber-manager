@@ -104,7 +104,7 @@ export function Step1Customer({
 
   if (mode === null) {
     return (
-      <div className="flex flex-col gap-4 px-6 py-6">
+      <div className="flex flex-col gap-4 px-4 py-6">
         <p className="text-sm text-muted-foreground text-center">
           O cliente já possui cadastro?
         </p>
@@ -146,7 +146,7 @@ export function Step1Customer({
 
   if (mode === "existing") {
     return (
-      <div className="flex flex-col gap-4 px-6 py-5">
+      <div className="flex flex-col gap-4 px-4 py-5">
         <button
           onClick={() => setMode(null)}
           className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer w-fit"
@@ -169,7 +169,7 @@ export function Step1Customer({
           />
         </div>
 
-        <div className="flex flex-col max-h-60 overflow-y-auto rounded-md border border-border divide-y divide-border">
+        <div className="flex flex-col overflow-y-auto rounded-md border border-border divide-y divide-border">
           {loading ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Carregando…
@@ -187,17 +187,19 @@ export function Step1Customer({
                 }
                 className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors text-left cursor-pointer"
               >
-                <div className="flex items-center gap-2.5">
+                <div className="w-full flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <User className="h-3.5 w-3.5 text-primary" />
                   </div>
-                  <span className="text-sm font-medium">{c.name}</span>
+                  <div className="flex flex-2 flex-col md:flex-row md:justify-between">
+                    <span className="text-sm font-medium">{c.name}</span>
+                    {c.phone && (
+                      <span className="text-xs text-muted-foreground">
+                        {maskPhone(c.phone)}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                {c.phone && (
-                  <span className="text-xs text-muted-foreground font-mono">
-                    {maskPhone(c.phone)}
-                  </span>
-                )}
               </button>
             ))
           )}

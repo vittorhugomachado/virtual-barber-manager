@@ -122,7 +122,7 @@
 }
 
 @layer base {
-    html {
+  html {
     font-size: 17px;
   }
   * {

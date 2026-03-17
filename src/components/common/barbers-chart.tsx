@@ -58,8 +58,16 @@ export function BarbersChart({
                 content={<ChartTooltipContent />}
               />
               <ChartLegend content={<ChartLegendContent />} />
-              <Bar dataKey="total" fill={chartConfig.total.color} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="completed" fill={chartConfig.completed.color} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="total"
+                fill={chartConfig.total.color}
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="completed"
+                fill={chartConfig.completed.color}
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ChartContainer>
         )}

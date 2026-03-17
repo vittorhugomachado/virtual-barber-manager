@@ -69,7 +69,9 @@ export function useDashboard(): DashboardData {
 
       supabase
         .from("appointments")
-        .select("starts_at, status, service_id, service:services(id, name, price)")
+        .select(
+          "starts_at, status, service_id, service:services(id, name, price)",
+        )
         .eq("barbershop_id", barbershop.id)
         .gte("starts_at", monthStart)
         .lt("starts_at", nextMonthStart),
@@ -95,7 +97,8 @@ export function useDashboard(): DashboardData {
           service_id: string | null;
           service: { id: string; name: string; price: number | null } | null;
         };
-        const monthApts = (monthCompletedRes.data ?? []) as unknown as MonthApt[];
+        const monthApts = (monthCompletedRes.data ??
+          []) as unknown as MonthApt[];
         const monthCompleted = monthApts.filter(a => a.status === "completed");
 
         const revenue = monthCompleted.reduce(
@@ -108,7 +111,11 @@ export function useDashboard(): DashboardData {
           if (!apt.service) continue;
           const existing = serviceMap.get(apt.service.id);
           if (existing) existing.count++;
-          else serviceMap.set(apt.service.id, { name: apt.service.name, count: 1 });
+          else
+            serviceMap.set(apt.service.id, {
+              name: apt.service.name,
+              count: 1,
+            });
         }
         const top = Array.from(serviceMap.values())
           .sort((a, b) => b.count - a.count)

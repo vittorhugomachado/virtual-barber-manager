@@ -200,7 +200,8 @@ export function useReports(from: string, to: string): ReportsData {
         if (!apt.service) continue;
         const e = serviceMap.get(apt.service.id);
         if (e) e.total++;
-        else serviceMap.set(apt.service.id, { name: apt.service.name, total: 1 });
+        else
+          serviceMap.set(apt.service.id, { name: apt.service.name, total: 1 });
       }
       const services = Array.from(serviceMap.values())
         .sort((a, b) => b.total - a.total)

@@ -183,9 +183,9 @@ export function ServicesMain() {
             className="border-dashed cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
           >
             <CardContent className="flex flex-col items-center justify-center gap-3 pt-8 pb-6 h-full min-h-52">
-              <div className="h-12 w-12 rounded-full border-2 border-dashed border-muted-foreground/50 flex items-center justify-center">
-                <Plus className="h-5 w-5 text-muted-foreground" />
-              </div>
+              <Button className="h-12 w-12 rounded-full flex items-center justify-center">
+                <Plus className="h-5 w-5" />
+              </Button>
               <span className="text-sm text-muted-foreground font-medium">
                 Novo serviço
               </span>

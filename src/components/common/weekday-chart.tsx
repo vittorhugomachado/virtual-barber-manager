@@ -54,11 +54,7 @@ export function WeekdayChart({
                 cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
                 content={<ChartTooltipContent hideLabel />}
               />
-              <Bar
-                dataKey="total"
-                fill="#a855f7"
-                radius={[4, 4, 0, 0]}
-              />
+              <Bar dataKey="total" fill="#a855f7" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ChartContainer>
         )}

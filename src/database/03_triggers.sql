@@ -40,12 +40,22 @@ CREATE TRIGGER trg_appointments_updated_at
 CREATE OR REPLACE FUNCTION check_appointment_conflict()
 RETURNS TRIGGER AS $$
 BEGIN
+  -- Não verifica conflito se o agendamento está sendo resolvido
+  IF NEW.status IN (
+    'cancelled_by_customer',
+    'cancelled_by_barbershop',
+    'no_show',
+    'completed'
+  ) THEN
+    RETURN NEW;
+  END IF;
+
   IF EXISTS (
     SELECT 1 FROM "appointments"
     WHERE
       "barber_id" = NEW.barber_id
       AND "id" != NEW.id
-      AND "status" NOT IN ('cancelled_by_customer', 'cancelled_by_barbershop')
+      AND "status" NOT IN ('cancelled_by_customer', 'cancelled_by_barbershop', 'no_show')
       AND (
         NEW.starts_at < "ends_at"
         AND NEW.ends_at > "starts_at"
@@ -53,6 +63,7 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Conflito de agendamento: este barbeiro já possui um agendamento neste horário.';
   END IF;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

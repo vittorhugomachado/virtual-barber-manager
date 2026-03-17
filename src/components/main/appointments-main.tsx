@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAppointments } from "@/hooks/use-appointments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,8 @@ import {
 } from "@/types/create-appointment";
 import type { AppointmentWithRelations } from "@/types/create-appointment";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/lib/supabase/supabase";
 import { CreateAppointmentModal } from "../modals/appointments/create-appointmend-modal/create-appointment-modal";
-import { UpdateAppointmentModal } from "../modals/appointments/update-appointment-modal";
 import { DeleteAppointmentModal } from "../modals/appointments/delete-appointment-appointment";
 
 type FilterType = "today" | "week" | "month" | "year" | "custom";
@@ -45,6 +45,100 @@ function RemovedBadge({ label, tooltip }: { label: string; tooltip: string }) {
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
+  );
+}
+
+// ─── StatusPicker ─────────────────────────────────────────────────────────────
+type AppointmentStatus = AppointmentWithRelations["status"];
+
+const STATUS_OPTIONS: { value: AppointmentStatus; label: string }[] = [
+  { value: "scheduled", label: "Agendado" },
+  { value: "completed", label: "Concluído" },
+  { value: "no_show", label: "Não compareceu" },
+  { value: "cancelled_by_barbershop", label: "Cancelado" },
+];
+
+function StatusPicker({
+  apt,
+  onRefetch,
+}: {
+  apt: AppointmentWithRelations;
+  onRefetch: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const now = new Date();
+  const startsAt = new Date(apt.starts_at);
+  const isFuture = startsAt > now;
+  const isPast40 = now.getTime() - startsAt.getTime() >= 40 * 60 * 1000;
+
+  const options =
+    apt.status === "no_show"
+      ? STATUS_OPTIONS.filter(
+          o => o.value === "completed" || o.value === "cancelled_by_barbershop",
+        )
+      : isPast40
+        ? STATUS_OPTIONS.filter(o => o.value === "no_show")
+        : STATUS_OPTIONS.filter(o => {
+            if (o.value === apt.status) return false;
+            if (o.value === "scheduled" && !isFuture) return false;
+            if (o.value === "no_show") return false;
+            return true;
+          });
+
+  async function changeStatus(newStatus: AppointmentStatus) {
+    setUpdating(true);
+    setOpen(false);
+    await supabase
+      .from("appointments")
+      .update({ status: newStatus })
+      .eq("id", apt.id);
+    onRefetch();
+    setUpdating(false);
+  }
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => options.length > 0 && setOpen(o => !o)}
+        disabled={updating}
+        className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium transition-opacity ${APPOINTMENT_STATUS_COLORS[apt.status]} ${
+          options.length > 0
+            ? "cursor-pointer hover:opacity-80"
+            : "cursor-default"
+        }`}
+      >
+        {updating ? "..." : APPOINTMENT_STATUS_LABELS[apt.status]}
+        {options.length > 0 && <ChevronDown className="h-3 w-3 shrink-0" />}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-20 bg-popover border rounded-lg shadow-lg py-1 min-w-36 overflow-hidden">
+          {options.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => changeStatus(opt.value)}
+              className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors cursor-pointer"
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -193,24 +287,23 @@ function isSameDay(date: Date, isoString: string): boolean {
   );
 }
 
-// ─── DaySection recebe callbacks para abrir os modais ────────────────────────
+// ─── DaySection ───────────────────────────────────────────────────────────────
 const DaySection = memo(function DaySection({
   date,
   appointments,
-  onEdit,
-  onCancel,
+  onRefetch,
 }: {
   date: Date;
   appointments: AppointmentWithRelations[];
-  onEdit: (apt: AppointmentWithRelations) => void;
   onCancel: (apt: AppointmentWithRelations) => void;
+  onRefetch: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const label = formatDayLabel(date);
   const isToday = label === "Hoje";
 
   return (
-    <div className="rounded-lg border overflow-hidden">
+    <div className="rounded-lg border">
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -252,112 +345,73 @@ const DaySection = memo(function DaySection({
             </div>
           ) : (
             <div className="divide-y">
-              {appointments.map(apt => (
-                <div
-                  key={apt.id}
-                  className="flex flex-col sm:flex-row items-center gap-2 md:gap-4 px-4 py-3"
-                >
-                  {(() => {
-                    const cancelled =
-                      apt.status === "cancelled_by_customer" ||
-                      apt.status === "cancelled_by_barbershop";
-                    const dim = cancelled ? "opacity-30" : "";
-                    return (
-                      <>
-                        <div className={`w-full flex gap-3 ${dim}`}>
-                          <div className="flex items-center gap-1.5 text-sm shrink-0 w-24">
-                            <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <span className="font-medium">
-                              {formatTime(apt.starts_at)}
-                            </span>
-                            <span className="text-muted-foreground">–</span>
-                            <span className="text-muted-foreground">
-                              {formatTime(apt.ends_at)}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-center gap-1.5 text-sm flex-1 min-w-0">
-                            <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <span className="truncate font-medium">
-                              {apt.customer?.name ?? (
-                                <RemovedBadge
-                                  label="Cliente removido"
-                                  tooltip="Este cliente foi excluído do sistema. O agendamento ainda existe no histórico."
-                                />
-                              )}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
-                            <Scissors className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            <span className="truncate text-muted-foreground">
-                              {apt.barber?.name ?? (
-                                <RemovedBadge
-                                  label="Barbeiro removido"
-                                  tooltip="Este barbeiro foi excluído do sistema. O agendamento ainda existe no histórico."
-                                />
-                              )}
-                            </span>
-                          </div>
+              {appointments.map(apt => {
+                const cancelled =
+                  apt.status === "cancelled_by_customer" ||
+                  apt.status === "cancelled_by_barbershop";
+                const dim = cancelled ? "opacity-30" : "";
+                return (
+                  <div
+                    key={apt.id}
+                    className="flex flex-col xl:flex-row items-center gap-2 xl:gap-4 px-4 py-3"
+                  >
+                    {/* Informações */}
+                    <div
+                      className={`flex-1 min-w-0 flex flex-col xl:flex-row gap-1 xl:gap-18 ${dim}`}
+                    >
+                      {/* linha 1: horário + cliente */}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-1 text-sm shrink-0">
+                          <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="font-medium">
+                            {formatTime(apt.starts_at)}
+                          </span>
+                          <span className="text-muted-foreground">–</span>
+                          <span className="text-muted-foreground">
+                            {formatTime(apt.ends_at)}
+                          </span>
                         </div>
-
-                        <div
-                          className={`hidden lg:flex items-center gap-1.5 text-sm flex-1 min-w-0 ${dim}`}
-                        >
-                          <span className="truncate text-muted-foreground">
-                            {apt.service?.name ?? (
+                        <div className="flex items-center gap-1.5 text-sm min-w-0 overflow-hidden">
+                          <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                          <span className="truncate font-medium">
+                            {apt.customer?.name ?? (
                               <RemovedBadge
-                                label="Serviço removido"
-                                tooltip="Este serviço foi excluído do sistema. O agendamento ainda existe no histórico."
+                                label="Cliente removido"
+                                tooltip="Este cliente foi excluído do sistema. O agendamento ainda existe no histórico."
                               />
                             )}
                           </span>
                         </div>
-                      </>
-                    );
-                  })()}
-
-                  <div className="shrink-0">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full font-medium ${APPOINTMENT_STATUS_COLORS[apt.status]}`}
-                    >
-                      {APPOINTMENT_STATUS_LABELS[apt.status]}
-                    </span>
+                      </div>
+                      {/* linha 2: barbeiro · serviço */}
+                      <div className="flex justify-center xl:justify-start items-center gap-1.5 text-sm min-w-0 overflow-hidden pl-0.5">
+                        <Scissors className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        <span className="flex items-center gap-1 text-muted-foreground min-w-0 overflow-hidden">
+                          <span className="truncate">
+                            {apt.barber?.name ?? (
+                              <RemovedBadge
+                                label="Barbeiro removido"
+                                tooltip="Este barbeiro foi excluído do sistema. O agendamento ainda existe no histórico."
+                              />
+                            )}
+                          </span>
+                          {apt.service && (
+                            <>
+                              <span className="shrink-0">·</span>
+                              <span className="truncate">
+                                {apt.service.name}
+                              </span>
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="xl:mr-4">
+                      <StatusPicker apt={apt} onRefetch={onRefetch} />
+                    </div>
                   </div>
-                  <div
-                    className={`${
-                      apt.status == "cancelled_by_customer" ||
-                      (apt.status == "cancelled_by_barbershop" &&
-                        "opacity-0 hidden sm:block sm:ml-2")
-                    } flex items-center gap-2 shrink-0`}
-                  >
-                    <Button
-                      disabled={
-                        apt.status == "cancelled_by_customer" ||
-                        apt.status == "cancelled_by_barbershop"
-                      }
-                      size="sm"
-                      variant="outline"
-                      className="cursor-pointer text-xs h-7"
-                      onClick={() => onEdit(apt)}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      disabled={
-                        apt.status == "cancelled_by_customer" ||
-                        apt.status == "cancelled_by_barbershop"
-                      }
-                      size="sm"
-                      variant="outline"
-                      className="cursor-pointer text-xs h-7 text-destructive hover:text-destructive"
-                      onClick={() => onCancel(apt)}
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -369,7 +423,6 @@ const DaySection = memo(function DaySection({
 // ─── AppointmentsMain ─────────────────────────────────────────────────────────
 export function AppointmentsMain() {
   const [filter, setFilter] = useState<FilterType>("week");
-
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>(
     {},
   );
@@ -399,16 +452,9 @@ export function AppointmentsMain() {
     return map;
   }, [days, appointments]);
 
-  // ── Estados dos modais ──────────────────────────────────────────────────────
   const [newModalOpen, setNewModalOpen] = useState(false);
-  const [editAppointment, setEditAppointment] =
-    useState<AppointmentWithRelations | null>(null);
   const [cancelAppointment, setCancelAppointment] =
     useState<AppointmentWithRelations | null>(null);
-
-  const handleEdit = useCallback((apt: AppointmentWithRelations) => {
-    setEditAppointment(apt);
-  }, []);
 
   const handleCancel = useCallback((apt: AppointmentWithRelations) => {
     setCancelAppointment(apt);
@@ -423,8 +469,8 @@ export function AppointmentsMain() {
             className="cursor-pointer"
             onClick={() => setNewModalOpen(true)}
           >
-            <Plus className="h-4 w-4 " />
-            <span className="">Novo agendamento</span>
+            <Plus className="h-4 w-4" />
+            <span>Novo agendamento</span>
           </Button>
         </div>
 
@@ -541,32 +587,24 @@ export function AppointmentsMain() {
               key={day.toISOString()}
               date={day}
               appointments={appointmentsByDay.get(day.toISOString()) ?? []}
-              onEdit={handleEdit}
               onCancel={handleCancel}
+              onRefetch={refetch}
             />
           ))}
         </div>
       )}
 
-      {/* Modais */}
       <CreateAppointmentModal
         open={newModalOpen}
         onClose={() => setNewModalOpen(false)}
         onSuccess={refetch}
       />
 
-      <UpdateAppointmentModal
-        open={!!editAppointment}
-        appointment={editAppointment}
-        onClose={() => setEditAppointment(null)}
-        onSuccess={refetch} // ✅
-      />
-
       <DeleteAppointmentModal
         open={!!cancelAppointment}
         appointment={cancelAppointment}
         onClose={() => setCancelAppointment(null)}
-        onSuccess={refetch} // ✅
+        onSuccess={refetch}
       />
     </main>
   );

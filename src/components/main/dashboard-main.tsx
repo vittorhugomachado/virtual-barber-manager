@@ -142,7 +142,7 @@ export function BarbershopDashboardMain() {
           }
         />
         <KpiCard
-          label="Receita do mês"
+          label="Faturamento do mês"
           value={formatCurrency(monthRevenue)}
           icon={<TrendingUp className="h-4 w-4" />}
           sub="Serviços concluídos"

@@ -35,7 +35,7 @@ function buildEmpty(): HourlyData[] {
 }
 
 function toLocalDateStr(date: Date): string {
-  return date.toLocaleDateString("en-CA"); 
+  return date.toLocaleDateString("en-CA");
 }
 
 function formatLabel(date: Date): string {
@@ -54,22 +54,29 @@ function formatLabel(date: Date): string {
 
 interface AppointmentsHourChartProps {
   title?: string;
+  /** Dados externos (modo relatórios). Quando fornecido, desativa navegação interna. */
+  externalData?: HourlyData[];
+  /** Label de data exibido quando em modo externo */
+  dateLabel?: string;
 }
 
 export function AppointmentsHourChart({
   title = "Agendamentos por horário",
+  externalData,
+  dateLabel,
 }: AppointmentsHourChartProps) {
   const { barbershop } = useBarbershopStore();
+  const isControlled = externalData !== undefined;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const [selectedDate, setSelectedDate] = useState<Date>(today);
-  const [hourlyData, setHourlyData] = useState<HourlyData[]>(buildEmpty());
+  const [internalData, setInternalData] = useState<HourlyData[]>(buildEmpty());
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!barbershop?.id) return;
+    if (isControlled || !barbershop?.id) return;
 
     const dateStr = toLocalDateStr(selectedDate);
     const dayStart = `${dateStr}T00:00:00Z`;
@@ -103,7 +110,7 @@ export function AppointmentsHourChart({
         }
       }
 
-      setHourlyData(
+      setInternalData(
         buckets.map((bucket, h) => ({
           hour: `${String(h).padStart(2, "0")}:00`,
           ...bucket,
@@ -113,7 +120,7 @@ export function AppointmentsHourChart({
     }
 
     void fetchData();
-  }, [barbershop, selectedDate]);
+  }, [barbershop, selectedDate, isControlled]);
 
   function changeDate(delta: number) {
     setSelectedDate(prev => {
@@ -122,6 +129,8 @@ export function AppointmentsHourChart({
       return next;
     });
   }
+
+  const displayData = isControlled ? externalData : internalData;
 
   return (
     <div className="bg-card border rounded-xl overflow-hidden">
@@ -132,32 +141,39 @@ export function AppointmentsHourChart({
         </div>
 
         <div className="flex items-center gap-2">
-          {loading && (
+          {isControlled && dateLabel && (
+            <span className="text-xs text-muted-foreground">{dateLabel}</span>
+          )}
+          {loading && !isControlled && (
             <span className="text-xs text-muted-foreground animate-pulse">
               Carregando…
             </span>
           )}
-          <button
-            onClick={() => changeDate(-1)}
-            className="p-1 rounded hover:bg-muted transition-colors cursor-pointer"
-          >
-            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-          </button>
-          <span className="text-md font-medium w-14 text-center">
-            {formatLabel(selectedDate)}
-          </span>
-          <button
-            onClick={() => changeDate(1)}
-            className="p-1 rounded hover:bg-muted transition-colors cursor-pointer"
-          >
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </button>
+          {!isControlled && (
+            <>
+              <button
+                onClick={() => changeDate(-1)}
+                className="p-1 rounded hover:bg-muted transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <span className="text-sm font-medium w-14 text-center">
+                {formatLabel(selectedDate)}
+              </span>
+              <button
+                onClick={() => changeDate(1)}
+                className="p-1 rounded hover:bg-muted transition-colors cursor-pointer"
+              >
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </>
+          )}
         </div>
       </div>
 
       <div className="p-4">
         <ChartContainer config={chartConfig} className="h-56 w-full">
-          <BarChart data={hourlyData} barCategoryGap="30%" barSize={8}>
+          <BarChart data={displayData} barCategoryGap="30%" barSize={8}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
               dataKey="hour"

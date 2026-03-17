@@ -118,7 +118,7 @@ export function ManageTeamMain() {
         {barbers.map(barber => (
           <Card
             key={barber.id}
-            className={`${!barber.is_active && "bg-zinc-950"} relative`}
+            className={`${!barber.is_active && "bg-zinc-950"} relative w-full max-w-80 mx-auto`}
           >
             <CardContent className="flex flex-col items-center gap-4 pt-8 pb-6">
               {/* Badge sem opacidade */}
@@ -131,23 +131,24 @@ export function ManageTeamMain() {
               </Badge>
 
               {/* Resto com opacidade quando inativo */}
-              <div
-                className={`${!barber.is_active && "opacity-30"} flex flex-col items-center gap-4 w-full`}
-              >
-                <Avatar className="h-23 w-23 md:h-35 md:w-35">
-                  <AvatarImage src={barber.avatar_url ?? undefined} />
-                  <AvatarFallback className="text-xl">
-                    {barber.name.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+              <div className="flex flex-col items-center gap-4 w-full">
+                <div
+                  className={`${!barber.is_active && "opacity-30"} flex flex-col items-center gap-4 w-full`}
+                >
+                  <Avatar className="h-23 w-23 md:h-35 md:w-35">
+                    <AvatarImage src={barber.avatar_url ?? undefined} />
+                    <AvatarFallback className="text-xl">
+                      {barber.name.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
 
-                <div className="flex flex-col items-center gap-1 text-center">
-                  <span className="font-semibold">{barber.name}</span>
-                  <span className="text-sm text-muted-foreground line-clamp-2">
-                    {barber.description}
-                  </span>
+                  <div className="flex flex-col items-center gap-1 text-center">
+                    <span className="font-semibold">{barber.name}</span>
+                    <span className="text-sm text-muted-foreground line-clamp-2">
+                      {barber.description}
+                    </span>
+                  </div>
                 </div>
-
                 <Button
                   size="sm"
                   variant="outline"

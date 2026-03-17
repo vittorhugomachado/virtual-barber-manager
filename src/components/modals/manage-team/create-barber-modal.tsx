@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -69,6 +69,8 @@ export function CreateBarberModal({
     defaultValues: { name: "", serviceIds: [] },
   });
 
+  const { setValue } = form;
+
   function handleAvailabilityChange(next: DayAvailability[]) {
     setAvailability(next);
     setAvailabilityErrors(validateAvailability(next));
@@ -133,7 +135,7 @@ export function CreateBarberModal({
       name: data.name,
       description: null,
       avatar_url: avatarPreview,
-      is_active: false,
+      is_active: true,
     });
     form.reset();
     setAvatarFile(null);
@@ -142,6 +144,15 @@ export function CreateBarberModal({
     setAvailabilityErrors({});
     onClose();
   }
+
+  useEffect(() => {
+    if (open && services.length > 0) {
+      setValue(
+        "serviceIds",
+        services.map(s => s.id),
+      );
+    }
+  }, [open, services, setValue]);
 
   return (
     <>

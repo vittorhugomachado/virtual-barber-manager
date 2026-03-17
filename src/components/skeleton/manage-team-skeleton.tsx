@@ -7,7 +7,7 @@ export function ManageTeamSkeleton() {
       <Skeleton className="h-4 w-48" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i} className="relative">
+          <Card key={i} className="relative w-full max-w-80 mx-auto">
             <CardContent className="flex flex-col items-center gap-4 pt-8 pb-6">
               <Skeleton className="absolute top-3 right-3 h-5 w-12 rounded-full" />
               <Skeleton className="h-20 w-20 rounded-full" />

@@ -122,6 +122,7 @@ export function AvailabilitySection({
                         Personalizado
                       </span>
                       <Switch
+                        className="cursor-pointer"
                         checked={day.use_custom_hours}
                         onCheckedChange={checked =>
                           updateDay(day.day_of_week, {
@@ -137,6 +138,7 @@ export function AvailabilitySection({
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs text-muted-foreground">Folga</span>
                     <Switch
+                      className="cursor-pointer"
                       checked={day.is_day_off}
                       onCheckedChange={checked =>
                         updateDay(day.day_of_week, {

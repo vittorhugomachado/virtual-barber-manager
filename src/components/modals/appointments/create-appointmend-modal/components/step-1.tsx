@@ -69,15 +69,17 @@ export function Step1Customer({
       return;
     }
 
-    const { data: existing } = await supabase
+    const { data: existingList } = await supabase
       .from("customers")
       .select("id, name")
       .eq("barbershop_id", barbershop!.id)
       .eq("phone", digits)
-      .maybeSingle();
+      .limit(1);
 
-    if (existing) {
-      setPhoneError(`Telefone já cadastrado para "${existing.name}".`);
+    if (existingList && existingList.length > 0) {
+      setPhoneError(
+        `Telefone já cadastrado para "${existingList[0].name}". Busque pelo cliente existente.`,
+      );
       setSubmitting(false);
       return;
     }

@@ -124,10 +124,7 @@ export function UpdateAppointmentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       <div className="relative z-10 w-full max-w-md mx-4 rounded-xl border bg-background shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
@@ -138,7 +135,7 @@ export function UpdateAppointmentModal({
           </div>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            className="flex items-center justify-center p-1 rounded-xs bg-[#FB2C36] text-white border-0 opacity-80 transition-opacity hover:opacity-100 cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>

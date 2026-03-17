@@ -26,7 +26,7 @@ export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
   completed: "bg-green-100 text-green-700",
   cancelled_by_customer: "bg-red-100 text-red-700",
   cancelled_by_barbershop: "bg-red-100 text-red-700",
-  no_show: "bg-zinc-100 text-zinc-500",
+  no_show: "bg-zinc-100 text-zinc-800",
 };
 
 export interface AppointmentWithRelations {

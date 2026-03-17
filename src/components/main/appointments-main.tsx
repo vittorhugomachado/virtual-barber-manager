@@ -28,7 +28,7 @@ import { CreateAppointmentModal } from "../modals/appointments/create-appointmen
 import { UpdateAppointmentModal } from "../modals/appointments/update-appointment-modal";
 import { DeleteAppointmentModal } from "../modals/appointments/delete-appointment-appointment";
 
-type FilterType = "week" | "month" | "year" | "custom";
+type FilterType = "today" | "week" | "month" | "year" | "custom";
 
 function RemovedBadge({ label, tooltip }: { label: string; tooltip: string }) {
   return (
@@ -54,6 +54,10 @@ function getDaysForFilter(
 ): Date[] {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  if (filter === "today") {
+    return [new Date(today)];
+  }
 
   if (filter === "week") {
     return Array.from({ length: 7 }, (_, i) => {
@@ -103,6 +107,7 @@ function getDaysForFilter(
 }
 
 const FILTER_LABELS: Record<FilterType, string> = {
+  today: "Hoje",
   week: "Esta semana",
   month: "Este mês",
   year: "Este ano",
@@ -115,6 +120,12 @@ function getRangeForFilter(
 ): { start: Date; end: Date } {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  if (filter === "today") {
+    const end = new Date(today);
+    end.setHours(23, 59, 59);
+    return { start: today, end };
+  }
 
   if (filter === "week") {
     const end = new Date(today);
@@ -421,7 +432,7 @@ export function AppointmentsMain() {
         <div>
           <div className="w-fit mx-auto lg:ml-0 flex flex-col items-center lg:items-start gap-3">
             <div className="flex flex-wrap items-center justify-center gap-2">
-              {(["week", "month", "year"] as FilterType[]).map(f => (
+              {(["today", "week", "month", "year"] as FilterType[]).map(f => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}

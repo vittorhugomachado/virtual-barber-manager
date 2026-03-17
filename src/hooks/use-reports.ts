@@ -121,17 +121,7 @@ export function useReports(from: string, to: string): ReportsData {
           a.status === "cancelled_by_customer" ||
           a.status === "cancelled_by_barbershop",
       ).length;
-      const nowNaive = new Date(Date.now() - 3 * 60 * 60 * 1000);
-      const noShowCutoff = new Date(nowNaive.getTime() - 20 * 60 * 1000);
-      const noShow = apts.filter(a => {
-        if (
-          a.status === "completed" ||
-          a.status === "cancelled_by_customer" ||
-          a.status === "cancelled_by_barbershop"
-        )
-          return false;
-        return new Date(a.starts_at) < noShowCutoff;
-      }).length;
+      const noShow = apts.filter(a => a.status === "no_show").length;
       const completionRate =
         total > 0 ? Math.round((completed / total) * 100) : 0;
       const revenue = completedApts.reduce(

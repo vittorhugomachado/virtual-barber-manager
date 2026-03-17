@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
+import { AppointmentsHourChart } from "@/components/common/appointments-hour-chart";
 import {
   CalendarCheck,
   CalendarDays,
@@ -94,8 +95,23 @@ export function BarbershopDashboardMain() {
     [todayAppointments],
   );
 
-  if (loading) return <DashboardSkeleton />;
+  const todayStats = useMemo(() => {
+    let agendados = 0,
+      concluidos = 0,
+      cancelados = 0;
+    for (const a of todayAppointments) {
+      if (a.status === "completed") concluidos++;
+      else if (
+        a.status === "cancelled_by_customer" ||
+        a.status === "cancelled_by_barbershop"
+      )
+        cancelados++;
+      else agendados++;
+    }
+    return { agendados, concluidos, cancelados };
+  }, [todayAppointments]);
 
+  if (loading) return <DashboardSkeleton />;
   return (
     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
       {/* Header */}
@@ -122,7 +138,7 @@ export function BarbershopDashboardMain() {
           icon={<CheckCircle2 className="h-4 w-4" />}
           sub={
             activeToday > 0
-              ? `${Math.round((completedToday / activeToday) * 100)}% dos ativos`
+              ? `${Math.round((completedToday / activeToday) * 100)}% dos agendamentos`
               : undefined
           }
         />
@@ -148,14 +164,31 @@ export function BarbershopDashboardMain() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Today's schedule */}
         <div className="lg:col-span-2 bg-card border rounded-xl overflow-hidden">
-          <div className="flex items-center gap-2 px-4 py-3 border-b">
-            <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-semibold text-sm">Agenda de hoje</h2>
-            {activeToday > 0 && (
-              <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                {activeToday} ativo{activeToday !== 1 ? "s" : ""}
+          <div className="flex items-center justify-between px-4 py-3 border-b">
+            <div className="flex items-center gap-2">
+              <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+              <h2 className="font-semibold text-sm">Agenda de hoje</h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center text-xs text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mr-0.5" />
+                {todayStats.agendados}{" "}
+                <span className="hidden sm:block ml-0.5">agendado</span>
+                {todayStats.agendados !== 1 ? "s" : ""}
               </span>
-            )}
+              <span className="inline-flex items-center text-xs text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-green-500 shrink-0 mr-0.5" />
+                {todayStats.concluidos}
+                <span className="hidden sm:block ml-0.5">concuído</span>
+                {todayStats.concluidos !== 1 ? "s" : ""}
+              </span>
+              <span className="inline-flex items-center text-xs text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-red-500 shrink-0 mr-0.5" />
+                {todayStats.cancelados}
+                <span className="hidden sm:block ml-0.5">cancelado</span>
+                {todayStats.cancelados !== 1 ? "s" : ""}
+              </span>
+            </div>
           </div>
 
           {todayAppointments.length === 0 ? (
@@ -276,6 +309,8 @@ export function BarbershopDashboardMain() {
           </div>
         </div>
       </div>
+
+      <AppointmentsHourChart />
     </main>
   );
 }

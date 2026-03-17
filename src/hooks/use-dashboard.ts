@@ -69,9 +69,8 @@ export function useDashboard(): DashboardData {
 
       supabase
         .from("appointments")
-        .select("service_id, service:services(id, name, price)")
+        .select("starts_at, status, service_id, service:services(id, name, price)")
         .eq("barbershop_id", barbershop.id)
-        .eq("status", "completed")
         .gte("starts_at", monthStart)
         .lt("starts_at", nextMonthStart),
 
@@ -89,20 +88,27 @@ export function useDashboard(): DashboardData {
     ]).then(
       ([todayRes, monthCompletedRes, totalCustomersRes, newCustomersRes]) => {
         const todayApts = (todayRes.data ?? []) as AppointmentWithRelations[];
-        const monthCompleted = monthCompletedRes.data ?? [];
 
-        const revenue = monthCompleted.reduce((sum, apt) => {
-          const price = (apt.service as { price: number | null } | null)?.price;
-          return sum + (price ?? 0);
-        }, 0);
+        type MonthApt = {
+          starts_at: string;
+          status: string;
+          service_id: string | null;
+          service: { id: string; name: string; price: number | null } | null;
+        };
+        const monthApts = (monthCompletedRes.data ?? []) as unknown as MonthApt[];
+        const monthCompleted = monthApts.filter(a => a.status === "completed");
+
+        const revenue = monthCompleted.reduce(
+          (sum, apt) => sum + (apt.service?.price ?? 0),
+          0,
+        );
 
         const serviceMap = new Map<string, { name: string; count: number }>();
         for (const apt of monthCompleted) {
-          const svc = apt.service as { id: string; name: string } | null;
-          if (!svc) continue;
-          const existing = serviceMap.get(svc.id);
+          if (!apt.service) continue;
+          const existing = serviceMap.get(apt.service.id);
           if (existing) existing.count++;
-          else serviceMap.set(svc.id, { name: svc.name, count: 1 });
+          else serviceMap.set(apt.service.id, { name: apt.service.name, count: 1 });
         }
         const top = Array.from(serviceMap.values())
           .sort((a, b) => b.count - a.count)

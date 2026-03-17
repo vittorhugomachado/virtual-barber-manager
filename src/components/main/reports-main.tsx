@@ -302,7 +302,7 @@ function StatusOverview({
 // ─── ReportsMain ──────────────────────────────────────────────────────────────
 
 export function ReportsMain() {
-  const [period, setPeriod] = useState<Period>("month");
+  const [period, setPeriod] = useState<Period>("week");
   const [custom, setCustom] = useState({ from: "", to: "" });
 
   const { from, to, label } = useMemo(

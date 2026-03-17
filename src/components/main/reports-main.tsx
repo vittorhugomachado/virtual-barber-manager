@@ -5,6 +5,7 @@ import { BarbersChart } from "@/components/common/barbers-chart";
 import { ServicesChart } from "@/components/common/services-chart";
 import { WeekdayChart } from "@/components/common/weekday-chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Cell, Pie, PieChart, Tooltip } from "recharts";
 import {
   Ban,
   CalendarDays,
@@ -106,12 +107,13 @@ function KpiCard({
   value: string | number;
   icon: React.ReactNode;
   sub?: string;
-  highlight?: "green" | "red" | "blue";
+  highlight?: "green" | "red" | "blue" | "orange";
 }) {
   const colors = {
     green: "text-green-500",
     red: "text-red-500",
     blue: "text-blue-500",
+    orange: "text-orange-500",
   };
 
   return (
@@ -126,6 +128,173 @@ function KpiCard({
         {value}
       </p>
       {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+    </div>
+  );
+}
+
+// ─── StatusOverview (cards + pie chart) ───────────────────────────────────────
+
+const PIE_COLORS = {
+  completed: "#22c55e",
+  cancelled: "#ef4444",
+  noShow: "#f97316",
+  scheduled: "#3b82f6",
+};
+
+function StatusOverview({
+  total,
+  completed,
+  cancelled,
+  noShow,
+  completionRate,
+}: {
+  total: number;
+  completed: number;
+  cancelled: number;
+  noShow: number;
+  completionRate: number;
+}) {
+  const scheduled = Math.max(0, total - completed - cancelled - noShow);
+
+  const pieData = [
+    { name: "Concluídos", value: completed, color: PIE_COLORS.completed },
+    { name: "Cancelados", value: cancelled, color: PIE_COLORS.cancelled },
+    { name: "Não compareceu", value: noShow, color: PIE_COLORS.noShow },
+    { name: "Agendados", value: scheduled, color: PIE_COLORS.scheduled },
+  ].filter(d => d.value > 0);
+
+  const isEmpty = total === 0;
+
+  return (
+    <div className="bg-card border rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b">
+        <CalendarDays className="h-4 w-4 text-muted-foreground" />
+        <h2 className="font-semibold text-sm">Visão geral dos agendamentos</h2>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+        {/* KPI cards lado esquerdo */}
+        <div className="grid grid-cols-2 gap-px border-r bg-border">
+          {[
+            {
+              label: "Total",
+              value: total,
+              icon: <CalendarDays className="h-4 w-4" />,
+              highlight: undefined,
+            },
+            {
+              label: "Concluídos",
+              value: completed,
+              icon: <CheckCircle2 className="h-4 w-4" />,
+              highlight: "green" as const,
+            },
+            {
+              label: "Cancelados",
+              value: cancelled,
+              icon: <Ban className="h-4 w-4" />,
+              highlight: cancelled > 0 ? ("red" as const) : undefined,
+            },
+            {
+              label: "Não compareceu",
+              value: noShow,
+              icon: <XCircle className="h-4 w-4" />,
+              highlight: noShow > 0 ? ("orange" as const) : undefined,
+            },
+            {
+              label: "Taxa de conclusão",
+              value: `${completionRate}%`,
+              icon: <Percent className="h-4 w-4" />,
+              highlight: (completionRate >= 70
+                ? "green"
+                : completionRate >= 40
+                  ? "blue"
+                  : total > 0
+                    ? "red"
+                    : undefined) as "green" | "blue" | "red" | undefined,
+            },
+          ].map(card => (
+            <div key={card.label} className="bg-card p-4 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {card.label}
+                </span>
+                <span className="text-muted-foreground">{card.icon}</span>
+              </div>
+              <p
+                className={`text-2xl font-bold ${
+                  card.highlight
+                    ? {
+                        green: "text-green-500",
+                        red: "text-red-500",
+                        blue: "text-blue-500",
+                        orange: "text-orange-500",
+                      }[card.highlight]
+                    : ""
+                }`}
+              >
+                {card.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Pie chart lado direito */}
+        <div className="flex flex-col items-center justify-center p-4 gap-4">
+          {isEmpty ? (
+            <p className="text-sm text-muted-foreground opacity-50">
+              Sem dados no período.
+            </p>
+          ) : (
+            <>
+              <PieChart width={160} height={160}>
+                <Pie
+                  data={pieData}
+                  cx={75}
+                  cy={75}
+                  innerRadius={45}
+                  outerRadius={75}
+                  dataKey="value"
+                  strokeWidth={0}
+                >
+                  {pieData.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: number, name: string) => [value, name]}
+                  contentStyle={{
+                    fontSize: 12,
+                    borderRadius: 8,
+                    border: "1px solid hsl(var(--border))",
+                    background: "hsl(var(--card))",
+                    color: "hsl(var(--foreground))",
+                  }}
+                />
+              </PieChart>
+
+              <div className="flex flex-col gap-1.5 w-full max-w-45">
+                {pieData.map(entry => (
+                  <div
+                    key={entry.name}
+                    className="flex items-center justify-between gap-2 text-xs"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full shrink-0"
+                        style={{ background: entry.color }}
+                      />
+                      <span className="text-muted-foreground">
+                        {entry.name}
+                      </span>
+                    </div>
+                    <span className="font-medium">{entry.value}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -145,7 +314,6 @@ export function ReportsMain() {
     useReports(from, to);
   const canFetch = !!from && !!to;
 
-  console.log(kpis.uniqueCustomers);
   return (
     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
       {/* Header + seletor de período */}
@@ -220,33 +388,7 @@ export function ReportsMain() {
         <LoadingSkeleton />
       ) : (
         <>
-          {/* KPI Cards — 2 colunas mobile, 4 desktop */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            <KpiCard
-              label="Total de agendamentos"
-              value={kpis.total}
-              icon={<CalendarDays className="h-4 w-4" />}
-            />
-            <KpiCard
-              label="Concluídos"
-              value={kpis.completed}
-              icon={<CheckCircle2 className="h-4 w-4" />}
-              highlight="green"
-              sub={
-                kpis.total > 0 ? `${kpis.completionRate}% do total` : undefined
-              }
-            />
-            <KpiCard
-              label="Cancelados"
-              value={kpis.cancelled}
-              icon={<Ban className="h-4 w-4" />}
-              highlight={kpis.cancelled > 0 ? "red" : undefined}
-            />
-            <KpiCard
-              label="Não compareceu"
-              value={kpis.noShow}
-              icon={<XCircle className="h-4 w-4" />}
-            />
             <KpiCard
               label="Faturamento"
               value={formatCurrency(kpis.revenue)}
@@ -257,18 +399,6 @@ export function ReportsMain() {
               label="Ticket médio"
               value={formatCurrency(kpis.avgTicket)}
               icon={<Ticket className="h-4 w-4" />}
-            />
-            <KpiCard
-              label="Taxa de conclusão"
-              value={`${kpis.completionRate}%`}
-              icon={<Percent className="h-4 w-4" />}
-              highlight={
-                kpis.completionRate >= 70
-                  ? "green"
-                  : kpis.completionRate >= 40
-                    ? "blue"
-                    : "red"
-              }
             />
             <KpiCard
               label="Clientes atendidos"
@@ -292,6 +422,14 @@ export function ReportsMain() {
               icon={<UserCheck className="h-4 w-4" />}
             />
           </div>
+          {/* Visão geral: cards de status + pie chart */}
+          <StatusOverview
+            total={kpis.total}
+            completed={kpis.completed}
+            cancelled={kpis.cancelled}
+            noShow={kpis.noShow}
+            completionRate={kpis.completionRate}
+          />
 
           {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -313,8 +451,28 @@ export function ReportsMain() {
 function LoadingSkeleton() {
   return (
     <>
+      <div className="bg-card border rounded-xl overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 border-b">
+          <Skeleton className="h-4 w-4 rounded" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-px border-r bg-border">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="bg-card p-4 space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-8 w-14" />
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center justify-center p-8">
+            <Skeleton className="h-40 w-40 rounded-full" />
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {Array.from({ length: 10 }).map((_, i) => (
+        {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="bg-card border rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <Skeleton className="h-3 w-24" />
@@ -325,6 +483,7 @@ function LoadingSkeleton() {
           </div>
         ))}
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="bg-card border rounded-xl overflow-hidden">

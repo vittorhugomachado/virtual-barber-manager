@@ -32,7 +32,9 @@ export function AvailabilitySection({
   errors,
   onClearError,
 }: AvailabilitySectionProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() =>
+    availability.some(d => d.use_custom_hours || d.is_day_off),
+  );
 
   function updateDay(dayOfWeek: number, patch: Partial<DayAvailability>) {
     onChange(

@@ -36,45 +36,49 @@ export function useBarberAvailability(barberId: string | null) {
   useEffect(() => {
     if (!barberId) return;
 
-    setLoading(true);
+    async function load() {
+      setLoading(true);
 
-    supabase
-      .from("barber_availability")
-      .select(
-        "day_of_week, is_day_off, use_custom_hours, starts_at, ends_at, period_order",
-      )
-      .eq("barber_id", barberId)
-      .order("day_of_week")
-      .order("period_order")
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          const byDay = new Map<number, typeof data>();
-          for (const row of data) {
-            if (!byDay.has(row.day_of_week)) byDay.set(row.day_of_week, []);
-            byDay.get(row.day_of_week)!.push(row);
-          }
+      const { data } = await supabase
+        .from("barber_availability")
+        .select(
+          "day_of_week, is_day_off, use_custom_hours, starts_at, ends_at, period_order",
+        )
+        .eq("barber_id", barberId)
+        .order("day_of_week")
+        .order("period_order");
 
-          setAvailability(
-            defaultAvailability().map(def => {
-              const rows = byDay.get(def.day_of_week);
-              if (!rows) return def;
-              const first = rows[0];
-              return {
-                day_of_week: def.day_of_week,
-                is_day_off: first.is_day_off,
-                use_custom_hours: first.use_custom_hours,
-                periods: first.use_custom_hours
-                  ? rows.map(r => ({
-                      starts_at: (r.starts_at ?? "08:00").slice(0, 5),
-                      ends_at: (r.ends_at ?? "18:00").slice(0, 5),
-                    }))
-                  : [{ starts_at: "08:00", ends_at: "18:00" }],
-              };
-            }),
-          );
+      if (data && data.length > 0) {
+        const byDay = new Map<number, typeof data>();
+        for (const row of data) {
+          if (!byDay.has(row.day_of_week)) byDay.set(row.day_of_week, []);
+          byDay.get(row.day_of_week)!.push(row);
         }
-        setLoading(false);
-      });
+
+        setAvailability(
+          defaultAvailability().map(def => {
+            const rows = byDay.get(def.day_of_week);
+            if (!rows) return def;
+            const first = rows[0];
+            return {
+              day_of_week: def.day_of_week,
+              is_day_off: first.is_day_off,
+              use_custom_hours: first.use_custom_hours,
+              periods: first.use_custom_hours
+                ? rows.map(r => ({
+                    starts_at: (r.starts_at ?? "08:00").slice(0, 5),
+                    ends_at: (r.ends_at ?? "18:00").slice(0, 5),
+                  }))
+                : [{ starts_at: "08:00", ends_at: "18:00" }],
+            };
+          }),
+        );
+      }
+
+      setLoading(false);
+    }
+
+    void load();
   }, [barberId]);
 
   return { availability, setAvailability, loading };
@@ -94,7 +98,18 @@ export async function saveBarberAvailability(
 
   if (delError) return false;
 
-  const rows = availability.flatMap(day => {
+  type AvailabilityRow = {
+    barber_id: string;
+    barbershop_id: string;
+    day_of_week: number;
+    is_day_off: boolean;
+    use_custom_hours: boolean;
+    starts_at: string | null;
+    ends_at: string | null;
+    period_order: number;
+  };
+
+  const rows = availability.flatMap<AvailabilityRow>(day => {
     if (!day.use_custom_hours) {
       return [
         {

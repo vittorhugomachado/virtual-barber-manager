@@ -112,7 +112,7 @@ CREATE INDEX idx_customers_barbershop ON "customers" ("barbershop_id");
 CREATE TABLE "appointments" (
   "id"             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   "barbershop_id"  UUID NOT NULL REFERENCES "barbershops"(id),
-  "customer_id"    UUID NOT NULL REFERENCES "customers"(id),
+  "customer_id"    UUID NOT NULL REFERENCES "customers"(id) ON DELETE CASCADE,
   "barber_id"      UUID NOT NULL REFERENCES "barbers"(id),
   "service_id"     UUID NOT NULL REFERENCES "services"(id),
   "notes"          TEXT,

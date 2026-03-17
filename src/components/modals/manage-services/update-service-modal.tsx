@@ -40,6 +40,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -83,14 +84,19 @@ export function UpdateServiceModal({
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageUrl, setCropperImageUrl] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const { count: futureCount, loading: countLoading } =
+    useFutureAppointmentsCount(
+      "service_id",
+      open ? (service?.id ?? null) : null,
+    );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as Resolver<FormValues>,
     defaultValues: {
       name: "",
       description: "",
-      price: undefined,
-      duration_min: undefined,
+      price: 0,
+      duration_min: 0,
       barberIds: [],
     },
   });
@@ -405,21 +411,41 @@ export function UpdateServiceModal({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir serviço?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Essa ação não pode ser desfeita. O serviço será removido
-                    permanentemente.
+                  <AlertDialogTitle>
+                    {!countLoading && futureCount > 0
+                      ? "Conflito com agenda"
+                      : "Excluir serviço?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="flex flex-col gap-2 mt-2">
+                      {!countLoading && futureCount > 0 ? (
+                        <span className="text-orange-500 font-medium">
+                          ⚠️ Existem {futureCount} agendamento
+                          {futureCount !== 1 ? "s" : ""} futuro
+                          {futureCount !== 1 ? "s" : ""} vinculado
+                          {futureCount !== 1 ? "s" : ""} a este serviço.
+                          Cancele-os antes de excluir.
+                        </span>
+                      ) : (
+                        <span>
+                          Essa ação não pode ser desfeita. O serviço será
+                          removido permanentemente.
+                        </span>
+                      )}
+                    </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="bg-destructive hover:bg-destructive/90"
-                  >
-                    {deleting ? "Excluindo..." : "Excluir"}
-                  </AlertDialogAction>
+                  <AlertDialogCancel>Voltar</AlertDialogCancel>
+                  {futureCount === 0 && (
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      disabled={deleting || countLoading}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      {deleting ? "Excluindo..." : "Excluir"}
+                    </AlertDialogAction>
+                  )}
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

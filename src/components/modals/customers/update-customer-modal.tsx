@@ -37,6 +37,7 @@ import type { Customer } from "@/types/customer";
 import { maskPhone } from "@/utils/masked-input-phone";
 import { CustomerConflictModal } from "./customer-conflict-modal";
 import { useBarbershopStore } from "@/store/barbershop.store";
+import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -71,6 +72,11 @@ export function UpdateCustomerModal({
     null,
   );
   const [conflictOpen, setConflictOpen] = useState(false);
+  const { count: futureCount, loading: countLoading } =
+    useFutureAppointmentsCount(
+      "customer_id",
+      open ? (customer?.id ?? null) : null,
+    );
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as Resolver<FormValues>,
@@ -198,21 +204,41 @@ export function UpdateCustomerModal({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Essa ação não pode ser desfeita. O cliente será removido
-                    permanentemente.
+                  <AlertDialogTitle>
+                    {!countLoading && futureCount > 0
+                      ? "Conflito com agenda"
+                      : "Excluir cliente?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="flex flex-col gap-2 mt-2">
+                      {!countLoading && futureCount > 0 ? (
+                        <span className="text-orange-500 font-medium">
+                          ⚠️ Existem {futureCount} agendamento
+                          {futureCount !== 1 ? "s" : ""} futuro
+                          {futureCount !== 1 ? "s" : ""} vinculado
+                          {futureCount !== 1 ? "s" : ""} a este cliente.
+                          Cancele-os antes de excluir.
+                        </span>
+                      ) : (
+                        <span>
+                          Essa ação não pode ser desfeita. O cliente será
+                          removido permanentemente.
+                        </span>
+                      )}
+                    </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="bg-destructive hover:bg-destructive/90"
-                  >
-                    {deleting ? "Excluindo..." : "Excluir"}
-                  </AlertDialogAction>
+                  <AlertDialogCancel>Voltar</AlertDialogCancel>
+                  {futureCount === 0 && (
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      disabled={deleting || countLoading}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      {deleting ? "Excluindo..." : "Excluir"}
+                    </AlertDialogAction>
+                  )}
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -250,6 +276,7 @@ export function UpdateCustomerModal({
           if (success) {
             setConflictOpen(false);
             setConflictCustomer(null);
+            onDeleted(existing.id);
             toast.success(
               "Cliente excluído. Agora você pode salvar novamente.",
             );

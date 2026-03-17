@@ -46,6 +46,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -79,6 +80,8 @@ export function UpdateBarberModal({
   const [availabilityErrors, setAvailabilityErrors] = useState<
     Record<string, string>
   >({});
+  const { count: futureCount, loading: countLoading } =
+    useFutureAppointmentsCount("barber_id", open ? (barber?.id ?? null) : null);
 
   const {
     availability,
@@ -327,21 +330,41 @@ export function UpdateBarberModal({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir barbeiro?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Essa ação não pode ser desfeita. O barbeiro será removido
-                    permanentemente.
+                  <AlertDialogTitle>
+                    {!countLoading && futureCount > 0
+                      ? "Conflito com agenda"
+                      : "Excluir barbeiro?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div className="flex flex-col gap-2 mt-2">
+                      {!countLoading && futureCount > 0 ? (
+                        <span className="text-orange-500 font-medium">
+                          ⚠️ Existem {futureCount} agendamento
+                          {futureCount !== 1 ? "s" : ""} futuro
+                          {futureCount !== 1 ? "s" : ""} vinculado
+                          {futureCount !== 1 ? "s" : ""} a este barbeiro.
+                          Cancele-os antes de excluir.
+                        </span>
+                      ) : (
+                        <span>
+                          Essa ação não pode ser desfeita. O barbeiro será
+                          removido permanentemente.
+                        </span>
+                      )}
+                    </div>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    className="bg-destructive hover:bg-destructive/90"
-                  >
-                    {deleting ? "Excluindo..." : "Excluir"}
-                  </AlertDialogAction>
+                  <AlertDialogCancel>Voltar</AlertDialogCancel>
+                  {futureCount === 0 && (
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      disabled={deleting || countLoading}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      {deleting ? "Excluindo..." : "Excluir"}
+                    </AlertDialogAction>
+                  )}
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>

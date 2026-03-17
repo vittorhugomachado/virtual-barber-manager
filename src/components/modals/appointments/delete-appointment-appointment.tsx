@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { X, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
 import type { AppointmentWithRelations } from "@/types/create-appointment";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CancelAppointmentModalProps {
   open: boolean;
@@ -34,8 +42,6 @@ export function DeleteAppointmentModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!open || !appointment) return null;
-
   async function handleConfirm() {
     setSubmitting(true);
     setError(null);
@@ -43,7 +49,7 @@ export function DeleteAppointmentModal({
     try {
       const { error: err } = await supabase
         .from("appointments")
-        .update({ status: "cancelled" })
+        .update({ status: "cancelled_by_barbershop" })
         .eq("id", appointment!.id);
 
       if (err) throw err;
@@ -58,77 +64,52 @@ export function DeleteAppointmentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
+    <AlertDialog open={open} onOpenChange={o => !o && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Cancelar agendamento?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="w-full flex flex-col gap-3">
+              <span>Tem certeza que deseja cancelar o agendamento abaixo?</span>
 
-      <div className="relative z-10 w-full max-w-sm mx-4 rounded-xl border bg-background shadow-2xl flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-destructive" />
-            <h2 className="text-base font-semibold">Cancelar agendamento</h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+              {appointment && (
+                <div className="w-full rounded-lg border bg-muted/30 px-4 py-3 flex flex-col gap-1.5 text-sm">
+                  <div className="font-medium text-foreground">
+                    {appointment.customer.name}
+                  </div>
+                  <div className="text-muted-foreground">
+                    {appointment.service.name} · {appointment.barber.name}
+                  </div>
+                  <div className="text-muted-foreground capitalize">
+                    {formatDateTime(appointment.starts_at)}
+                  </div>
+                </div>
+              )}
 
-        {/* Body */}
-        <div className="px-6 py-5 flex flex-col gap-4">
-          <p className="text-sm text-muted-foreground">
-            Tem certeza que deseja cancelar o agendamento abaixo?
-          </p>
+              <span className="text-xs">Esta ação não pode ser desfeita.</span>
 
-          {/* Resumo */}
-          <div className="rounded-lg border bg-muted/30 px-4 py-3 flex flex-col gap-1.5 text-sm">
-            <div className="font-medium text-foreground">
-              {appointment.customer.name}
+              {error && (
+                <p className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+                  {error}
+                </p>
+              )}
             </div>
-            <div className="text-muted-foreground">
-              {appointment.service.name} · {appointment.barber.name}
-            </div>
-            <div className="text-muted-foreground capitalize">
-              {formatDateTime(appointment.starts_at)}
-            </div>
-          </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-          <p className="text-xs text-muted-foreground">
-            Esta ação não pode ser desfeita.
-          </p>
-
-          {error && (
-            <p className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
-              {error}
-            </p>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t bg-muted/30">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={submitting}
-            className="cursor-pointer"
-          >
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={submitting} onClick={onClose}>
             Voltar
-          </Button>
-          <Button
-            variant="destructive"
+          </AlertDialogCancel>
+          <AlertDialogAction
             onClick={handleConfirm}
             disabled={submitting}
-            className="cursor-pointer"
+            className="bg-destructive hover:bg-destructive/90"
           >
             {submitting ? "Cancelando..." : "Sim, cancelar"}
-          </Button>
-        </div>
-      </div>
-    </div>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

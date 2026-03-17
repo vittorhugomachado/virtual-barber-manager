@@ -37,6 +37,7 @@ interface CreateCustomerModalProps {
   onClose: () => void;
   onCreated: (customer: Customer) => void;
   onEditExisting?: (customer: Customer) => void;
+  onDeleted?: (id: string) => void;
 }
 
 export function CreateCustomerModal({
@@ -44,6 +45,7 @@ export function CreateCustomerModal({
   onClose,
   onCreated,
   onEditExisting,
+  onDeleted,
 }: CreateCustomerModalProps) {
   const { barbershop } = useBarbershopStore();
 
@@ -171,6 +173,7 @@ export function CreateCustomerModal({
           if (success) {
             setConflictOpen(false);
             setConflictCustomer(null);
+            onDeleted?.(customer.id);
             toast.success(
               "Cliente excluído. Agora você pode cadastrar novamente.",
             );

@@ -108,7 +108,7 @@ export function UpdateAppointmentModal({
     try {
       const { error: err } = await supabase
         .from("appointments")
-        .update({ status: "cancelled" })
+        .update({ status: "cancelled_by_barbershop" })
         .eq("id", appointment.id); // sem o "!" agora
 
       if (err) throw err;

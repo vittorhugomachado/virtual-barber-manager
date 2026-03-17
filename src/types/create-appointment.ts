@@ -5,7 +5,8 @@ export type AppointmentStatus =
   | "confirmed"
   | "in_progress"
   | "completed"
-  | "cancelled"
+  | "cancelled_by_customer"
+  | "cancelled_by_barbershop"
   | "no_show";
 
 export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
@@ -13,7 +14,8 @@ export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
   confirmed: "Confirmado",
   in_progress: "Em atendimento",
   completed: "Concluído",
-  cancelled: "Cancelado",
+  cancelled_by_customer: "Cancelado",
+  cancelled_by_barbershop: "Cancelado",
   no_show: "Não compareceu",
 };
 
@@ -22,7 +24,8 @@ export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
   confirmed: "bg-emerald-100 text-emerald-700",
   in_progress: "bg-amber-100 text-amber-700",
   completed: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
+  cancelled_by_customer: "bg-red-100 text-red-700",
+  cancelled_by_barbershop: "bg-red-100 text-red-700",
   no_show: "bg-zinc-100 text-zinc-500",
 };
 

@@ -71,6 +71,7 @@ export function CreateAppointmentModal({
     try {
       const service = services.find(s => s.id === serviceId);
       const durationMin = service?.duration_min ?? 30;
+
       const startsAt = new Date(`${date}T${time}:00Z`);
       const endsAt = new Date(startsAt.getTime() + durationMin * 60 * 1000);
 
@@ -82,21 +83,34 @@ export function CreateAppointmentModal({
           .select("barber_id")
           .eq("service_id", serviceId);
 
-        const available: string[] = [];
-        for (const { barber_id } of eligible ?? []) {
-          const { data: conflicts } = await supabase
-            .from("appointments")
-            .select("id, status")
-            .eq("barber_id", barber_id)
-            .lt("starts_at", endsAt.toISOString())
-            .gt("ends_at", startsAt.toISOString());
+        const eligibleIds = (eligible ?? []).map(e => e.barber_id);
 
-          const activeConflicts = (conflicts ?? []).filter(
-            c => c.status !== "cancelled",
+        if (eligibleIds.length === 0) {
+          setSubmitError(
+            "Nenhum barbeiro disponível neste horário. Tente outro.",
           );
-
-          if (activeConflicts.length === 0) available.push(barber_id);
+          setSubmitting(false);
+          return;
         }
+
+        const { data: conflicts } = await supabase
+          .from("appointments")
+          .select("barber_id, status")
+          .in("barber_id", eligibleIds)
+          .lt("starts_at", endsAt.toISOString())
+          .gt("ends_at", startsAt.toISOString());
+
+        const busyBarberIds = new Set(
+          (conflicts ?? [])
+            .filter(
+              c =>
+                c.status !== "cancelled_by_customer" &&
+                c.status !== "cancelled_by_barbershop",
+            )
+            .map(c => c.barber_id),
+        );
+
+        const available = eligibleIds.filter(id => !busyBarberIds.has(id));
 
         if (available.length === 0) {
           setSubmitError(
@@ -120,10 +134,7 @@ export function CreateAppointmentModal({
         status: "scheduled",
       });
 
-      if (err) {
-        console.log("Erro detalhado:", JSON.stringify(err, null, 2));
-        throw err;
-      }
+      if (err) throw err;
 
       onSuccess?.();
       handleClose();

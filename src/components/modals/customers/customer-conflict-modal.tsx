@@ -5,10 +5,23 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Phone } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { maskPhone } from "@/utils/masked-input-phone";
 import type { Customer } from "@/types/customer";
+import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
 
 interface CustomerConflictModalProps {
   open: boolean;
@@ -25,6 +38,12 @@ export function CustomerConflictModal({
   onEdit,
   onDelete,
 }: CustomerConflictModalProps) {
+  const { count: futureCount, loading: countLoading } =
+    useFutureAppointmentsCount(
+      "customer_id",
+      open ? (customer?.id ?? null) : null,
+    );
+
   if (!customer) return null;
 
   return (
@@ -53,15 +72,58 @@ export function CustomerConflictModal({
         </div>
 
         <DialogFooter className="flex-row flex-wrap items-center justify-center gap-2 sm:justify-between">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive cursor-pointer"
-            onClick={() => onDelete(customer)}
-          >
-            Excluir cliente
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive cursor-pointer"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Excluir cliente
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {!countLoading && futureCount > 0
+                    ? "Conflito com agenda"
+                    : "Excluir cliente?"}
+                </AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="flex flex-col gap-2 mt-2">
+                    {!countLoading && futureCount > 0 ? (
+                      <span className="text-orange-500 font-medium">
+                        ⚠️ Existem {futureCount} agendamento
+                        {futureCount !== 1 ? "s" : ""} futuro
+                        {futureCount !== 1 ? "s" : ""} vinculado
+                        {futureCount !== 1 ? "s" : ""} a este cliente.
+                        Cancele-os antes de excluir.
+                      </span>
+                    ) : (
+                      <span>
+                        Essa ação não pode ser desfeita. O cliente será removido
+                        permanentemente.
+                      </span>
+                    )}
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Voltar</AlertDialogCancel>
+                {futureCount === 0 && (
+                  <AlertDialogAction
+                    onClick={() => onDelete(customer)}
+                    disabled={countLoading}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    Excluir
+                  </AlertDialogAction>
+                )}
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <div className="flex flex-2 gap-2 justify-end">
             <Button type="button" variant="outline" onClick={onClose}>

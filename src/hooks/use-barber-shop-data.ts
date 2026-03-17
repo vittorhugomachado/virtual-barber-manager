@@ -1,14 +1,25 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "./use-auth";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { supabase } from "@/lib/supabase/supabase";
 
 export function useBarbershopData() {
-  const { session } = useAuth();
+  const { session, loading: authLoading } = useAuth();
   const { barbershop, setBarbershop } = useBarbershopStore();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!session?.user.id || barbershop) return;
+    if (authLoading) return;
+
+    if (!session?.user.id) {
+      setLoading(false);
+      return;
+    }
+
+    if (barbershop) {
+      setLoading(false);
+      return;
+    }
 
     supabase
       .from("barbershops")
@@ -28,8 +39,9 @@ export function useBarbershopData() {
             ...data,
             owner_name: data.profiles?.name ?? "",
           });
+        setLoading(false);
       });
-  }, [session, barbershop, setBarbershop]);
+  }, [session, authLoading, barbershop, setBarbershop]);
 
-  return { barbershop };
+  return { barbershop, loading };
 }

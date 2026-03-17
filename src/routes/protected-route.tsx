@@ -16,13 +16,10 @@ export function ProtectedRoute({
   skeleton,
   withSidebar = false,
 }: ProtectedRouteProps) {
-  const { isLogged, loading } = useAuth();
+  const { isLogged, loading: authLoading } = useAuth();
+  const { barbershop, loading: barbershopLoading } = useBarbershopData();
 
-  const { barbershop } = useBarbershopData();
-
-  console.log(barbershop);
-
-  if (loading)
+  if (authLoading || barbershopLoading)
     return skeleton ? (
       <>{skeleton}</>
     ) : (
@@ -31,13 +28,13 @@ export function ProtectedRoute({
       </div>
     );
 
-  if (!isLogged) return <Navigate to="/entrar" />;
+  if (!isLogged || !barbershop) return <Navigate to="/entrar" />;
 
   if (withSidebar) {
     return (
       <SidebarProvider>
         <SidebarComponent />
-        <SidebarInset>
+        <SidebarInset className="min-w-0 overflow-x-hidden">
           <Outlet />
         </SidebarInset>
       </SidebarProvider>

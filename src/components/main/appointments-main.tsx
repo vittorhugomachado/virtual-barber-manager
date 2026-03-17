@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useAppointments } from "@/hooks/use-appointments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { HelpCircle } from "lucide-react";
 import {
   CalendarDays,
   ChevronDown,
@@ -22,6 +29,24 @@ import { UpdateAppointmentModal } from "../modals/appointments/update-appointmen
 import { DeleteAppointmentModal } from "../modals/appointments/delete-appointment-appointment";
 
 type FilterType = "week" | "month" | "year" | "custom";
+
+function RemovedBadge({ label, tooltip }: { label: string; tooltip: string }) {
+  return (
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex items-center gap-1 text-orange-500 cursor-help">
+            {label}
+            <HelpCircle className="h-3.5 w-3.5 shrink-0" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-55 text-xs">
+          {tooltip}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
 
 function getDaysForFilter(
   filter: FilterType,
@@ -136,6 +161,7 @@ function formatDayLabel(date: Date): string {
     weekday: "long",
     day: "2-digit",
     month: "2-digit",
+    year: "numeric",
   });
 }
 
@@ -143,20 +169,21 @@ function formatTime(isoString: string): string {
   return new Date(isoString).toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "UTC",
   });
 }
 
 function isSameDay(date: Date, isoString: string): boolean {
   const d = new Date(isoString);
   return (
-    d.getFullYear() === date.getFullYear() &&
-    d.getMonth() === date.getMonth() &&
-    d.getDate() === date.getDate()
+    d.getUTCFullYear() === date.getFullYear() &&
+    d.getUTCMonth() === date.getMonth() &&
+    d.getUTCDate() === date.getDate()
   );
 }
 
 // ─── DaySection recebe callbacks para abrir os modais ────────────────────────
-function DaySection({
+const DaySection = memo(function DaySection({
   date,
   appointments,
   onEdit,
@@ -184,24 +211,20 @@ function DaySection({
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           )}
           <span
-            className={`text-sm font-semibold capitalize ${isToday ? "text-primary" : ""}`}
+            className={`text-sm font-semibold text-start capitalize ${isToday ? "text-primary" : ""}`}
           >
             {label}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {date.toLocaleDateString("pt-BR", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            })}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           {appointments.length > 0 && (
             <Badge variant="secondary" className="text-xs">
-              {appointments.length} agendamento
-              {appointments.length !== 1 ? "s" : ""}
+              {appointments.length}{" "}
+              <span className="hidden">
+                agendamento
+                {appointments.length !== 1 ? "s" : ""}
+              </span>
             </Badge>
           )}
         </div>
@@ -221,38 +244,67 @@ function DaySection({
               {appointments.map(apt => (
                 <div
                   key={apt.id}
-                  className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 px-4 py-3"
+                  className="flex flex-col sm:flex-row items-center gap-2 md:gap-4 px-4 py-3"
                 >
-                  <div className="flex items-center gap-1.5 text-sm shrink-0 w-24">
-                    <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="font-medium">
-                      {formatTime(apt.starts_at)}
-                    </span>
-                    <span className="text-muted-foreground">–</span>
-                    <span className="text-muted-foreground">
-                      {formatTime(apt.ends_at)}
-                    </span>
-                  </div>
+                  {(() => {
+                    const cancelled =
+                      apt.status === "cancelled_by_customer" ||
+                      apt.status === "cancelled_by_barbershop";
+                    const dim = cancelled ? "opacity-30" : "";
+                    return (
+                      <>
+                        <div className={`w-full flex gap-3 ${dim}`}>
+                          <div className="flex items-center gap-1.5 text-sm shrink-0 w-24">
+                            <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <span className="font-medium">
+                              {formatTime(apt.starts_at)}
+                            </span>
+                            <span className="text-muted-foreground">–</span>
+                            <span className="text-muted-foreground">
+                              {formatTime(apt.ends_at)}
+                            </span>
+                          </div>
 
-                  <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
-                    <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="truncate font-medium">
-                      {apt.customer.name}
-                    </span>
-                  </div>
+                          <div className="flex items-center justify-center gap-1.5 text-sm flex-1 min-w-0">
+                            <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <span className="truncate font-medium">
+                              {apt.customer?.name ?? (
+                                <RemovedBadge
+                                  label="Cliente removido"
+                                  tooltip="Este cliente foi excluído do sistema. O agendamento ainda existe no histórico."
+                                />
+                              )}
+                            </span>
+                          </div>
 
-                  <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
-                    <Scissors className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="truncate text-muted-foreground">
-                      {apt.barber.name}
-                    </span>
-                  </div>
+                          <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
+                            <Scissors className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <span className="truncate text-muted-foreground">
+                              {apt.barber?.name ?? (
+                                <RemovedBadge
+                                  label="Barbeiro removido"
+                                  tooltip="Este barbeiro foi excluído do sistema. O agendamento ainda existe no histórico."
+                                />
+                              )}
+                            </span>
+                          </div>
+                        </div>
 
-                  <div className="hidden lg:flex items-center gap-1.5 text-sm flex-1 min-w-0">
-                    <span className="truncate text-muted-foreground">
-                      {apt.service.name}
-                    </span>
-                  </div>
+                        <div
+                          className={`hidden lg:flex items-center gap-1.5 text-sm flex-1 min-w-0 ${dim}`}
+                        >
+                          <span className="truncate text-muted-foreground">
+                            {apt.service?.name ?? (
+                              <RemovedBadge
+                                label="Serviço removido"
+                                tooltip="Este serviço foi excluído do sistema. O agendamento ainda existe no histórico."
+                              />
+                            )}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   <div className="shrink-0">
                     <span
@@ -261,9 +313,18 @@ function DaySection({
                       {APPOINTMENT_STATUS_LABELS[apt.status]}
                     </span>
                   </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div
+                    className={`${
+                      apt.status == "cancelled_by_customer" ||
+                      (apt.status == "cancelled_by_barbershop" &&
+                        "opacity-0 hidden sm:block sm:ml-2")
+                    } flex items-center gap-2 shrink-0`}
+                  >
                     <Button
+                      disabled={
+                        apt.status == "cancelled_by_customer" ||
+                        apt.status == "cancelled_by_barbershop"
+                      }
                       size="sm"
                       variant="outline"
                       className="cursor-pointer text-xs h-7"
@@ -272,6 +333,10 @@ function DaySection({
                       Editar
                     </Button>
                     <Button
+                      disabled={
+                        apt.status == "cancelled_by_customer" ||
+                        apt.status == "cancelled_by_barbershop"
+                      }
                       size="sm"
                       variant="outline"
                       className="cursor-pointer text-xs h-7 text-destructive hover:text-destructive"
@@ -288,7 +353,7 @@ function DaySection({
       )}
     </div>
   );
-}
+});
 
 // ─── AppointmentsMain ─────────────────────────────────────────────────────────
 export function AppointmentsMain() {
@@ -298,12 +363,30 @@ export function AppointmentsMain() {
     {},
   );
 
-  const { start, end } = getRangeForFilter(filter, customRange);
+  const { start, end } = useMemo(
+    () => getRangeForFilter(filter, customRange),
+    [filter, customRange],
+  );
   const { appointments, loading, refetch } = useAppointments(start, end);
 
-  const days = getDaysForFilter(filter, customRange).filter(day =>
-    appointments.some(apt => isSameDay(day, apt.starts_at)),
+  const days = useMemo(
+    () =>
+      getDaysForFilter(filter, customRange).filter(day =>
+        appointments.some(apt => isSameDay(day, apt.starts_at)),
+      ),
+    [filter, customRange, appointments],
   );
+
+  const appointmentsByDay = useMemo(() => {
+    const map = new Map<string, AppointmentWithRelations[]>();
+    for (const day of days) {
+      map.set(
+        day.toISOString(),
+        appointments.filter(apt => isSameDay(day, apt.starts_at)),
+      );
+    }
+    return map;
+  }, [days, appointments]);
 
   // ── Estados dos modais ──────────────────────────────────────────────────────
   const [newModalOpen, setNewModalOpen] = useState(false);
@@ -312,111 +395,118 @@ export function AppointmentsMain() {
   const [cancelAppointment, setCancelAppointment] =
     useState<AppointmentWithRelations | null>(null);
 
+  const handleEdit = useCallback((apt: AppointmentWithRelations) => {
+    setEditAppointment(apt);
+  }, []);
+
+  const handleCancel = useCallback((apt: AppointmentWithRelations) => {
+    setCancelAppointment(apt);
+  }, []);
+
   return (
     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col w-fit">
-          <h1 className="text-2xl font-semibold">Agenda</h1>
-          <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
-        </div>
-        <Button
-          className="cursor-pointer"
-          onClick={() => setNewModalOpen(true)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Novo agendamento
-        </Button>
-      </div>
-
-      {/* Filtros */}
-      <div className="flex flex-col items-center md:items-start gap-3">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {(["week", "month", "year"] as FilterType[]).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border ${
-                filter === f
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-              }`}
-            >
-              {FILTER_LABELS[f]}
-            </button>
-          ))}
-
-          <button
-            onClick={() => setFilter("custom")}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border inline-flex items-center gap-1.5 ${
-              filter === "custom"
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-            }`}
+      <div className="lg:flex lg:flex-row-reverse">
+        {/* Header */}
+        <div className="w-fit flex flex-col sm:flex-row gap-4 items-center justify-between mx-auto lg:mr-0 mb-6">
+          <Button
+            className="cursor-pointer"
+            onClick={() => setNewModalOpen(true)}
           >
-            <CalendarDays className="h-3.5 w-3.5" />
-            Data específica
-          </button>
+            <Plus className="h-4 w-4 " />
+            <span className="">Novo agendamento</span>
+          </Button>
         </div>
 
-        {filter === "custom" && (
-          <div className="flex flex-wrap items-center justify-center gap-3 px-1">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                De
-              </label>
-              <div className="relative flex items-center">
-                <input
-                  type="date"
-                  value={
-                    customRange.from
-                      ? customRange.from.toISOString().split("T")[0]
-                      : ""
-                  }
-                  onChange={e => {
-                    const d = e.target.value
-                      ? new Date(e.target.value + "T00:00:00")
-                      : undefined;
-                    setCustomRange(r => ({ ...r, from: d }));
-                  }}
-                  style={{ colorScheme: "light" }}
-                  className="h-8 rounded-md border border-border bg-background pl-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-text [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                />
-                <CalendarDays className="absolute right-2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              </div>
-            </div>
+        {/* Filtros */}
+        <div>
+          <div className="w-fit mx-auto lg:ml-0 flex flex-col items-center lg:items-start gap-3">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {(["week", "month", "year"] as FilterType[]).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border ${
+                    filter === f
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                  }`}
+                >
+                  {FILTER_LABELS[f]}
+                </button>
+              ))}
 
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                Até
-              </label>
-              <div className="relative flex items-center">
-                <input
-                  type="date"
-                  value={
-                    customRange.to
-                      ? customRange.to.toISOString().split("T")[0]
-                      : ""
-                  }
-                  min={
-                    customRange.from
-                      ? customRange.from.toISOString().split("T")[0]
-                      : undefined
-                  }
-                  onChange={e => {
-                    const d = e.target.value
-                      ? new Date(e.target.value + "T00:00:00")
-                      : undefined;
-                    setCustomRange(r => ({ ...r, to: d }));
-                  }}
-                  style={{ colorScheme: "light" }}
-                  className="h-8 rounded-md border border-border bg-background pl-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-text [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                />
-                <CalendarDays className="absolute right-2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              </div>
+              <button
+                onClick={() => setFilter("custom")}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border inline-flex items-center gap-1.5 ${
+                  filter === "custom"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                }`}
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                Data específica
+              </button>
             </div>
           </div>
-        )}
+          {filter === "custom" && (
+            <div className="flex flex-wrap items-center lg:justify-start justify-center gap-3 px-1 mt-3">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                  De
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type="date"
+                    value={
+                      customRange.from
+                        ? customRange.from.toISOString().split("T")[0]
+                        : ""
+                    }
+                    onChange={e => {
+                      const d = e.target.value
+                        ? new Date(e.target.value + "T00:00:00")
+                        : undefined;
+                      setCustomRange(r => ({ ...r, from: d }));
+                    }}
+                    style={{ colorScheme: "light" }}
+                    className="h-8 rounded-md border border-border bg-background pl-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-text [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <CalendarDays className="absolute right-2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                  Até
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type="date"
+                    value={
+                      customRange.to
+                        ? customRange.to.toISOString().split("T")[0]
+                        : ""
+                    }
+                    min={
+                      customRange.from
+                        ? customRange.from.toISOString().split("T")[0]
+                        : undefined
+                    }
+                    onChange={e => {
+                      const d = e.target.value
+                        ? new Date(e.target.value + "T00:00:00")
+                        : undefined;
+                      setCustomRange(r => ({ ...r, to: d }));
+                    }}
+                    style={{ colorScheme: "light" }}
+                    className="h-8 rounded-md border border-border bg-background pl-2 pr-8 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-text [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-8 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <CalendarDays className="absolute right-2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Dias */}
@@ -439,11 +529,9 @@ export function AppointmentsMain() {
             <DaySection
               key={day.toISOString()}
               date={day}
-              appointments={appointments.filter(apt =>
-                isSameDay(day, apt.starts_at),
-              )}
-              onEdit={apt => setEditAppointment(apt)}
-              onCancel={apt => setCancelAppointment(apt)}
+              appointments={appointmentsByDay.get(day.toISOString()) ?? []}
+              onEdit={handleEdit}
+              onCancel={handleCancel}
             />
           ))}
         </div>

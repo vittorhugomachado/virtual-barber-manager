@@ -47,16 +47,18 @@ interface BarberSlots {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function localTimeToUTCMinutes(t: string): number {
+const BRT_OFFSET_MINUTES = 3 * 60; // UTC-3
+
+function brTimeToUTCMinutes(t: string): number {
   const [h, m] = t.split(":").map(Number);
-  const offsetMinutes = new Date().getTimezoneOffset(); // +180 em Brasília
-  return h * 60 + m + offsetMinutes; // converte local → UTC
+  return h * 60 + m + BRT_OFFSET_MINUTES;
 }
 
-function minutesToTime(m: number): string {
-  return `${Math.floor(m / 60)
-    .toString()
-    .padStart(2, "0")}:${(m % 60).toString().padStart(2, "0")}`;
+function utcMinutesToBRTime(utcMin: number): string {
+  const brMin = utcMin - BRT_OFFSET_MINUTES;
+  const h = Math.floor(brMin / 60);
+  const m = brMin % 60;
+  return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
 }
 
 function generateSlotsForPeriods(
@@ -66,7 +68,7 @@ function generateSlotsForPeriods(
   for (const { opens, closes } of periods) {
     let cur = opens;
     while (cur + 30 <= closes) {
-      slots.push(minutesToTime(cur));
+      slots.push(utcMinutesToBRTime(cur));
       cur += 30;
     }
   }
@@ -90,8 +92,8 @@ function resolveWorkingPeriods(
     return customEntries
       .sort((a, b) => a.period_order - b.period_order)
       .map(r => ({
-        opens: localTimeToUTCMinutes(r.starts_at!),
-        closes: localTimeToUTCMinutes(r.ends_at!),
+        opens: brTimeToUTCMinutes(r.starts_at!.slice(0, 5)),
+        closes: brTimeToUTCMinutes(r.ends_at!.slice(0, 5)),
       }));
   }
 
@@ -103,8 +105,8 @@ function resolveWorkingPeriods(
   return shopEntries
     .sort((a, b) => a.period_order - b.period_order)
     .map(r => ({
-      opens: localTimeToUTCMinutes(r.opens_at),
-      closes: localTimeToUTCMinutes(r.closes_at),
+      opens: brTimeToUTCMinutes(r.opens_at.slice(0, 5)),
+      closes: brTimeToUTCMinutes(r.closes_at.slice(0, 5)),
     }));
 }
 
@@ -119,16 +121,12 @@ function groupSlotsByPeriod(slots: TimeSlot[]): {
   const noite: TimeSlot[] = [];
 
   for (const slot of slots) {
-    const min = localTimeToUTCMinutes(slot.time);
-    if (
-      min >= localTimeToUTCMinutes("04:00") &&
-      min <= localTimeToUTCMinutes("12:30")
-    ) {
+    const [h, m] = slot.time.split(":").map(Number);
+    const totalMin = h * 60 + m;
+
+    if (totalMin >= 4 * 60 && totalMin <= 12 * 60 + 30) {
       manha.push(slot);
-    } else if (
-      min >= localTimeToUTCMinutes("13:00") &&
-      min <= localTimeToUTCMinutes("17:30")
-    ) {
+    } else if (totalMin >= 13 * 60 && totalMin <= 17 * 60 + 30) {
       tarde.push(slot);
     } else {
       noite.push(slot);
@@ -438,8 +436,8 @@ export function Step4BarberTime({
 
     const allSlotTimes = generateSlotsForPeriods(periods);
 
-    const dayStart = `${dateStr}T00:00:00`;
-    const dayEnd = `${dateStr}T23:59:59`;
+    const dayStart = `${dateStr}T00:00:00Z`;
+    const dayEnd = `${dateStr}T23:59:59Z`;
 
     const { data: existingApts } = await supabase
       .from("appointments")
@@ -449,16 +447,19 @@ export function Step4BarberTime({
       .lte("starts_at", dayEnd);
 
     const activeApts = (existingApts ?? []).filter(
-      a => a.status !== "cancelled",
+      a =>
+        a.status !== "cancelled_by_customer" &&
+        a.status !== "cancelled_by_barbershop",
     );
 
-    const now = new Date();
+    // nowNaive: hora atual em BRT tratada como UTC (mesmo padrão do banco)
+    const nowNaive = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
 
     const timeSlots: TimeSlot[] = allSlotTimes.map(time => {
       const slotStart = new Date(`${dateStr}T${time}:00Z`);
       const slotEnd = new Date(slotStart.getTime() + durationMin * 60 * 1000);
 
-      if (slotStart <= now) return { time, available: false };
+      if (slotStart <= nowNaive) return { time, available: false };
 
       const overlaps = activeApts.some(apt => {
         const aptStart = new Date(apt.starts_at);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,9 +11,6 @@ import {
 } from "@/components/ui/table";
 import {
   CalendarDays,
-  ChevronDown,
-  ChevronUp,
-  ChevronsUpDown,
   Phone,
   Plus,
   Search,
@@ -27,26 +24,6 @@ import { UpdateCustomerModal } from "@/components/modals/customers/update-custom
 import { Pencil } from "lucide-react";
 import type { Customer } from "@/types/customer";
 
-type SortField = "last_appointment" | "total_appointments" | null;
-type SortDir = "asc" | "desc";
-
-function SortIcon({
-  field,
-  sortField,
-  sortDir,
-}: {
-  field: SortField;
-  sortField: SortField;
-  sortDir: SortDir;
-}) {
-  if (sortField !== field)
-    return <ChevronsUpDown className="h-3.5 w-3.5 ml-1 opacity-40" />;
-  return sortDir === "asc" ? (
-    <ChevronUp className="h-3.5 w-3.5 ml-1" />
-  ) : (
-    <ChevronDown className="h-3.5 w-3.5 ml-1" />
-  );
-}
 
 function formatPhone(phone: string) {
   const digits = phone.replace(/\D/g, "").slice(0, 11);
@@ -64,58 +41,29 @@ export function CustomersMain() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null,
   );
-  const [sortField, setSortField] = useState<SortField>(null);
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
-
-  function handleSort(field: SortField) {
-    if (sortField === field) {
-      setSortDir(d => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortField(field);
-      setSortDir("desc");
-    }
-  }
-
-  const filtered = customers
-    .filter(
-      c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.phone.includes(search),
-    )
-    .sort((a, b) => {
-      if (!sortField) return 0;
-      const dir = sortDir === "asc" ? 1 : -1;
-
-      if (sortField === "total_appointments") {
-        return (
-          ((a.total_appointments ?? 0) - (b.total_appointments ?? 0)) * dir
-        );
-      }
-      if (sortField === "last_appointment") {
-        const dateA = a.last_appointment
-          ? new Date(a.last_appointment).getTime()
-          : 0;
-        const dateB = b.last_appointment
-          ? new Date(b.last_appointment).getTime()
-          : 0;
-        return (dateA - dateB) * dir;
-      }
-      return 0;
-    });
+  const filtered = useMemo(
+    () =>
+      customers.filter(
+        c =>
+          c.name.toLowerCase().includes(search.toLowerCase()) ||
+          c.phone.includes(search),
+      ),
+    [customers, search],
+  );
 
   if (loading) return <CustomersSkeleton />;
 
   return (
-    <main className="w-full max-w-325 flex flex-col gap-6 px-6 md:px-12 pb-12 mx-auto mt-8">
+    <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="flex flex-col flex-wrap md:flex-row items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground inline-flex items-center gap-1">
           <Users className="h-4 w-4" />
           {customers.length} cliente{customers.length !== 1 ? "s" : ""}{" "}
           cadastrado{customers.length !== 1 ? "s" : ""}
         </p>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <div className="relative w-full md:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -156,33 +104,7 @@ export function CustomersMain() {
                 <TableHead className="hidden text-center md:table-cell w-36">
                   Telefone
                 </TableHead>
-                <TableHead
-                  className="hidden lg:table-cell w-32 cursor-pointer select-none"
-                  onClick={() => handleSort("total_appointments")}
-                >
-                  <span className="inline-flex items-center">
-                    Agendamentos
-                    <SortIcon
-                      field="total_appointments"
-                      sortField={sortField}
-                      sortDir={sortDir}
-                    />
-                  </span>
-                </TableHead>
-                <TableHead
-                  className="hidden lg:table-cell w-36 cursor-pointer select-none"
-                  onClick={() => handleSort("last_appointment")}
-                >
-                  <span className="inline-flex items-center">
-                    Última visita
-                    <SortIcon
-                      field="last_appointment"
-                      sortField={sortField}
-                      sortDir={sortDir}
-                    />
-                  </span>
-                </TableHead>
-                <TableHead className="w-20 md:w-48  rounded-tr-md" />
+                <TableHead className="w-20 md:w-48 rounded-tr-md" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -216,16 +138,6 @@ export function CustomersMain() {
                       <Phone className="h-3.5 w-3.5 shrink-0" />
                       {formatPhone(customer.phone)}
                     </a>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-center">
-                    {customer.total_appointments ?? "—"}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-center">
-                    {customer.last_appointment
-                      ? new Date(customer.last_appointment).toLocaleDateString(
-                          "pt-BR",
-                        )
-                      : "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -265,6 +177,7 @@ export function CustomersMain() {
         open={createOpen}
         onClose={() => setCreateOpen(false)}
         onCreated={customer => setCustomers(prev => [customer, ...prev])}
+        onDeleted={id => setCustomers(prev => prev.filter(c => c.id !== id))}
         onEditExisting={customer => {
           setCreateOpen(false);
           setEditCustomer(customer);

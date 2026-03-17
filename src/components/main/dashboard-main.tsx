@@ -10,7 +10,6 @@ import {
   Clock,
   Scissors,
   TrendingUp,
-  User,
   Users,
   UserPlus,
 } from "lucide-react";
@@ -173,20 +172,26 @@ export function BarbershopDashboardMain() {
               <span className="inline-flex items-center text-xs text-muted-foreground">
                 <span className="h-2 w-2 rounded-full bg-blue-500 shrink-0 mr-0.5" />
                 {todayStats.agendados}{" "}
-                <span className="hidden sm:block ml-0.5">agendado</span>
-                {todayStats.agendados !== 1 ? "s" : ""}
+                <span className="hidden sm:block ml-0.5">
+                  agendado
+                  {todayStats.agendados !== 1 ? "s" : ""}
+                </span>
               </span>
               <span className="inline-flex items-center text-xs text-muted-foreground">
                 <span className="h-2 w-2 rounded-full bg-green-500 shrink-0 mr-0.5" />
                 {todayStats.concluidos}
-                <span className="hidden sm:block ml-0.5">concuído</span>
-                {todayStats.concluidos !== 1 ? "s" : ""}
+                <span className="hidden sm:block ml-0.5">
+                  concuído
+                  {todayStats.concluidos !== 1 ? "s" : ""}
+                </span>
               </span>
               <span className="inline-flex items-center text-xs text-muted-foreground">
                 <span className="h-2 w-2 rounded-full bg-red-500 shrink-0 mr-0.5" />
                 {todayStats.cancelados}
-                <span className="hidden sm:block ml-0.5">cancelado</span>
-                {todayStats.cancelados !== 1 ? "s" : ""}
+                <span className="hidden sm:block ml-0.5">
+                  cancelado
+                  {todayStats.cancelados !== 1 ? "s" : ""}
+                </span>
               </span>
             </div>
           </div>
@@ -210,7 +215,7 @@ export function BarbershopDashboardMain() {
                     className="flex items-center gap-3 px-4 py-3"
                   >
                     <div
-                      className={`flex items-center gap-1 text-xs font-medium w-20 shrink-0 ${cancelled ? "opacity-40" : ""}`}
+                      className={`w-fit flex items-center gap-1 text-xs font-medium shrink-0 ${cancelled ? "opacity-40" : ""}`}
                     >
                       <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
                       {formatTime(apt.starts_at)}
@@ -222,13 +227,12 @@ export function BarbershopDashboardMain() {
                       <span className="text-sm font-medium truncate">
                         {apt.customer?.name ?? "Cliente removido"}
                       </span>
-                      <span className="text-xs text-muted-foreground inline-flex items-center gap-1 truncate">
-                        <User className="h-3 w-3 shrink-0" />
+                      <span className="text-xs text-muted-foreground inline-flex flex-wrap items-center gap-1 truncate">
+                        <Scissors className="h-3 w-3 shrink-0" />
                         {apt.barber?.name ?? "Barbeiro removido"}
                         {apt.service && (
                           <>
                             <span>·</span>
-                            <Scissors className="h-3 w-3 shrink-0" />
                             <span className="truncate">{apt.service.name}</span>
                           </>
                         )}

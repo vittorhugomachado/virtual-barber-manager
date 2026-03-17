@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/chart";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, StoreIcon } from "lucide-react";
 
 const chartConfig = {
   concluido: { label: "Concluído", color: "#22c55e" },
@@ -74,6 +74,7 @@ export function AppointmentsHourChart({
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [internalData, setInternalData] = useState<HourlyData[]>(buildEmpty());
   const [loading, setLoading] = useState(false);
+  const [isClosed, setIsClosed] = useState(false);
 
   useEffect(() => {
     if (isControlled || !barbershop?.id) return;
@@ -81,14 +82,30 @@ export function AppointmentsHourChart({
     const dateStr = toLocalDateStr(selectedDate);
     const dayStart = `${dateStr}T00:00:00Z`;
     const dayEnd = `${dateStr}T23:59:59Z`;
+    const dayOfWeek = selectedDate.getDay();
+
     async function fetchData() {
       setLoading(true);
-      const { data } = await supabase
-        .from("appointments")
-        .select("starts_at, status")
-        .eq("barbershop_id", barbershop!.id)
-        .gte("starts_at", dayStart)
-        .lte("starts_at", dayEnd);
+
+      const [{ data: hoursData }, { data: aptsData }] = await Promise.all([
+        supabase
+          .from("opening_hours")
+          .select("is_open")
+          .eq("barbershop_id", barbershop!.id)
+          .eq("day_of_week", dayOfWeek),
+        supabase
+          .from("appointments")
+          .select("starts_at, status")
+          .eq("barbershop_id", barbershop!.id)
+          .gte("starts_at", dayStart)
+          .lte("starts_at", dayEnd),
+      ]);
+
+      const closed =
+        !hoursData ||
+        hoursData.length === 0 ||
+        hoursData.every(r => !r.is_open);
+      setIsClosed(closed);
 
       const buckets = Array.from({ length: 24 }, () => ({
         concluido: 0,
@@ -96,7 +113,7 @@ export function AppointmentsHourChart({
         cancelado: 0,
       }));
 
-      for (const apt of data ?? []) {
+      for (const apt of aptsData ?? []) {
         const h = new Date(apt.starts_at).getUTCHours();
         if (apt.status === "completed") {
           buckets[h].concluido++;
@@ -140,14 +157,9 @@ export function AppointmentsHourChart({
           <h2 className="font-semibold text-sm">{title}</h2>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {isControlled && dateLabel && (
             <span className="text-xs text-muted-foreground">{dateLabel}</span>
-          )}
-          {loading && !isControlled && (
-            <span className="text-xs text-muted-foreground animate-pulse">
-              Carregando…
-            </span>
           )}
           {!isControlled && (
             <>
@@ -157,8 +169,14 @@ export function AppointmentsHourChart({
               >
                 <ChevronLeft className="h-4 w-4 text-muted-foreground" />
               </button>
-              <span className="text-sm font-medium w-14 text-center">
-                {formatLabel(selectedDate)}
+              <span className="text-sm font-medium w-16 text-center">
+                {loading && !isControlled ? (
+                  <span className="text-xs text-muted-foreground animate-pulse mr-3">
+                    Carregando…
+                  </span>
+                ) : (
+                  formatLabel(selectedDate)
+                )}
               </span>
               <button
                 onClick={() => changeDate(1)}
@@ -172,49 +190,56 @@ export function AppointmentsHourChart({
       </div>
 
       <div className="p-4">
-        <ChartContainer config={chartConfig} className="h-56 w-full">
-          <BarChart data={displayData} barCategoryGap="30%" barSize={8}>
-            <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis
-              dataKey="hour"
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 10 }}
-              tickMargin={6}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 11 }}
-              tickMargin={4}
-              allowDecimals={false}
-              width={24}
-            />
-            <ChartTooltip
-              cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
-              content={<ChartTooltipContent />}
-            />
-            <ChartLegend content={<ChartLegendContent />} />
-            <Bar
-              dataKey="concluido"
-              stackId="a"
-              fill={chartConfig.concluido.color}
-              radius={[0, 0, 0, 0]}
-            />
-            <Bar
-              dataKey="agendado"
-              stackId="a"
-              fill={chartConfig.agendado.color}
-              radius={[0, 0, 0, 0]}
-            />
-            <Bar
-              dataKey="cancelado"
-              stackId="a"
-              fill={chartConfig.cancelado.color}
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        </ChartContainer>
+        {!isControlled && isClosed ? (
+          <div className="h-56 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+            <StoreIcon className="h-8 w-8 opacity-40" />
+            <span className="text-sm font-medium">Barbearia fechada</span>
+          </div>
+        ) : (
+          <ChartContainer config={chartConfig} className="h-56 w-full">
+            <BarChart data={displayData} barCategoryGap="30%" barSize={8}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis
+                dataKey="hour"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 10 }}
+                tickMargin={6}
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 11 }}
+                tickMargin={4}
+                allowDecimals={false}
+                width={24}
+              />
+              <ChartTooltip
+                cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                content={<ChartTooltipContent />}
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+              <Bar
+                dataKey="concluido"
+                stackId="a"
+                fill={chartConfig.concluido.color}
+                radius={[0, 0, 0, 0]}
+              />
+              <Bar
+                dataKey="agendado"
+                stackId="a"
+                fill={chartConfig.agendado.color}
+                radius={[0, 0, 0, 0]}
+              />
+              <Bar
+                dataKey="cancelado"
+                stackId="a"
+                fill={chartConfig.cancelado.color}
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ChartContainer>
+        )}
       </div>
     </div>
   );

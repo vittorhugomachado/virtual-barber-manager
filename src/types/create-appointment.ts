@@ -20,13 +20,13 @@ export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
 };
 
 export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
-  scheduled: "bg-blue-100 text-blue-700",
-  confirmed: "bg-emerald-100 text-emerald-700",
-  in_progress: "bg-amber-100 text-amber-700",
-  completed: "bg-green-100 text-green-700",
-  cancelled_by_customer: "bg-red-100 text-red-700",
-  cancelled_by_barbershop: "bg-red-100 text-red-700",
-  no_show: "bg-zinc-100 text-zinc-800",
+  scheduled: "bg-blue-700 text-blue-100",
+  confirmed: "bg-emerald-700 text-emerald-100",
+  in_progress: "bg-amber-700 text-amber-100",
+  completed: "bg-green-700 text-green-100",
+  cancelled_by_customer: "bg-red-700 text-red-100",
+  cancelled_by_barbershop: "bg-red-700 text-red-100",
+  no_show: "bg-zinc-800 text-zinc-100",
 };
 
 export interface AppointmentWithRelations {

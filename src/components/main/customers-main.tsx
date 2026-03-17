@@ -9,13 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  CalendarDays,
-  Phone,
-  Plus,
-  Search,
-  Users,
-} from "lucide-react";
+import { CalendarDays, Phone, Plus, Search, Users } from "lucide-react";
 import { useCustomers } from "@/hooks/use-customers";
 import { CustomersSkeleton } from "@/components/skeleton/customers-skeleton";
 import { CreateCustomerModal } from "@/components/modals/customers/create-customer-modal";
@@ -23,7 +17,6 @@ import { CustomerHistoryModal } from "@/components/modals/customers/customer-his
 import { UpdateCustomerModal } from "@/components/modals/customers/update-customer-modal";
 import { Pencil } from "lucide-react";
 import type { Customer } from "@/types/customer";
-
 
 function formatPhone(phone: string) {
   const digits = phone.replace(/\D/g, "").slice(0, 11);

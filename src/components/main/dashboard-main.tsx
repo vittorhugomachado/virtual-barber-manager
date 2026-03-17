@@ -1,15 +1,281 @@
-import { useLogout } from "@/hooks/use-logout";
-import { Button } from "../ui/button";
+import { useMemo } from "react";
+import { useDashboard } from "@/hooks/use-dashboard";
+import { useBarbershopStore } from "@/store/barbershop.store";
+import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
+import {
+  CalendarCheck,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Scissors,
+  TrendingUp,
+  User,
+  Users,
+  UserPlus,
+} from "lucide-react";
+import {
+  APPOINTMENT_STATUS_COLORS,
+  APPOINTMENT_STATUS_LABELS,
+} from "@/types/create-appointment";
+
+function getGreeting() {
+  const hour = new Date(
+    new Date().getTime() - 3 * 60 * 60 * 1000,
+  ).getUTCHours();
+  if (hour < 12) return "Bom dia";
+  if (hour < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
+function formatCurrency(value: number) {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatTime(isoString: string) {
+  return new Date(isoString).toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
+}
+
+function formatTodayDate() {
+  const naive = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
+  return naive.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    timeZone: "UTC",
+  });
+}
+
+interface KpiCardProps {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  sub?: string;
+}
+
+function KpiCard({ label, value, icon, sub }: KpiCardProps) {
+  return (
+    <div className="bg-card border rounded-xl p-4 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          {label}
+        </span>
+        <span className="text-muted-foreground">{icon}</span>
+      </div>
+      <p className="text-2xl font-bold">{value}</p>
+      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+    </div>
+  );
+}
 
 export function BarbershopDashboardMain() {
-  const { logout, isLoading } = useLogout();
+  const { barbershop } = useBarbershopStore();
+  const {
+    todayAppointments,
+    monthRevenue,
+    completedToday,
+    totalCustomers,
+    newCustomersThisMonth,
+    topServices,
+    loading,
+  } = useDashboard();
+
+  const activeToday = useMemo(
+    () =>
+      todayAppointments.filter(
+        a =>
+          a.status !== "cancelled_by_customer" &&
+          a.status !== "cancelled_by_barbershop" &&
+          a.status !== "no_show",
+      ).length,
+    [todayAppointments],
+  );
+
+  if (loading) return <DashboardSkeleton />;
 
   return (
-    <main className="flex-1 p-4 flex justify-center items-center">
-      <h1>Em construção</h1>
-      <Button disabled={isLoading} onClick={logout}>
-        {isLoading ? "Saindo..." : "Sair da conta"}
-      </Button>
+    <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
+      {/* Header */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold">
+          {getGreeting()}, {barbershop?.owner_name ?? barbershop?.name}!
+        </h1>
+        <p className="text-sm text-muted-foreground capitalize">
+          {formatTodayDate()}
+        </p>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <KpiCard
+          label="Agendamentos hoje"
+          value={activeToday}
+          icon={<CalendarDays className="h-4 w-4" />}
+          sub={`${todayAppointments.length} no total (incluindo cancelados)`}
+        />
+        <KpiCard
+          label="Concluídos hoje"
+          value={completedToday}
+          icon={<CheckCircle2 className="h-4 w-4" />}
+          sub={
+            activeToday > 0
+              ? `${Math.round((completedToday / activeToday) * 100)}% dos ativos`
+              : undefined
+          }
+        />
+        <KpiCard
+          label="Receita do mês"
+          value={formatCurrency(monthRevenue)}
+          icon={<TrendingUp className="h-4 w-4" />}
+          sub="Serviços concluídos"
+        />
+        <KpiCard
+          label="Total de clientes"
+          value={totalCustomers}
+          icon={<Users className="h-4 w-4" />}
+          sub={
+            newCustomersThisMonth > 0
+              ? `+${newCustomersThisMonth} este mês`
+              : "Nenhum novo este mês"
+          }
+        />
+      </div>
+
+      {/* Main content: Today's schedule + Top services */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Today's schedule */}
+        <div className="lg:col-span-2 bg-card border rounded-xl overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b">
+            <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-semibold text-sm">Agenda de hoje</h2>
+            {activeToday > 0 && (
+              <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                {activeToday} ativo{activeToday !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          {todayAppointments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+              <CalendarDays className="h-8 w-8 opacity-20" />
+              <span className="text-sm opacity-50">
+                Nenhum agendamento para hoje.
+              </span>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {todayAppointments.map(apt => {
+                const cancelled =
+                  apt.status === "cancelled_by_customer" ||
+                  apt.status === "cancelled_by_barbershop";
+                return (
+                  <div
+                    key={apt.id}
+                    className="flex items-center gap-3 px-4 py-3"
+                  >
+                    <div
+                      className={`flex items-center gap-1 text-xs font-medium w-20 shrink-0 ${cancelled ? "opacity-40" : ""}`}
+                    >
+                      <Clock className="h-3 w-3 text-muted-foreground shrink-0" />
+                      {formatTime(apt.starts_at)}
+                    </div>
+
+                    <div
+                      className={`flex flex-col min-w-0 flex-1 ${cancelled ? "opacity-40" : ""}`}
+                    >
+                      <span className="text-sm font-medium truncate">
+                        {apt.customer?.name ?? "Cliente removido"}
+                      </span>
+                      <span className="text-xs text-muted-foreground inline-flex items-center gap-1 truncate">
+                        <User className="h-3 w-3 shrink-0" />
+                        {apt.barber?.name ?? "Barbeiro removido"}
+                        {apt.service && (
+                          <>
+                            <span>·</span>
+                            <Scissors className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{apt.service.name}</span>
+                          </>
+                        )}
+                      </span>
+                    </div>
+
+                    <span
+                      className={`shrink-0 text-xs px-2 py-1 rounded-full font-medium ${APPOINTMENT_STATUS_COLORS[apt.status]}`}
+                    >
+                      {APPOINTMENT_STATUS_LABELS[apt.status]}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Right column */}
+        <div className="flex flex-col gap-4">
+          {/* Top services */}
+          <div className="bg-card border rounded-xl overflow-hidden flex-1">
+            <div className="flex items-center gap-2 px-4 py-3 border-b">
+              <Scissors className="h-4 w-4 text-muted-foreground" />
+              <h2 className="font-semibold text-sm">Top serviços do mês</h2>
+            </div>
+
+            {topServices.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-8 text-muted-foreground">
+                <Scissors className="h-6 w-6 opacity-20" />
+                <span className="text-xs opacity-50 text-center">
+                  Nenhum serviço concluído este mês.
+                </span>
+              </div>
+            ) : (
+              <div className="p-4 flex flex-col gap-3">
+                {topServices.map((svc, i) => {
+                  const max = topServices[0].count;
+                  const pct = Math.round((svc.count / max) * 100);
+                  return (
+                    <div key={svc.name} className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-muted-foreground font-medium w-4 shrink-0">
+                            {i + 1}.
+                          </span>
+                          <span className="truncate font-medium">
+                            {svc.name}
+                          </span>
+                        </span>
+                        <span className="shrink-0 ml-2 text-muted-foreground">
+                          {svc.count}×
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* New customers card */}
+          <div className="bg-card border rounded-xl p-4 flex items-center gap-4">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <UserPlus className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Novos clientes</p>
+              <p className="text-xl font-bold">{newCustomersThisMonth}</p>
+              <p className="text-xs text-muted-foreground">este mês</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

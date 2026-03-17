@@ -453,7 +453,8 @@ export function Step4BarberTime({
     );
 
     // nowNaive: hora atual em BRT tratada como UTC (mesmo padrão do banco)
-    const nowNaive = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
+    // nowNaive com janela de 20 min no passado: threshold = agora_BRT - 20min
+    const nowNaive = new Date(new Date().getTime() - (3 * 60 + 20) * 60 * 1000);
 
     const timeSlots: TimeSlot[] = allSlotTimes.map(time => {
       const slotStart = new Date(`${dateStr}T${time}:00Z`);

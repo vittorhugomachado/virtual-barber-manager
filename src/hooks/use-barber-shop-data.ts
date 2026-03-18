@@ -41,7 +41,7 @@ export function useBarbershopData() {
         .from("barbershops")
         .select("*, profiles(name)")
         .eq("owner_id", userId!)
-        .single();
+        .maybeSingle();
 
       if (ownerData) {
         setBarbershopWithRole(

@@ -1,5 +1,5 @@
 import { useCustomers } from "@/hooks/use-customers";
-import { supabase } from "@/lib/supabase/supabase";
+import { createCustomer } from "@/lib/supabase/customers/create-customer";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { maskPhone } from "@/utils/masked-input-phone";
 import {
@@ -69,38 +69,32 @@ export function Step1Customer({
       return;
     }
 
-    const { data: existingList } = await supabase
-      .from("customers")
-      .select("id, name")
-      .eq("barbershop_id", barbershop!.id)
-      .eq("phone", digits)
-      .limit(1);
+    const result = await createCustomer({
+      barbershopId: barbershop!.id,
+      name: newName.trim(),
+      phone: digits,
+    });
 
-    if (existingList && existingList.length > 0) {
+    if (result.status === "conflict") {
       setPhoneError(
-        `Telefone já cadastrado para "${existingList[0].name}". Busque pelo cliente existente.`,
+        `Telefone já cadastrado para "${result.existing.name}". Busque pelo cliente existente.`,
       );
       setSubmitting(false);
       return;
     }
 
-    const { data, error: err } = await supabase
-      .from("customers")
-      .insert({
-        barbershop_id: barbershop!.id,
-        name: newName.trim(),
-        phone: digits,
-      })
-      .select()
-      .single();
-
-    if (err || !data) {
+    if (result.status === "error") {
       setError("Erro ao criar cliente. Tente novamente.");
       setSubmitting(false);
       return;
     }
 
-    onSelect({ id: data.id, name: data.name, phone: data.phone, isNew: true });
+    onSelect({
+      id: result.customer.id,
+      name: result.customer.name,
+      phone: result.customer.phone ?? "",
+      isNew: true,
+    });
     setSubmitting(false);
   }
 

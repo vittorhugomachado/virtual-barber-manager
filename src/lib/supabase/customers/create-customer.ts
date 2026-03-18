@@ -17,9 +17,11 @@ export async function createCustomer({
   name,
   phone,
 }: CreateCustomerParams): Promise<CreateCustomerResult> {
+  const normalizedPhone = phone.replace(/\D/g, "");
+
   const { data, error } = await supabase
     .from("customers")
-    .insert({ barbershop_id: barbershopId, name, phone })
+    .insert({ barbershop_id: barbershopId, name, phone: normalizedPhone })
     .select("*")
     .single();
 
@@ -29,7 +31,7 @@ export async function createCustomer({
         .from("customers")
         .select("*")
         .eq("barbershop_id", barbershopId)
-        .eq("phone", phone)
+        .eq("phone", normalizedPhone)
         .single();
 
       if (existing) return { status: "conflict", existing };

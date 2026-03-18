@@ -366,7 +366,7 @@ const DaySection = memo(function DaySection({
                       className={`flex-1 w-full min-w-0 flex flex-col lg:flex-row gap-1 xl:gap-18 ${dim}`}
                     >
                       {/* linha 1: horário + cliente */}
-                      <div className="flex items-center justify-center gap-3 min-w-0">
+                      <div className="flex flex-wrap items-center justify-center gap-3 min-w-0">
                         <div className="flex items-center gap-1 text-sm shrink-0">
                           <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span className="font-medium">

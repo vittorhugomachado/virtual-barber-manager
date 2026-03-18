@@ -5,9 +5,10 @@ import { BarbersChart } from "@/components/common/barbers-chart";
 import { ServicesChart } from "@/components/common/services-chart";
 import { WeekdayChart } from "@/components/common/weekday-chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Cell, Pie, PieChart, Tooltip } from "recharts";
+import { Cell, Pie, PieChart } from "recharts";
 import {
   Ban,
+  Hash,
   CalendarDays,
   CheckCircle2,
   Clock,
@@ -179,8 +180,14 @@ function StatusOverview({
             {
               label: "Total",
               value: total,
-              icon: <CalendarDays className="h-4 w-4" />,
+              icon: <Hash className="h-4 w-4" />,
               highlight: undefined,
+            },
+            {
+              label: "Agendados",
+              value: scheduled,
+              icon: <CalendarDays className="h-4 w-4" />,
+              highlight: "blue" as const,
             },
             {
               label: "Concluídos",
@@ -260,16 +267,6 @@ function StatusOverview({
                     <Cell key={i} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip
-                  formatter={(value: number, name: string) => [value, name]}
-                  contentStyle={{
-                    fontSize: 12,
-                    borderRadius: 8,
-                    border: "1px solid hsl(var(--border))",
-                    background: "hsl(var(--card))",
-                    color: "hsl(var(--foreground))",
-                  }}
-                />
               </PieChart>
 
               <div className="flex flex-col gap-1.5 w-full max-w-45">
@@ -318,8 +315,6 @@ export function ReportsMain() {
     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
       {/* Header + seletor de período */}
       <div className="flex flex-col gap-3">
-        <h1 className="text-2xl font-bold">Relatórios</h1>
-
         <div className="flex flex-wrap items-center gap-2">
           {(["today", "week", "month", "year", "custom"] as Period[]).map(p => (
             <button
@@ -388,7 +383,7 @@ export function ReportsMain() {
         <LoadingSkeleton />
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <KpiCard
               label="Faturamento"
               value={formatCurrency(kpis.revenue)}

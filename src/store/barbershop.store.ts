@@ -8,6 +8,7 @@ type BarbershopStore = {
   memberRole: MemberRole | null;
   setBarbershop: (data: Barbershop) => void;
   setMemberRole: (role: MemberRole) => void;
+  setBarbershopWithRole: (data: Barbershop, role: MemberRole) => void;
   clearBarbershop: () => void;
 };
 
@@ -16,5 +17,6 @@ export const useBarbershopStore = create<BarbershopStore>(set => ({
   memberRole: null,
   setBarbershop: data => set({ barbershop: data }),
   setMemberRole: role => set({ memberRole: role }),
+  setBarbershopWithRole: (data, role) => set({ barbershop: data, memberRole: role }),
   clearBarbershop: () => set({ barbershop: null, memberRole: null }),
 }));

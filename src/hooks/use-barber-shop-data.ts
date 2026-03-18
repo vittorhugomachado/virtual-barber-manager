@@ -1,40 +1,53 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "./use-auth";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { supabase } from "@/lib/supabase/supabase";
 
 export function useBarbershopData() {
   const { session, loading: authLoading } = useAuth();
-  const { barbershop, setBarbershop, setMemberRole } = useBarbershopStore();
+  const { setBarbershopWithRole, clearBarbershop } = useBarbershopStore();
   const [loading, setLoading] = useState(true);
+  const loadedForRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
 
-    if (!session?.user.id) {
+    const userId = session?.user.id ?? null;
+
+    // Usuário deslogou
+    if (!userId) {
+      if (loadedForRef.current !== null) {
+        clearBarbershop();
+        loadedForRef.current = null;
+      }
       setLoading(false);
       return;
     }
 
-    if (barbershop) {
+    // Já carregou para este usuário
+    if (loadedForRef.current === userId) {
       setLoading(false);
       return;
     }
+
+    // Usuário trocou — limpa estado anterior antes de carregar
+    clearBarbershop();
+    loadedForRef.current = userId;
+    setLoading(true);
 
     async function load() {
       // 1. Tenta carregar como owner
       const { data: ownerData } = await supabase
         .from("barbershops")
         .select("*, profiles(name)")
-        .eq("owner_id", session!.user.id)
+        .eq("owner_id", userId!)
         .single();
 
       if (ownerData) {
-        setBarbershop({
-          ...ownerData,
-          owner_name: ownerData.profiles?.name ?? "",
-        });
-        setMemberRole("owner");
+        setBarbershopWithRole(
+          { ...ownerData, owner_name: ownerData.profiles?.name ?? "" },
+          "owner",
+        );
         setLoading(false);
         return;
       }
@@ -54,16 +67,15 @@ export function useBarbershopData() {
           supabase
             .from("barbershop_members")
             .select("role")
-            .eq("user_id", session!.user.id)
+            .eq("user_id", userId!)
             .single(),
         ]);
 
         if (shopData) {
-          setBarbershop({
-            ...shopData,
-            owner_name: shopData.profiles?.name ?? "",
-          });
-          setMemberRole(memberData?.role ?? "reader");
+          setBarbershopWithRole(
+            { ...shopData, owner_name: shopData.profiles?.name ?? "" },
+            memberData?.role ?? "reader",
+          );
         }
       }
 
@@ -71,7 +83,7 @@ export function useBarbershopData() {
     }
 
     load();
-  }, [session, authLoading, barbershop, setBarbershop, setMemberRole]);
+  }, [session?.user.id, authLoading, setBarbershopWithRole, clearBarbershop]);
 
-  return { barbershop, loading };
+  return { barbershop: useBarbershopStore(s => s.barbershop), loading };
 }

@@ -7,6 +7,8 @@ import {
   Users,
   UserSquare,
   ChartBar,
+  Shield,
+  User,
 } from "lucide-react";
 import {
   Sidebar,
@@ -45,11 +47,11 @@ export function SidebarComponent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { state, isMobile, setOpenMobile } = useSidebar();
-  const { memberRole } = useBarbershopStore();
+  const { memberRole, memberUsername } = useBarbershopStore();
 
   const visibleMenuItems =
     memberRole === "reader" ? readerMenuItems : menuItems;
-  const visibleConfigItems = memberRole === "reader" ? [] : configItems;
+  const visibleConfigItems = memberRole === "owner" ? configItems : [];
 
   function handleNavigate(url: string) {
     if (isMobile) setOpenMobile(false);
@@ -111,6 +113,27 @@ export function SidebarComponent() {
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
+
+        {(memberRole === "admin" || memberRole === "reader") &&
+          memberUsername && (
+            <div className="flex items-center gap-2.5 px-2 py-2 mx-1 mb-1 rounded-lg bg-muted/60">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                {memberRole === "admin" ? (
+                  <Shield className="h-4 w-4" />
+                ) : (
+                  <User className="h-4 w-4" />
+                )}
+              </div>
+              <div className="flex flex-col min-w-0 overflow-hidden">
+                <span className="text-sm font-medium truncate">
+                  @{memberUsername}
+                </span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {memberRole === "admin" ? "Administrador" : "Leitor"}
+                </span>
+              </div>
+            </div>
+          )}
       </SidebarFooter>
     </Sidebar>
   );

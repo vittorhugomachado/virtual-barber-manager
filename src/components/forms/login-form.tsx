@@ -22,40 +22,83 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
-const formSchema = z.object({
+const ownerSchema = z.object({
   email: z.email("Email inválido"),
   password: z.string().min(1, "Digite sua senha"),
 });
 
+const memberSchema = z.object({
+  username: z.string().min(1, "Digite seu nome de usuário"),
+  password: z.string().min(1, "Digite sua senha"),
+});
+
+const errorMessages: Record<string, string> = {
+  "Invalid login credentials": "Usuário ou senha incorretos",
+  "Email not confirmed": "Email não confirmado",
+  "Too many requests": "Muitas tentativas, aguarde um momento",
+};
+
 export function LoginForm() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<"owner" | "member">("owner");
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+  const ownerForm = useForm<z.infer<typeof ownerSchema>>({
+    resolver: zodResolver(ownerSchema),
+    defaultValues: { email: "", password: "" },
   });
 
-  async function onSubmit(data: z.infer<typeof formSchema>) {
+  const memberForm = useForm<z.infer<typeof memberSchema>>({
+    resolver: zodResolver(memberSchema),
+    defaultValues: { username: "", password: "" },
+  });
+
+  async function onOwnerSubmit(data: z.infer<typeof ownerSchema>) {
     if (isLoading) return;
     setIsLoading(true);
-
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email: data.email,
         password: data.password,
       });
+      if (error) {
+        toast.error(errorMessages[error.message] ?? "Erro ao fazer login");
+        return;
+      }
+      navigate("/painel");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function onMemberSubmit(data: z.infer<typeof memberSchema>) {
+    if (isLoading) return;
+    setIsLoading(true);
+    try {
+      // Busca o email interno pelo username
+      const { data: rows, error: lookupError } = await supabase.rpc(
+        "get_member_auth_email",
+        { p_username: data.username.toLowerCase() },
+      );
+
+      if (lookupError || !rows || rows.length === 0) {
+        toast.error("Usuário não encontrado");
+        return;
+      }
+
+      // Se tiver mais de uma barbearia com esse username, usa a primeira
+      // (em cenários futuros pode-se exibir um seletor)
+      const internalEmail = rows[0].internal_email;
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: internalEmail,
+        password: data.password,
+      });
 
       if (error) {
-        const mensagens: Record<string, string> = {
-          "Invalid login credentials": "Email ou senha incorretos",
-          "Email not confirmed": "Email não confirmado",
-          "Too many requests": "Muitas tentativas, aguarde um momento",
-        };
-        toast.error(mensagens[error.message] ?? "Erro ao fazer login");
+        toast.error(
+          errorMessages[error.message] ?? "Usuário ou senha incorretos",
+        );
         return;
       }
 
@@ -74,23 +117,50 @@ export function LoginForm() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form id="login-form" onSubmit={form.handleSubmit(onSubmit)}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
+          {/* Toggle de modo */}
+          <div className="flex gap-1 mb-6 p-1 bg-muted rounded-lg w-fit">
+            <button
+              type="button"
+              onClick={() => setMode("owner")}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                mode === "owner"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Proprietário
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("member")}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                mode === "member"
+                  ? "bg-background shadow-sm text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Colaborador
+            </button>
+          </div>
+
+          {mode === "owner" ? (
+            <div key="owner-mode">
+              <form
+                id="login-form-owner"
+                onSubmit={ownerForm.handleSubmit(onOwnerSubmit)}
+              >
                 <FieldGroup>
                   <Controller
                     name="email"
-                    control={form.control}
+                    control={ownerForm.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="login-form-email">
-                          Email
-                        </FieldLabel>
+                        <FieldLabel htmlFor="login-email">Email</FieldLabel>
                         <Input
                           {...field}
-                          id="login-form-email"
-                          aria-invalid={fieldState.invalid}
+                          id="login-email"
                           placeholder="barbearia@email.com"
+                          aria-invalid={fieldState.invalid}
                         />
                         {fieldState.invalid && (
                           <FieldError errors={[fieldState.error]} />
@@ -100,19 +170,17 @@ export function LoginForm() {
                   />
                   <Controller
                     name="password"
-                    control={form.control}
+                    control={ownerForm.control}
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="login-form-password">
-                          Senha
-                        </FieldLabel>
+                        <FieldLabel htmlFor="login-password">Senha</FieldLabel>
                         <Input
                           {...field}
                           type="password"
-                          id="login-form-password"
-                          aria-invalid={fieldState.invalid}
+                          id="login-password"
                           placeholder="sua senha"
                           autoComplete="off"
+                          aria-invalid={fieldState.invalid}
                         />
                         {fieldState.invalid && (
                           <FieldError errors={[fieldState.error]} />
@@ -121,24 +189,88 @@ export function LoginForm() {
                     )}
                   />
                 </FieldGroup>
-              </div>
-            </div>
-          </form>
-        </CardContent>
-        <CardFooter className="flex-col gap-2">
-          <Button
-            type="submit"
-            form="login-form"
-            disabled={isLoading}
-            className="w-full max-w-xs"
-          >
-            {isLoading ? "Entrando..." : "Login"}
-          </Button>
+              </form>
 
-          <Button variant="link" onClick={() => navigate("/cadastro")}>
-            Criar conta
-          </Button>
-        </CardFooter>
+              <CardFooter className="flex-col gap-2 mt-6">
+                <Button
+                  type="submit"
+                  form="login-form-owner"
+                  disabled={isLoading}
+                  className="w-full max-w-36"
+                >
+                  {isLoading ? "Entrando..." : "Login"}
+                </Button>
+
+                <Button variant="link" onClick={() => navigate("/cadastro")}>
+                  Criar conta
+                </Button>
+              </CardFooter>
+            </div>
+          ) : (
+            <div key="member-mode">
+              <form
+                id="login-form-member"
+                onSubmit={memberForm.handleSubmit(onMemberSubmit)}
+              >
+                <FieldGroup>
+                  <Controller
+                    name="username"
+                    control={memberForm.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="login-username">
+                          Nome de usuário
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          id="login-username"
+                          placeholder="ex: joao_silva"
+                          aria-invalid={fieldState.invalid}
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    name="password"
+                    control={memberForm.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="login-member-password">
+                          Senha
+                        </FieldLabel>
+                        <Input
+                          {...field}
+                          type="password"
+                          id="login-member-password"
+                          placeholder="sua senha"
+                          autoComplete="off"
+                          aria-invalid={fieldState.invalid}
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                </FieldGroup>
+              </form>
+
+              <CardFooter className="flex-col gap-2 mt-6">
+                <Button
+                  type="submit"
+                  form="login-form-member"
+                  disabled={isLoading}
+                  className="w-full max-w-36"
+                >
+                  {isLoading ? "Entrando..." : "Entrar"}
+                </Button>
+              </CardFooter>
+            </div>
+          )}
+        </CardContent>
       </Card>
     </div>
   );

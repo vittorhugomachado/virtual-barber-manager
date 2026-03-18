@@ -3,7 +3,7 @@ import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Plus, Shield, Eye, Trash2, Loader2 } from "lucide-react";
+import { Plus, Shield, Eye, Trash2, Loader2, EyeOff } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,12 +35,16 @@ type Member = {
   id: string;
   user_id: string;
   role: "admin" | "reader";
-  name: string;
-  email: string;
+  username: string;
 };
 
 const formSchema = z.object({
-  email: z.string().min(1, "Email é obrigatório"),
+  username: z
+    .string()
+    .min(3, "Mínimo 3 caracteres")
+    .max(30, "Máximo 30 caracteres")
+    .regex(/^[a-z0-9_]+$/, "Apenas letras minúsculas, números e _"),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   role: z.enum(["admin", "reader"]),
 });
 
@@ -52,10 +56,11 @@ export function UsersSection() {
   const [fetchKey, setFetchKey] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as Resolver<FormValues>,
-    defaultValues: { email: "", role: "reader" },
+    defaultValues: { username: "", password: "", role: "reader" },
   });
 
   useEffect(() => {
@@ -69,14 +74,51 @@ export function UsersSection() {
 
   async function onSubmit(values: FormValues) {
     if (!barbershop) return;
-    const { error } = await supabase.rpc("add_member_by_email", {
-      p_email: values.email,
-      p_role: values.role,
-      p_barbershop_id: barbershop.id,
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const res = await supabase.functions.invoke("create-member", {
+      body: {
+        username: values.username,
+        password: values.password,
+        role: values.role,
+        barbershop_id: barbershop.id,
+      },
+      headers: {
+        Authorization: `Bearer ${session?.access_token}`,
+      },
     });
 
-    if (error) {
-      toast.error(error.message);
+    if (res.error) {
+      let message = res.error.message;
+
+      try {
+        const errorBody = await res.error.context.json();
+        message = errorBody?.error ?? message;
+
+        if (errorBody?.error?.toLowerCase().includes("nome de usuário")) {
+          form.setError("username", { message });
+          return;
+        }
+      } catch {
+        // mantém mensagem genérica se não conseguir ler o body
+      }
+
+      toast.error(message);
+      return;
+    }
+
+    if (res.data?.error) {
+      const message = res.data.error;
+
+      if (message.toLowerCase().includes("nome de usuário")) {
+        form.setError("username", { message });
+        return;
+      }
+
+      toast.error(message);
       return;
     }
 
@@ -88,12 +130,18 @@ export function UsersSection() {
 
   async function handleRemove(memberId: string) {
     setRemovingId(memberId);
-    const { error } = await supabase.rpc("remove_member", {
-      p_member_id: memberId,
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const res = await supabase.functions.invoke("delete-member", {
+      body: { member_id: memberId },
+      headers: {
+        Authorization: `Bearer ${session?.access_token}`,
+      },
     });
 
-    if (error) {
-      toast.error(error.message);
+    if (res.error || res.data?.error) {
+      toast.error(res.data?.error ?? res.error?.message);
     } else {
       toast.success("Usuário removido.");
       setMembers(prev => (prev ?? []).filter(m => m.id !== memberId));
@@ -125,9 +173,8 @@ export function UsersSection() {
             <Card key={member.id}>
               <CardContent className="flex items-center justify-between px-5">
                 <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="font-medium truncate">{member.name}</span>
-                  <span className="text-sm text-muted-foreground truncate">
-                    {member.email}
+                  <span className="font-medium truncate">
+                    @{member.username}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 shrink-0 ml-4">
@@ -178,7 +225,10 @@ export function UsersSection() {
         open={dialogOpen}
         onOpenChange={open => {
           setDialogOpen(open);
-          if (!open) form.reset();
+          if (!open) {
+            form.reset();
+            setShowPassword(false);
+          }
         }}
       >
         <DialogContent className="sm:max-w-md">
@@ -193,18 +243,57 @@ export function UsersSection() {
           >
             <FieldGroup>
               <Controller
-                name="email"
+                name="username"
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="member-email">Email</FieldLabel>
+                    <FieldLabel htmlFor="member-username">
+                      Nome de usuário
+                    </FieldLabel>
                     <Input
                       {...field}
-                      id="member-email"
-                      type="email"
-                      placeholder="email@exemplo.com"
+                      id="member-username"
+                      placeholder="ex: joao_silva"
                       aria-invalid={fieldState.invalid}
+                      onChange={e =>
+                        field.onChange(e.target.value.toLowerCase())
+                      }
                     />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="member-password">Senha</FieldLabel>
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        id="member-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Mínimo 6 caracteres"
+                        aria-invalid={fieldState.invalid}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowPassword(v => !v)}
+                        tabIndex={-1}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}
@@ -262,7 +351,7 @@ export function UsersSection() {
               type="submit"
               form="add-member-form"
               disabled={form.formState.isSubmitting}
-              className="cursor-pointer"
+              className="cursor-pointer rounded-full"
             >
               {form.formState.isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

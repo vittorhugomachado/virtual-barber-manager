@@ -3,7 +3,15 @@
     "allow": [
       "Bash(npx supabase:*)",
       "Bash(curl:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(supabase:*)",
+      "Read(//usr/local/bin/**)",
+      "Read(//c/Users/Vitor Hugo/AppData/Local/**)",
+      "Read(//c/Users/Vitor Hugo/scoop/shims/**)",
+      "Bash(mkdir -p \"/c/Users/Vitor Hugo/OneDrive/Desktop/virtual-barber-front-end/virtual-barber-front-end/supabase/functions/create-member\")",
+      "Bash(mkdir -p \"/c/Users/Vitor Hugo/OneDrive/Desktop/virtual-barber-front-end/virtual-barber-front-end/supabase/functions/delete-member\")",
+      "Bash(xargs grep:*)",
+      "Bash(/tmp/update_rpcs.sql:*)"
     ]
   }
 }

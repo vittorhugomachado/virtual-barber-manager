@@ -214,11 +214,10 @@ export function UpdateBarberModal({
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col gap-1">
-                <Label>Foto</Label>
                 <Button
+                  className="rounded-full"
                   type="button"
                   size="sm"
-                  variant="outline"
                   onClick={() =>
                     document.getElementById("update-barber-avatar")?.click()
                   }
@@ -370,10 +369,16 @@ export function UpdateBarberModal({
             </AlertDialog>
 
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-full"
+              >
                 Cancelar
               </Button>
               <Button
+                className="rounded-full"
                 type="submit"
                 form="update-barber-form"
                 disabled={form.formState.isSubmitting}

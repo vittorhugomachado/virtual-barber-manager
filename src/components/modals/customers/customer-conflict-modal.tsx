@@ -126,7 +126,12 @@ export function CustomerConflictModal({
           </AlertDialog>
 
           <div className="flex flex-2 gap-2 justify-end">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="rounded-full"
+            >
               Cancelar
             </Button>
             <Button type="button" onClick={() => onEdit(customer)}>

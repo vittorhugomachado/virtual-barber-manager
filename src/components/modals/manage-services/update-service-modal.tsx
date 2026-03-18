@@ -218,7 +218,7 @@ export function UpdateServiceModal({
           >
             {/* Imagem */}
             <div className="flex items-center gap-4">
-              <div className="h-20 w-20 rounded-lg bg-muted overflow-hidden shrink-0">
+              <div className="h-20 w-35 rounded-lg bg-muted overflow-hidden shrink-0">
                 {imagePreview ? (
                   <img
                     src={imagePreview}
@@ -232,11 +232,10 @@ export function UpdateServiceModal({
                 )}
               </div>
               <div className="flex flex-col gap-1">
-                <Label>Imagem</Label>
                 <Button
+                  className="rounded-full"
                   type="button"
                   size="sm"
-                  variant="outline"
                   onClick={() =>
                     document.getElementById("update-service-image")?.click()
                   }
@@ -451,10 +450,16 @@ export function UpdateServiceModal({
             </AlertDialog>
 
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-full"
+              >
                 Cancelar
               </Button>
               <Button
+                className="rounded-full"
                 type="submit"
                 form="update-service-form"
                 disabled={form.formState.isSubmitting}

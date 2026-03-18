@@ -473,7 +473,7 @@ export function AppointmentsMain() {
         {/* Header */}
         <div className="w-fit flex flex-col sm:flex-row gap-4 items-center justify-between mx-auto lg:mr-0 mb-6">
           <Button
-            className="cursor-pointer"
+            className="cursor-pointer rounded-full"
             onClick={() => setNewModalOpen(true)}
           >
             <Plus className="h-4 w-4" />

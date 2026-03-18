@@ -47,7 +47,8 @@ export function SidebarComponent() {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const { memberRole } = useBarbershopStore();
 
-  const visibleMenuItems = memberRole === "reader" ? readerMenuItems : menuItems;
+  const visibleMenuItems =
+    memberRole === "reader" ? readerMenuItems : menuItems;
   const visibleConfigItems = memberRole === "reader" ? [] : configItems;
 
   function handleNavigate(url: string) {

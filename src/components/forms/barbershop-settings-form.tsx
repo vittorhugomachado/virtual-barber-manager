@@ -387,7 +387,7 @@ export function SettingsForm() {
       <Button
         type="submit"
         disabled={form.formState.isSubmitting || !form.formState.isDirty}
-        className="w-60 mx-auto"
+        className="w-60 mx-auto rounded-full"
       >
         {form.formState.isSubmitting ? "Salvando..." : "Salvar alterações"}
       </Button>

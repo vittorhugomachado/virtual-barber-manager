@@ -146,7 +146,12 @@ export function ImageCropper({
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="rounded-full"
+          >
             Cancelar
           </Button>
           <Button type="button" disabled={isProcessing} onClick={handleConfirm}>

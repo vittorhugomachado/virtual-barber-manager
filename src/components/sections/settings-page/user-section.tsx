@@ -254,6 +254,7 @@ export function UsersSection() {
               type="button"
               variant="outline"
               onClick={() => setDialogOpen(false)}
+              className="rounded-full"
             >
               Cancelar
             </Button>

@@ -244,7 +244,12 @@ export function UpdateCustomerModal({
             </AlertDialog>
 
             <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-full"
+              >
                 Cancelar
               </Button>
               <Button

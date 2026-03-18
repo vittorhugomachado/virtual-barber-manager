@@ -67,10 +67,10 @@ export function CustomersMain() {
             />
           </div>
           <Button
-            className="cursor-pointer shrink-0"
+            className="cursor-pointer shrink-0 rounded-full"
             onClick={() => setCreateOpen(true)}
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4" />
             Novo cliente
           </Button>
         </div>

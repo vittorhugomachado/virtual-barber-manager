@@ -180,11 +180,10 @@ export function CreateServiceModal({
                 )}
               </div>
               <div className="flex flex-col gap-1">
-                <Label>Imagem</Label>
                 <Button
+                  className="rounded-full"
                   type="button"
                   size="sm"
-                  variant="outline"
                   onClick={() =>
                     document.getElementById("create-service-image")?.click()
                   }
@@ -345,7 +344,12 @@ export function CreateServiceModal({
           </form>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="rounded-full"
+            >
               Cancelar
             </Button>
             <Button

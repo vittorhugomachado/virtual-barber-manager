@@ -30,7 +30,10 @@ export function useBarbershopData() {
         .single();
 
       if (ownerData) {
-        setBarbershop({ ...ownerData, owner_name: ownerData.profiles?.name ?? "" });
+        setBarbershop({
+          ...ownerData,
+          owner_name: ownerData.profiles?.name ?? "",
+        });
         setMemberRole("owner");
         setLoading(false);
         return;
@@ -56,7 +59,10 @@ export function useBarbershopData() {
         ]);
 
         if (shopData) {
-          setBarbershop({ ...shopData, owner_name: shopData.profiles?.name ?? "" });
+          setBarbershop({
+            ...shopData,
+            owner_name: shopData.profiles?.name ?? "",
+          });
           setMemberRole(memberData?.role ?? "reader");
         }
       }

@@ -361,7 +361,7 @@ export function OpeningHoursSection() {
       <Button
         onClick={handleSave}
         disabled={saving || !isDirty}
-        className="self-end cursor-pointer"
+        className="self-end cursor-pointer rounded-full"
       >
         {saving ? (
           <>

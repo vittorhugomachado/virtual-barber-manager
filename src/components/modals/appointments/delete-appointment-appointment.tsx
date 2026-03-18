@@ -75,10 +75,10 @@ export function DeleteAppointmentModal({
               {appointment && (
                 <div className="w-full rounded-lg border bg-muted/30 px-4 py-3 flex flex-col gap-1.5 text-sm">
                   <div className="font-medium text-foreground">
-                    {appointment.customer.name}
+                    {appointment.customer?.name}
                   </div>
                   <div className="text-muted-foreground">
-                    {appointment.service.name} · {appointment.barber.name}
+                    {appointment.service?.name} · {appointment.barber?.name}
                   </div>
                   <div className="text-muted-foreground capitalize">
                     {formatDateTime(appointment.starts_at)}

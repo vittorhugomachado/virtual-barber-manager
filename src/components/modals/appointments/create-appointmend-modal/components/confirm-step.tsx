@@ -102,7 +102,7 @@ export function ConfirmStep({
           variant="outline"
           onClick={onClose}
           disabled={submitting}
-          className="cursor-pointer flex-1"
+          className="cursor-pointer flex-1 rounded-full"
         >
           Cancelar
         </Button>

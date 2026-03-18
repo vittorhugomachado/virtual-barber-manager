@@ -1,6 +1,6 @@
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { useLogout } from "@/hooks/use-logout";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -16,10 +16,18 @@ interface HeaderPageProps {
 }
 
 export function HeaderPage({ page }: HeaderPageProps) {
-  const { barbershop } = useBarbershopStore();
+  const { barbershop, memberRole, memberUsername } = useBarbershopStore();
   const { logout, isLoading } = useLogout();
 
-  const initials = barbershop?.name?.slice(0, 2).toUpperCase() ?? "BB";
+  const isMember = memberRole === "admin" || memberRole === "reader";
+  const displayName = isMember
+    ? `@${memberUsername}`
+    : (barbershop?.owner_name ?? barbershop?.name ?? "");
+  const displaySub = isMember
+    ? memberRole === "admin"
+      ? "Administrador"
+      : "Leitor"
+    : (barbershop?.name ?? "");
 
   return (
     <header className="w-full relative flex items-center justify-center md:justify-start gap-2 min-w-0 md:pl-12 mb-4 mt-3 md:mb-3.5">
@@ -39,17 +47,21 @@ export function HeaderPage({ page }: HeaderPageProps) {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none">
               <Avatar className="h-12 w-12">
-                <AvatarImage src={barbershop?.logo_url ?? undefined} />
-                <AvatarFallback>{initials}</AvatarFallback>
+                {!isMember && (
+                  <AvatarImage src={barbershop?.logo_url ?? undefined} />
+                )}
+                <AvatarFallback>
+                  <User />
+                </AvatarFallback>
               </Avatar>
               <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel className="flex flex-col gap-0.5">
-              <span className="font-medium truncate">{barbershop?.name}</span>
+              <span className="font-medium truncate">{displayName}</span>
               <span className="text-xs text-muted-foreground font-normal truncate">
-                {barbershop?.email}
+                {displaySub}
               </span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

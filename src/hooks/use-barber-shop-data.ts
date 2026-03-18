@@ -66,7 +66,7 @@ export function useBarbershopData() {
             .single(),
           supabase
             .from("barbershop_members")
-            .select("role")
+            .select("role, username")
             .eq("user_id", userId!)
             .single(),
         ]);
@@ -75,6 +75,7 @@ export function useBarbershopData() {
           setBarbershopWithRole(
             { ...shopData, owner_name: shopData.profiles?.name ?? "" },
             memberData?.role ?? "reader",
+            memberData?.username ?? undefined,
           );
         }
       }

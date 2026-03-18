@@ -22,6 +22,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/common/logo";
+import { useBarbershopStore } from "@/store/barbershop.store";
 
 const menuItems = [
   { title: "Visão Geral", url: "/", icon: ChartLine },
@@ -32,6 +33,10 @@ const menuItems = [
   { title: "Relatórios", url: "/relatorios", icon: ChartBar },
 ];
 
+const readerMenuItems = [
+  { title: "Agenda", url: "/agenda", icon: CalendarDays },
+];
+
 const configItems = [
   { title: "Configurações", url: "/configuracoes", icon: Cog },
 ];
@@ -40,6 +45,10 @@ export function SidebarComponent() {
   const location = useLocation();
   const navigate = useNavigate();
   const { state, isMobile, setOpenMobile } = useSidebar();
+  const { memberRole } = useBarbershopStore();
+
+  const visibleMenuItems = memberRole === "reader" ? readerMenuItems : menuItems;
+  const visibleConfigItems = memberRole === "reader" ? [] : configItems;
 
   function handleNavigate(url: string) {
     if (isMobile) setOpenMobile(false);
@@ -67,7 +76,7 @@ export function SidebarComponent() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map(item => (
+              {visibleMenuItems.map(item => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     isActive={location.pathname === item.url}
@@ -87,7 +96,7 @@ export function SidebarComponent() {
 
       <SidebarFooter>
         <SidebarMenu>
-          {configItems.map(item => (
+          {visibleConfigItems.map(item => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton
                 isActive={location.pathname === item.url}

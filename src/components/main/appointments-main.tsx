@@ -37,7 +37,6 @@ function RemovedBadge({ label, tooltip }: { label: string; tooltip: string }) {
         <TooltipTrigger asChild>
           <span className="inline-flex items-center gap-1 text-orange-500 cursor-help">
             {label}
-            <HelpCircle className="h-3.5 w-3.5 shrink-0" />
           </span>
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-55 text-xs">
@@ -85,8 +84,16 @@ function StatusPicker({
   const isFuture = startsAt > now;
   const isPast40 = now.getTime() - startsAt.getTime() >= 40 * 60 * 1000;
 
-  const options =
-    apt.status === "no_show"
+  const hasDeleted = !apt.customer || !apt.barber || !apt.service;
+
+  const options = hasDeleted
+    ? STATUS_OPTIONS.filter(
+        o =>
+          o.value !== apt.status &&
+          (o.value === "cancelled_by_barbershop" ||
+            o.value === "cancelled_by_customer"),
+      )
+    : apt.status === "no_show"
       ? STATUS_OPTIONS.filter(
           o => o.value === "completed" || o.value === "cancelled_by_barbershop",
         )
@@ -353,14 +360,14 @@ const DaySection = memo(function DaySection({
                 return (
                   <div
                     key={apt.id}
-                    className="flex flex-col xl:flex-row items-center gap-2 xl:gap-4 px-4 py-3"
+                    className="flex flex-col lg:flex-row items-center gap-2 xl:gap-4 px-4 py-3"
                   >
                     {/* Informações */}
                     <div
-                      className={`flex-1 min-w-0 flex flex-col xl:flex-row gap-1 xl:gap-18 ${dim}`}
+                      className={`flex-1 w-full min-w-0 flex flex-col lg:flex-row gap-1 xl:gap-18 ${dim}`}
                     >
                       {/* linha 1: horário + cliente */}
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center justify-center gap-3 min-w-0">
                         <div className="flex items-center gap-1 text-sm shrink-0">
                           <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span className="font-medium">
@@ -371,7 +378,7 @@ const DaySection = memo(function DaySection({
                             {formatTime(apt.ends_at)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-sm min-w-0 overflow-hidden">
+                        <div className="lg:w-32.5 lg:ml-3 truncate flex items-center gap-1.5 text-sm min-w-0 overflow-hidden">
                           <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span className="truncate font-medium">
                             {apt.customer?.name ?? (
@@ -385,8 +392,8 @@ const DaySection = memo(function DaySection({
                       </div>
                       {/* linha 2: barbeiro · serviço */}
                       <div className="flex justify-center xl:justify-start items-center gap-1.5 text-sm min-w-0 overflow-hidden pl-0.5">
-                        <Scissors className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        <span className="flex items-center gap-1 text-muted-foreground min-w-0 overflow-hidden">
+                        <Scissors className="h-3.5 w-3.5 hidden md:block text-muted-foreground shrink-0" />
+                        <span className="flex flex-wrap justify-center items-center gap-1 text-muted-foreground min-w-0 overflow-hidden">
                           <span className="truncate">
                             {apt.barber?.name ?? (
                               <RemovedBadge
@@ -395,14 +402,15 @@ const DaySection = memo(function DaySection({
                               />
                             )}
                           </span>
-                          {apt.service && (
-                            <>
-                              <span className="shrink-0">·</span>
-                              <span className="truncate">
-                                {apt.service.name}
-                              </span>
-                            </>
-                          )}
+                          <span className="shrink-0">·</span>
+                          <span className="truncate">
+                            {apt.service?.name ?? (
+                              <RemovedBadge
+                                label="Serviço removido"
+                                tooltip="Este serviço foi excluído do sistema. O agendamento ainda existe no histórico."
+                              />
+                            )}
+                          </span>
                         </span>
                       </div>
                     </div>

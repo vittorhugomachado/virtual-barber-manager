@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(npx supabase:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "mcp__ide__getDiagnostics"
     ]
   }
 }

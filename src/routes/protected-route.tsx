@@ -1,7 +1,8 @@
-import { Navigate, Outlet } from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Spinner } from "@/components/ui/spinner";
 import { useBarbershopData } from "@/hooks/use-barber-shop-data";
+import { useBarbershopStore } from "@/store/barbershop.store";
 import { SidebarComponent } from "@/components/common/sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
@@ -18,6 +19,8 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { isLogged, loading: authLoading } = useAuth();
   const { barbershop, loading: barbershopLoading } = useBarbershopData();
+  const { memberRole } = useBarbershopStore();
+  const { pathname } = useLocation();
 
   if (authLoading || barbershopLoading)
     return skeleton ? (
@@ -29,6 +32,9 @@ export function ProtectedRoute({
     );
 
   if (!isLogged || !barbershop) return <Navigate to="/entrar" />;
+
+  if (memberRole === "reader" && pathname !== "/agenda")
+    return <Navigate to="/agenda" replace />;
 
   if (withSidebar) {
     return (

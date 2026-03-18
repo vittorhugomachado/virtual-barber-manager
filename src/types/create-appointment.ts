@@ -32,9 +32,9 @@ export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
 export interface AppointmentWithRelations {
   id: string;
   barbershop_id: string;
-  customer_id: string;
-  barber_id: string;
-  service_id: string;
+  customer_id: string | null;
+  barber_id: string | null;
+  service_id: string | null;
   starts_at: string;
   ends_at: string;
   status: AppointmentStatus;
@@ -44,18 +44,18 @@ export interface AppointmentWithRelations {
     id: string;
     name: string;
     phone: string | null;
-  };
+  } | null;
   barber: {
     id: string;
     name: string;
     avatar_url: string | null;
-  };
+  } | null;
   service: {
     id: string;
     name: string;
     duration_min: number | null;
     price: number | null;
-  };
+  } | null;
 }
 
 // ─── Modal steps ─────────────────────────────────────────────────────────────

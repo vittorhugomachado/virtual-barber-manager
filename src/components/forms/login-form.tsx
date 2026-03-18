@@ -28,6 +28,7 @@ const ownerSchema = z.object({
 });
 
 const memberSchema = z.object({
+  slug: z.string().min(1, "Digite o site da barbearia"),
   username: z.string().min(1, "Digite seu nome de usuário"),
   password: z.string().min(1, "Digite sua senha"),
 });
@@ -50,7 +51,7 @@ export function LoginForm() {
 
   const memberForm = useForm<z.infer<typeof memberSchema>>({
     resolver: zodResolver(memberSchema),
-    defaultValues: { username: "", password: "" },
+    defaultValues: { slug: "", username: "", password: "" },
   });
 
   async function onOwnerSubmit(data: z.infer<typeof ownerSchema>) {
@@ -75,20 +76,25 @@ export function LoginForm() {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      // Busca o email interno pelo username
-      const { data: rows, error: lookupError } = await supabase.rpc(
+      const { data: internalEmail, error: lookupError } = await supabase.rpc(
         "get_member_auth_email",
-        { p_username: data.username.toLowerCase() },
+        {
+          p_username: data.username.toLowerCase(),
+          p_slug: data.slug.toLowerCase().trim(),
+        },
       );
 
-      if (lookupError || !rows || rows.length === 0) {
-        toast.error("Usuário não encontrado");
+      if (lookupError) {
+        toast.error("Erro ao verificar usuário");
         return;
       }
 
-      // Se tiver mais de uma barbearia com esse username, usa a primeira
-      // (em cenários futuros pode-se exibir um seletor)
-      const internalEmail = rows[0].internal_email;
+      if (!internalEmail) {
+        memberForm.setError("slug", {
+          message: "Barbearia não encontrada ou usuário não pertence a ela",
+        });
+        return;
+      }
 
       const { error } = await supabase.auth.signInWithPassword({
         email: internalEmail,
@@ -96,9 +102,9 @@ export function LoginForm() {
       });
 
       if (error) {
-        toast.error(
-          errorMessages[error.message] ?? "Usuário ou senha incorretos",
-        );
+        memberForm.setError("password", {
+          message: errorMessages[error.message] ?? "Senha incorreta",
+        });
         return;
       }
 
@@ -213,6 +219,45 @@ export function LoginForm() {
                 onSubmit={memberForm.handleSubmit(onMemberSubmit)}
               >
                 <FieldGroup>
+                  <Controller
+                    name="slug"
+                    control={memberForm.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <div className="flex flex-col gap-1">
+                          <FieldLabel htmlFor="login-slug">
+                            Site da barbearia
+                          </FieldLabel>
+
+                          <div className="relative">
+                            {/* prefixo dentro do input */}
+                            <span className="h-full w-37 flex items-center pl-3 border border-zinc-600 border-r-0 rounded-l-lg absolute bg-zinc-900 text-muted-foreground text-sm pointer-events-none">
+                              virtualbarber.com.br/
+                            </span>
+
+                            <Input
+                              {...field}
+                              id="login-slug"
+                              placeholder="nome-da-barbearia"
+                              className="pl-38" // espaço pro prefixo
+                              aria-invalid={fieldState.invalid}
+                              onChange={e => {
+                                // opcional: normalizar slug
+                                const value = e.target.value
+                                  .toLowerCase()
+                                  .replace(/[^a-z0-9-]/g, "");
+                                field.onChange(value);
+                              }}
+                            />
+                          </div>
+
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
+                        </div>
+                      </Field>
+                    )}
+                  />
                   <Controller
                     name="username"
                     control={memberForm.control}

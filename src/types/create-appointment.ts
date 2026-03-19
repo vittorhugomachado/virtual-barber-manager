@@ -63,6 +63,12 @@ export interface AppointmentWithRelations {
 export type Step = 1 | 2 | 3;
 export type CustomerMode = "existing" | "new" | null;
 
+export interface ServiceSelection {
+  serviceId: string;
+  barberId: string;
+  time: string;
+}
+
 export interface SelectedCustomer {
   id: string;
   name: string;

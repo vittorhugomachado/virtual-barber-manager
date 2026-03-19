@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useBarbers } from "@/hooks/use-barbers";
 import { useServices } from "@/hooks/use-service";
-import type { SelectedCustomer } from "@/types/create-appointment";
+import type { SelectedCustomer, ServiceSelection } from "@/types/create-appointment";
 import { maskPhone } from "@/utils/masked-input-phone";
 import {
   AlertCircle,
@@ -15,20 +15,16 @@ import {
 
 export function ConfirmStep({
   customer,
-  serviceId,
-  barberId,
+  serviceSelections,
   date,
-  time,
   onConfirm,
   onClose,
   submitting,
   error,
 }: {
   customer: SelectedCustomer;
-  serviceId: string;
-  barberId: string;
+  serviceSelections: ServiceSelection[];
   date: string;
-  time: string;
   onConfirm: () => void;
   onClose: () => void;
   submitting: boolean;
@@ -37,9 +33,6 @@ export function ConfirmStep({
   const { services } = useServices();
   const { barbers } = useBarbers();
 
-  const service = services.find(s => s.id === serviceId);
-  const barber = barbers.find(b => b.id === barberId);
-
   const dateLabel = new Date(`${date}T00:00:00`).toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "2-digit",
@@ -47,47 +40,121 @@ export function ConfirmStep({
     year: "numeric",
   });
 
-  const rows = [
-    {
-      icon: <User className="h-3.5 w-3.5" />,
-      label: "Cliente",
-      value: customer.name,
-    },
-    {
-      icon: <Phone className="h-3.5 w-3.5" />,
-      label: "Telefone",
-      value: maskPhone(customer.phone),
-    },
-    {
-      icon: <Sparkles className="h-3.5 w-3.5" />,
-      label: "Serviço",
-      value: service?.name ?? "—",
-    },
-    {
-      icon: <Scissors className="h-3.5 w-3.5" />,
-      label: "Profissional",
-      value: barber?.name ?? "—",
-    },
-    {
-      icon: <CalendarDays className="h-3.5 w-3.5" />,
-      label: "Data",
-      value: dateLabel,
-    },
-    { icon: <Clock className="h-3.5 w-3.5" />, label: "Horário", value: time },
-  ];
+  const totalDuration = serviceSelections.reduce((acc, sel) => {
+    const s = services.find(sv => sv.id === sel.serviceId);
+    return acc + (s?.duration_min ?? 0);
+  }, 0);
+
+  const totalPrice = serviceSelections.reduce((acc, sel) => {
+    const s = services.find(sv => sv.id === sel.serviceId);
+    return acc + (Number(s?.price) ?? 0);
+  }, 0);
 
   return (
     <div className="flex flex-col gap-4 px-4 py-5">
+      {/* Customer + date */}
       <div className="rounded-xl border border-border overflow-hidden divide-y divide-border">
-        {rows.map((row, i) => (
-          <div key={i} className="flex items-center gap-3 px-4 py-3">
-            <span className="text-muted-foreground shrink-0">{row.icon}</span>
-            <span className="text-xs text-muted-foreground w-16 shrink-0">
-              {row.label}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="text-muted-foreground shrink-0">
+            <User className="h-3.5 w-3.5" />
+          </span>
+          <span className="text-xs text-muted-foreground w-16 shrink-0">
+            Cliente
+          </span>
+          <span className="text-sm font-medium">{customer.name}</span>
+        </div>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="text-muted-foreground shrink-0">
+            <Phone className="h-3.5 w-3.5" />
+          </span>
+          <span className="text-xs text-muted-foreground w-16 shrink-0">
+            Telefone
+          </span>
+          <span className="text-sm font-medium">
+            {maskPhone(customer.phone)}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="text-muted-foreground shrink-0">
+            <CalendarDays className="h-3.5 w-3.5" />
+          </span>
+          <span className="text-xs text-muted-foreground w-16 shrink-0">
+            Data
+          </span>
+          <span className="text-sm font-medium capitalize">{dateLabel}</span>
+        </div>
+        {(totalDuration > 0 || totalPrice > 0) && (
+          <div className="flex items-center gap-3 px-4 py-3">
+            <span className="text-muted-foreground shrink-0">
+              <Clock className="h-3.5 w-3.5" />
             </span>
-            <span className="text-sm font-medium capitalize">{row.value}</span>
+            <span className="text-xs text-muted-foreground w-16 shrink-0">
+              Total
+            </span>
+            <span className="text-sm font-medium">
+              {totalDuration > 0 ? `${totalDuration} min` : ""}
+              {totalDuration > 0 && totalPrice > 0 ? " · " : ""}
+              {totalPrice > 0
+                ? `R$ ${totalPrice.toFixed(2).replace(".", ",")}`
+                : ""}
+            </span>
           </div>
-        ))}
+        )}
+      </div>
+
+      {/* Per-service blocks */}
+      <div className="flex flex-col gap-3">
+        {serviceSelections.map((sel, i) => {
+          const service = services.find(s => s.id === sel.serviceId);
+          const barber = barbers.find(b => b.id === sel.barberId);
+
+          return (
+            <div
+              key={sel.serviceId}
+              className="rounded-xl border border-border overflow-hidden divide-y divide-border"
+            >
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-muted/30">
+                <span className="flex items-center justify-center w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0">
+                  {i + 1}
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Serviço {i + 1}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <span className="text-muted-foreground shrink-0">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-xs text-muted-foreground w-20 shrink-0">
+                  Serviço
+                </span>
+                <span className="text-sm font-medium">
+                  {service?.name ?? "—"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <span className="text-muted-foreground shrink-0">
+                  <Scissors className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-xs text-muted-foreground w-20 shrink-0">
+                  Profissional
+                </span>
+                <span className="text-sm font-medium">
+                  {barber?.name ?? "—"}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <span className="text-muted-foreground shrink-0">
+                  <Clock className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-xs text-muted-foreground w-20 shrink-0">
+                  Horário
+                </span>
+                <span className="text-sm font-medium">{sel.time}</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {error && (

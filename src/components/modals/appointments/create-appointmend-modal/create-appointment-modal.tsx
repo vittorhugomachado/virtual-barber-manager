@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
 import { useServices } from "@/hooks/use-service";
 import { useBarbershopStore } from "@/store/barbershop.store";
-import type { SelectedCustomer } from "@/types/create-appointment";
+import type { SelectedCustomer, ServiceSelection } from "@/types/create-appointment";
 import { Step1Customer } from "./components/step-1";
 import { Step2Service } from "./components/step-2";
 import { Step3Date } from "./components/step-3";
@@ -31,11 +31,12 @@ export function CreateAppointmentModal({
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [customer, setCustomer] = useState<SelectedCustomer | null>(null);
-  const [serviceId, setServiceId] = useState<string | null>(null);
+  const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [date, setDate] = useState<string | null>(null);
   const [dateObj, setDateObj] = useState<Date | null>(null);
-  const [barberId, setBarberId] = useState<string | null>(null);
-  const [time, setTime] = useState<string | null>(null);
+  const [serviceSelections, setServiceSelections] = useState<
+    ServiceSelection[]
+  >([]);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -44,11 +45,10 @@ export function CreateAppointmentModal({
     setStep(1);
     setShowConfirm(false);
     setCustomer(null);
-    setServiceId(null);
+    setServiceIds([]);
     setDate(null);
     setDateObj(null);
-    setBarberId(null);
-    setTime(null);
+    setServiceSelections([]);
     setSubmitting(false);
     setSubmitError(null);
   }
@@ -63,77 +63,37 @@ export function CreateAppointmentModal({
   }, [open]);
 
   async function handleConfirm() {
-    if (!customer || !serviceId || !barberId || !date || !time || !barbershop)
+    if (
+      !customer ||
+      serviceSelections.length === 0 ||
+      !date ||
+      !barbershop
+    )
       return;
+
     setSubmitting(true);
     setSubmitError(null);
 
     try {
-      const service = services.find(s => s.id === serviceId);
-      const durationMin = service?.duration_min ?? 30;
-
-      const startsAt = new Date(`${date}T${time}:00Z`);
-      const endsAt = new Date(startsAt.getTime() + durationMin * 60 * 1000);
-
-      // Resolve "any" → pick random available barber
-      let resolvedBarberId = barberId;
-      if (barberId === "any") {
-        const { data: eligible } = await supabase
-          .from("barber_services")
-          .select("barber_id")
-          .eq("service_id", serviceId);
-
-        const eligibleIds = (eligible ?? []).map(e => e.barber_id);
-
-        if (eligibleIds.length === 0) {
-          setSubmitError(
-            "Nenhum barbeiro disponível neste horário. Tente outro.",
-          );
-          setSubmitting(false);
-          return;
-        }
-
-        const { data: conflicts } = await supabase
-          .from("appointments")
-          .select("barber_id, status")
-          .in("barber_id", eligibleIds)
-          .lt("starts_at", endsAt.toISOString())
-          .gt("ends_at", startsAt.toISOString());
-
-        const busyBarberIds = new Set(
-          (conflicts ?? [])
-            .filter(
-              c =>
-                c.status !== "cancelled_by_customer" &&
-                c.status !== "cancelled_by_barbershop",
-            )
-            .map(c => c.barber_id),
+      const inserts = serviceSelections.map(sel => {
+        const service = services.find(s => s.id === sel.serviceId);
+        const durationMin = service?.duration_min ?? 30;
+        const startsAt = new Date(`${date}T${sel.time}:00Z`);
+        const endsAt = new Date(
+          startsAt.getTime() + durationMin * 60 * 1000,
         );
-
-        const available = eligibleIds.filter(id => !busyBarberIds.has(id));
-
-        if (available.length === 0) {
-          setSubmitError(
-            "Nenhum barbeiro disponível neste horário. Tente outro.",
-          );
-          setSubmitting(false);
-          return;
-        }
-
-        resolvedBarberId =
-          available[Math.floor(Math.random() * available.length)];
-      }
-
-      const { error: err } = await supabase.from("appointments").insert({
-        barbershop_id: barbershop.id,
-        customer_id: customer.id,
-        barber_id: resolvedBarberId,
-        service_id: serviceId,
-        starts_at: startsAt.toISOString(),
-        ends_at: endsAt.toISOString(),
-        status: "scheduled",
+        return {
+          barbershop_id: barbershop.id,
+          customer_id: customer.id,
+          barber_id: sel.barberId,
+          service_id: sel.serviceId,
+          starts_at: startsAt.toISOString(),
+          ends_at: endsAt.toISOString(),
+          status: "scheduled",
+        };
       });
 
+      const { error: err } = await supabase.from("appointments").insert(inserts);
       if (err) throw err;
 
       onSuccess?.();
@@ -179,8 +139,8 @@ export function CreateAppointmentModal({
           {!showConfirm && step === 2 && (
             <Step2Service
               onBack={() => setStep(1)}
-              onSelect={sId => {
-                setServiceId(sId);
+              onSelect={ids => {
+                setServiceIds(ids);
                 setStep(3);
               }}
             />
@@ -197,37 +157,41 @@ export function CreateAppointmentModal({
             />
           )}
 
-          {!showConfirm && step === 4 && serviceId && date && dateObj && (
-            <Step4BarberTime
-              serviceId={serviceId}
-              date={date}
-              dateObj={dateObj}
-              onBack={() => setStep(3)}
-              onDateChange={(d, dObj) => {
-                setDate(d);
-                setDateObj(dObj);
-              }}
-              onSelect={(bId, t) => {
-                setBarberId(bId);
-                setTime(t);
-                setShowConfirm(true);
-              }}
-            />
-          )}
+          {!showConfirm &&
+            step === 4 &&
+            serviceIds.length > 0 &&
+            date &&
+            dateObj && (
+              <Step4BarberTime
+                serviceIds={serviceIds}
+                date={date}
+                dateObj={dateObj}
+                onBack={() => setStep(3)}
+                onDateChange={(d, dObj) => {
+                  setDate(d);
+                  setDateObj(dObj);
+                }}
+                onSelect={selections => {
+                  setServiceSelections(selections);
+                  setShowConfirm(true);
+                }}
+              />
+            )}
 
-          {showConfirm && customer && serviceId && barberId && date && time && (
-            <ConfirmStep
-              customer={customer}
-              serviceId={serviceId}
-              barberId={barberId}
-              date={date}
-              time={time}
-              onConfirm={handleConfirm}
-              onClose={handleClose}
-              submitting={submitting}
-              error={submitError}
-            />
-          )}
+          {showConfirm &&
+            customer &&
+            serviceSelections.length > 0 &&
+            date && (
+              <ConfirmStep
+                customer={customer}
+                serviceSelections={serviceSelections}
+                date={date}
+                onConfirm={handleConfirm}
+                onClose={handleClose}
+                submitting={submitting}
+                error={submitError}
+              />
+            )}
         </div>
       </div>
     </div>

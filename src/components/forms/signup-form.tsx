@@ -25,7 +25,10 @@ import { useState } from "react";
 const formSchema = z.object({
   name: z.string().min(1, "Digite seu nome"),
   phone: z.string().min(10, "Celular inválido"),
-  barbershopName: z.string().min(1, "Digite o nome da barbearia"),
+  barbershopName: z
+    .string()
+    .min(1, "Digite o nome da barbearia")
+    .max(30, "Nome deve ter no máximo 30 caracteres"),
   email: z.email("Email inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
@@ -101,6 +104,13 @@ export function SignupForm() {
         await supabase.auth.signOut();
         if (rpcError.message.includes("phone_already_exists")) {
           toast.error("Este celular já está cadastrado");
+        } else if (
+          rpcError.message.includes("barbershops_name_max_length") ||
+          rpcError.message.includes("name_max_length")
+        ) {
+          form.setError("barbershopName", {
+            message: "Nome deve ter no máximo 30 caracteres",
+          });
         } else {
           toast.error("Erro ao criar conta", { description: rpcError.message });
         }
@@ -139,6 +149,7 @@ export function SignupForm() {
                           id="signup-form-barbershop"
                           aria-invalid={fieldState.invalid}
                           placeholder="Barbearia do João"
+                          maxLength={30}
                         />
                         {fieldState.invalid && (
                           <FieldError errors={[fieldState.error]} />

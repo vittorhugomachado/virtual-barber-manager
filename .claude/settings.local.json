@@ -11,7 +11,9 @@
       "Bash(mkdir -p \"/c/Users/Vitor Hugo/OneDrive/Desktop/virtual-barber-front-end/virtual-barber-front-end/supabase/functions/create-member\")",
       "Bash(mkdir -p \"/c/Users/Vitor Hugo/OneDrive/Desktop/virtual-barber-front-end/virtual-barber-front-end/supabase/functions/delete-member\")",
       "Bash(xargs grep:*)",
-      "Bash(/tmp/update_rpcs.sql:*)"
+      "Bash(/tmp/update_rpcs.sql:*)",
+      "Bash(cat:*)",
+      "Bash(find '/c/Users/Vitor Hugo/OneDrive/Desktop/virtual-barber-front-end/virtual-barber-front-end' -type f \\\\\\(-name *.sql -o -name *schema* -o -name *migration* \\\\\\))"
     ]
   }
 }

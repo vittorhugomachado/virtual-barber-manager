@@ -23,7 +23,10 @@ import {
 } from "@/components/ui/field";
 
 const formSchema = z.object({
-  name: z.string().min(1, "Nome da barbearia é obrigatório"),
+  name: z
+    .string()
+    .min(1, "Nome da barbearia é obrigatório")
+    .max(30, "Nome deve ter no máximo 30 caracteres"),
   phone: z.string().min(10, "Celular inválido"),
   slug: z.string().optional(),
   description: z.string().optional(),
@@ -156,7 +159,14 @@ export function SettingsForm() {
 
     if (barbershopResult.error) {
       const msg = barbershopResult.error.message;
-      if (msg.includes("barbershops_slug_key") || msg.includes("slug")) {
+      if (
+        msg.includes("barbershops_name_max_length") ||
+        msg.includes("name_max_length")
+      ) {
+        form.setError("name", {
+          message: "Nome deve ter no máximo 30 caracteres",
+        });
+      } else if (msg.includes("barbershops_slug_key") || msg.includes("slug")) {
         form.setError("slug", { message: "Este slug já está em uso" });
       } else if (
         msg.includes("barbershops_phone_key") ||
@@ -256,6 +266,7 @@ export function SettingsForm() {
                     {...field}
                     id="settings-name"
                     placeholder="Barbearia do João"
+                    maxLength={30}
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.invalid && (

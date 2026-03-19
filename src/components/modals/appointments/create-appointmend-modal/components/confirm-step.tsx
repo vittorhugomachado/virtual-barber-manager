@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { useBarbers } from "@/hooks/use-barbers";
 import { useServices } from "@/hooks/use-service";
-import type { SelectedCustomer, ServiceSelection } from "@/types/create-appointment";
+import type {
+  SelectedCustomer,
+  ServiceSelection,
+} from "@/types/create-appointment";
 import { maskPhone } from "@/utils/masked-input-phone";
 import {
   AlertCircle,
@@ -47,7 +50,7 @@ export function ConfirmStep({
 
   const totalPrice = serviceSelections.reduce((acc, sel) => {
     const s = services.find(sv => sv.id === sel.serviceId);
-    return acc + (Number(s?.price) ?? 0);
+    return acc + Number(s?.price ?? 0);
   }, 0);
 
   return (

@@ -28,7 +28,7 @@ export function Step2Service({
 
   const totalPrice = selected.reduce((acc, id) => {
     const s = services.find(sv => sv.id === id);
-    return acc + (Number(s?.price) ?? 0);
+    return acc + Number(s?.price ?? 0);
   }, 0);
 
   return (

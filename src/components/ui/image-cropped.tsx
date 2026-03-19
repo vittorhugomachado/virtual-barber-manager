@@ -29,7 +29,6 @@ interface ImageCropperProps {
 async function getCroppedFile(
   imageSrc: string,
   pixelCrop: Area,
-  cropShape: "rect" | "round",
 ): Promise<File> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
@@ -37,18 +36,6 @@ async function getCroppedFile(
 
   canvas.width = pixelCrop.width;
   canvas.height = pixelCrop.height;
-
-  if (cropShape === "round") {
-    ctx.beginPath();
-    ctx.arc(
-      pixelCrop.width / 2,
-      pixelCrop.height / 2,
-      pixelCrop.width / 2,
-      0,
-      Math.PI * 2,
-    );
-    ctx.clip();
-  }
 
   ctx.drawImage(
     image,
@@ -103,7 +90,7 @@ export function ImageCropper({
     if (!croppedAreaPixels) return;
     setIsProcessing(true);
     try {
-      const file = await getCroppedFile(imageUrl, croppedAreaPixels, cropShape);
+      const file = await getCroppedFile(imageUrl, croppedAreaPixels);
       onConfirm(file);
     } finally {
       setIsProcessing(false);

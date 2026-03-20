@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { ImageCropper } from "../ui/image-cropped";
 import { supabase } from "@/lib/supabase/supabase";
@@ -307,13 +306,25 @@ export function SettingsForm() {
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="settings-slug">Slug</FieldLabel>
-                  <Input
-                    {...field}
-                    id="settings-slug"
-                    placeholder="barbearia-do-joao"
-                    aria-invalid={fieldState.invalid}
-                  />
+                  <FieldLabel htmlFor="settings-slug">Site</FieldLabel>
+                  <div className="relative">
+                    <span className="h-full w-37 flex items-center pl-3 border border-zinc-600 border-r-0 rounded-l-lg absolute bg-zinc-900 text-muted-foreground text-sm pointer-events-none">
+                      virtualbarber.com.br/
+                    </span>
+                    <Input
+                      {...field}
+                      id="settings-slug"
+                      placeholder="nome-da-barbearia"
+                      className="pl-38"
+                      aria-invalid={fieldState.invalid}
+                      onChange={e => {
+                        const value = e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]/g, "");
+                        field.onChange(value);
+                      }}
+                    />
+                  </div>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}

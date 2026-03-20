@@ -5,6 +5,7 @@ import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import * as z from "zod";
+import { Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,6 +44,8 @@ export function LoginForm() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [mode, setMode] = useState<"owner" | "member">("owner");
+  const [showOwnerPassword, setShowOwnerPassword] = useState(false);
+  const [showMemberPassword, setShowMemberPassword] = useState(false);
 
   const ownerForm = useForm<z.infer<typeof ownerSchema>>({
     resolver: zodResolver(ownerSchema),
@@ -180,14 +183,29 @@ export function LoginForm() {
                     render={({ field, fieldState }) => (
                       <Field data-invalid={fieldState.invalid}>
                         <FieldLabel htmlFor="login-password">Senha</FieldLabel>
-                        <Input
-                          {...field}
-                          type="password"
-                          id="login-password"
-                          placeholder="sua senha"
-                          autoComplete="off"
-                          aria-invalid={fieldState.invalid}
-                        />
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showOwnerPassword ? "text" : "password"}
+                            id="login-password"
+                            placeholder="sua senha"
+                            autoComplete="off"
+                            aria-invalid={fieldState.invalid}
+                            className="pr-9"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowOwnerPassword(v => !v)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            tabIndex={-1}
+                          >
+                            {showOwnerPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
                         {fieldState.invalid && (
                           <FieldError errors={[fieldState.error]} />
                         )}
@@ -286,14 +304,29 @@ export function LoginForm() {
                         <FieldLabel htmlFor="login-member-password">
                           Senha
                         </FieldLabel>
-                        <Input
-                          {...field}
-                          type="password"
-                          id="login-member-password"
-                          placeholder="sua senha"
-                          autoComplete="off"
-                          aria-invalid={fieldState.invalid}
-                        />
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            type={showMemberPassword ? "text" : "password"}
+                            id="login-member-password"
+                            placeholder="sua senha"
+                            autoComplete="off"
+                            aria-invalid={fieldState.invalid}
+                            className="pr-9"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowMemberPassword(v => !v)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            tabIndex={-1}
+                          >
+                            {showMemberPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
                         {fieldState.invalid && (
                           <FieldError errors={[fieldState.error]} />
                         )}

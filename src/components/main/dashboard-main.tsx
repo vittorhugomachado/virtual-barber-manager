@@ -83,17 +83,6 @@ export function BarbershopDashboardMain() {
     loading,
   } = useDashboard();
 
-  const activeToday = useMemo(
-    () =>
-      todayAppointments.filter(
-        a =>
-          a.status !== "cancelled_by_customer" &&
-          a.status !== "cancelled_by_barbershop" &&
-          a.status !== "no_show",
-      ).length,
-    [todayAppointments],
-  );
-
   const todayStats = useMemo(() => {
     let agendados = 0,
       concluidos = 0,
@@ -127,17 +116,16 @@ export function BarbershopDashboardMain() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <KpiCard
           label="Agendamentos hoje"
-          value={activeToday}
+          value={todayAppointments.length}
           icon={<CalendarDays className="h-4 w-4" />}
-          sub={`${todayAppointments.length} no total (incluindo cancelados)`}
         />
         <KpiCard
           label="Concluídos hoje"
           value={completedToday}
           icon={<CheckCircle2 className="h-4 w-4" />}
           sub={
-            activeToday > 0
-              ? `${Math.round((completedToday / activeToday) * 100)}% dos agendamentos`
+            todayAppointments.length > 0
+              ? `${Math.round((completedToday / todayAppointments.length) * 100)}% dos agendamentos`
               : undefined
           }
         />

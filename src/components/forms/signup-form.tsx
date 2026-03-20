@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { maskPhone } from "@/utils/masked-input-phone";
+import { Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Digite seu nome"),
@@ -46,6 +47,7 @@ const mensagens: Record<string, string> = {
 export function SignupForm() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -232,14 +234,25 @@ export function SignupForm() {
                         <FieldLabel htmlFor="signup-form-password">
                           Senha
                         </FieldLabel>
-                        <Input
-                          {...field}
-                          id="signup-form-password"
-                          type="password"
-                          aria-invalid={fieldState.invalid}
-                          placeholder="mínimo 6 caracteres"
-                          autoComplete="off"
-                        />
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            id="signup-form-password"
+                            type={showPassword ? "text" : "password"}
+                            aria-invalid={fieldState.invalid}
+                            placeholder="mínimo 6 caracteres"
+                            autoComplete="off"
+                            className="pr-9"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(v => !v)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            tabIndex={-1}
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
+                        </div>
                         {fieldState.invalid && (
                           <FieldError errors={[fieldState.error]} />
                         )}

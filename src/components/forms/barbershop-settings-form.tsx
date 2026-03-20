@@ -303,27 +303,6 @@ export function SettingsForm() {
             />
 
             <Controller
-              name="description"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="settings-description">
-                    Descrição
-                  </FieldLabel>
-                  <Textarea
-                    {...field}
-                    id="settings-description"
-                    placeholder="Fale sobre sua barbearia..."
-                    aria-invalid={fieldState.invalid}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-
-            <Controller
               name="slug"
               control={form.control}
               render={({ field, fieldState }) => (

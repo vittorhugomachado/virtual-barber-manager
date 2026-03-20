@@ -44,7 +44,10 @@ import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-coun
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  description: z.string().max(100, "Descrição deve ter no máximo 100 caracteres").optional(),
+  description: z
+    .string()
+    .max(100, "Descrição deve ter no máximo 100 caracteres")
+    .optional(),
   price: z.preprocess(
     val =>
       val === "" || val === undefined || val === null ? undefined : Number(val),
@@ -289,7 +292,9 @@ export function UpdateServiceModal({
                       <FieldLabel htmlFor="update-service-description">
                         Descrição
                       </FieldLabel>
-                      <span className={`text-xs ${(field.value?.length ?? 0) > 100 ? "text-destructive" : "text-muted-foreground"}`}>
+                      <span
+                        className={`text-xs ${(field.value?.length ?? 0) > 100 ? "text-destructive" : "text-muted-foreground"}`}
+                      >
                         {field.value?.length ?? 0}/100
                       </span>
                     </div>

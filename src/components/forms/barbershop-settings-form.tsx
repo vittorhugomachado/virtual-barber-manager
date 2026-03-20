@@ -21,13 +21,16 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { maskPhone } from "@/utils/masked-input-phone";
 
 const formSchema = z.object({
   name: z
     .string()
     .min(1, "Nome da barbearia é obrigatório")
     .max(30, "Nome deve ter no máximo 30 caracteres"),
-  phone: z.string().min(10, "Celular inválido"),
+  phone: z
+    .string()
+    .refine(v => v.replace(/\D/g, "").length === 11, "Celular inválido"),
   slug: z.string().optional(),
   description: z.string().optional(),
   ownerName: z.string().min(1, "Nome do proprietário é obrigatório"),
@@ -51,7 +54,7 @@ export function SettingsForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: barbershop?.name ?? "",
-      phone: barbershop?.phone ?? "",
+      phone: maskPhone(barbershop?.phone ?? ""),
       slug: barbershop?.slug ?? "",
       description: barbershop?.description ?? "",
       ownerName: barbershop?.owner_name ?? "",
@@ -63,7 +66,7 @@ export function SettingsForm() {
     if (barbershop) {
       form.reset({
         name: barbershop.name ?? "",
-        phone: barbershop.phone ?? "",
+        phone: maskPhone(barbershop.phone ?? ""),
         slug: barbershop.slug ?? "",
         description: barbershop.description ?? "",
         ownerName: barbershop.owner_name ?? "",
@@ -133,13 +136,15 @@ export function SettingsForm() {
   async function onSubmit(data: FormValues) {
     if (!barbershop?.id) return;
 
+    const rawPhone = data.phone.replace(/\D/g, "");
+
     const [barbershopResult, profileResult] = await Promise.all([
       supabase
         .from("barbershops")
         .update({
           name: data.name,
           slug: data.slug,
-          phone: data.phone,
+          phone: rawPhone,
           email: data.email,
           description: data.description,
           updated_at: new Date().toISOString(),
@@ -286,7 +291,9 @@ export function SettingsForm() {
                     {...field}
                     id="settings-phone"
                     placeholder="(00) 00000-0000"
+                    inputMode="numeric"
                     aria-invalid={fieldState.invalid}
+                    onChange={e => field.onChange(maskPhone(e.target.value))}
                   />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />

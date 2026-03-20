@@ -30,7 +30,7 @@ import type { Service } from "@/types/services";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  description: z.string().optional(),
+  description: z.string().max(100, "Descrição deve ter no máximo 100 caracteres").optional(),
   price: z.preprocess(
     val =>
       val === "" || val === undefined || val === null ? undefined : Number(val),
@@ -233,14 +233,20 @@ export function CreateServiceModal({
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="create-service-description">
-                      Descrição
-                    </FieldLabel>
+                    <div className="flex items-center justify-between">
+                      <FieldLabel htmlFor="create-service-description">
+                        Descrição
+                      </FieldLabel>
+                      <span className={`text-xs ${(field.value?.length ?? 0) > 100 ? "text-destructive" : "text-muted-foreground"}`}>
+                        {field.value?.length ?? 0}/100
+                      </span>
+                    </div>
                     <Textarea
                       {...field}
                       id="create-service-description"
                       placeholder="Descreva o serviço..."
                       aria-invalid={fieldState.invalid}
+                      maxLength={100}
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />

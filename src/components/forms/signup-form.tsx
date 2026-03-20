@@ -21,10 +21,13 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { maskPhone } from "@/utils/masked-input-phone";
 
 const formSchema = z.object({
   name: z.string().min(1, "Digite seu nome"),
-  phone: z.string().min(10, "Celular inválido"),
+  phone: z
+    .string()
+    .refine(v => v.replace(/\D/g, "").length === 11, "Celular inválido"),
   barbershopName: z
     .string()
     .min(1, "Digite o nome da barbearia")
@@ -59,9 +62,11 @@ export function SignupForm() {
     if (isLoading) return;
     setIsLoading(true);
 
+    const rawPhone = data.phone.replace(/\D/g, "");
+
     try {
       const { data: existingPhone } = await supabase.rpc("check_phone_exists", {
-        p_phone: data.phone,
+        p_phone: rawPhone,
       });
 
       if (existingPhone) {
@@ -93,7 +98,7 @@ export function SignupForm() {
       const { error: rpcError } = await supabase.rpc("register_barbershop", {
         p_user_id: userId,
         p_name: data.name,
-        p_phone: data.phone,
+        p_phone: rawPhone,
         p_barbershop_name: data.barbershopName,
         p_barbershop_slug:
           data.barbershopName.toLowerCase().replace(/\s+/g, "-") + userId,
@@ -190,6 +195,10 @@ export function SignupForm() {
                           id="signup-form-phone"
                           aria-invalid={fieldState.invalid}
                           placeholder="(00) 00000-0000"
+                          inputMode="numeric"
+                          onChange={e =>
+                            field.onChange(maskPhone(e.target.value))
+                          }
                         />
                         {fieldState.invalid && (
                           <FieldError errors={[fieldState.error]} />

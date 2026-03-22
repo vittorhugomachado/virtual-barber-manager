@@ -86,7 +86,7 @@ export function UpdateCustomerModal({
   useEffect(() => {
     if (!customer) return;
     Promise.resolve().then(() => {
-      form.reset({ name: customer.name, phone: customer.phone });
+      form.reset({ name: customer.name, phone: customer.phone ?? "" });
     });
   }, [customer, form]);
 

@@ -62,7 +62,7 @@ export function CustomerConflictModal({
             <span className="font-semibold">{customer.name}</span>
             <span className="text-sm text-muted-foreground inline-flex items-center gap-1">
               <Phone className="h-3.5 w-3.5 shrink-0" />
-              {maskPhone(customer.phone)}
+              {customer.phone ? maskPhone(customer.phone) : "Sem telefone"}
             </span>
           </div>
 

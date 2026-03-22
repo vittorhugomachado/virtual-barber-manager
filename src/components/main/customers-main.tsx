@@ -18,8 +18,13 @@ import { UpdateCustomerModal } from "@/components/modals/customers/update-custom
 import { Pencil } from "lucide-react";
 import type { Customer } from "@/types/customer";
 
-function formatPhone(phone: string) {
-  const digits = phone.replace(/\D/g, "").slice(0, 11);
+function getPhoneDigits(phone: string | null) {
+  return (phone ?? "").replace(/\D/g, "").slice(0, 11);
+}
+
+function formatPhone(phone: string | null) {
+  const digits = getPhoneDigits(phone);
+  if (!digits) return "Sem telefone";
   if (digits.length <= 10) {
     return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3");
   }
@@ -39,7 +44,7 @@ export function CustomersMain() {
       customers.filter(
         c =>
           c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.phone.includes(search),
+          (c.phone ?? "").includes(search),
       ),
     [customers, search],
   );
@@ -101,61 +106,79 @@ export function CustomersMain() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(customer => (
-                <TableRow key={customer.id}>
-                  <TableCell className="md:pl-6 max-w-0">
-                    <div className="flex flex-col md:flex-row md:items-center md:gap-3 min-w-0">
-                      <span className="font-medium truncate block">
-                        {customer.name}
-                      </span>
-                      <span className="text-sm text-muted-foreground inline-flex items-center gap-1 md:hidden min-w-0">
-                        <Phone className="h-3.5 w-3.5 shrink-0" />
+              {filtered.map(customer => {
+                const phoneDigits = getPhoneDigits(customer.phone);
+                const hasPhone = phoneDigits.length > 0;
+
+                return (
+                  <TableRow key={customer.id}>
+                    <TableCell className="md:pl-6 max-w-0">
+                      <div className="flex flex-col md:flex-row md:items-center md:gap-3 min-w-0">
+                        <span className="font-medium truncate block">
+                          {customer.name}
+                        </span>
+                        <span className="text-sm text-muted-foreground inline-flex items-center gap-1 md:hidden min-w-0">
+                          <Phone className="h-3.5 w-3.5 shrink-0" />
+                          {hasPhone ? (
+                            <a
+                              href={`https://wa.me/55${phoneDigits}`}
+                              className="truncate"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {formatPhone(customer.phone)}
+                            </a>
+                          ) : (
+                            <span className="truncate">
+                              {formatPhone(customer.phone)}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      {hasPhone ? (
                         <a
-                          href={`https://wa.me/55${customer.phone.replace(/\D/g, "")}`}
-                          className="truncate"
+                          className="inline-flex items-center gap-1 cursor-pointer"
+                          href={`https://wa.me/55${phoneDigits}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >
+                          <Phone className="h-3.5 w-3.5 shrink-0" />
                           {formatPhone(customer.phone)}
                         </a>
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    <a
-                      className="inline-flex items-center gap-1 cursor-pointer"
-                      href={`https://wa.me/55${customer.phone.replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Phone className="h-3.5 w-3.5 shrink-0" />
-                      {formatPhone(customer.phone)}
-                    </a>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="cursor-pointer"
-                        onClick={() => setEditCustomer(customer)}
-                      >
-                        <Pencil className="h-3.5 w-3.5 lg:mr-2" />
-                        <span className="hidden lg:inline">Editar</span>
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="cursor-pointer"
-                        onClick={() => setSelectedCustomer(customer)}
-                      >
-                        <CalendarDays className="h-3.5 w-3.5 lg:mr-2" />
-                        <span className="hidden lg:inline">Histórico</span>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      ) : (
+                        <span className="inline-flex items-center gap-1">
+                          <Phone className="h-3.5 w-3.5 shrink-0" />
+                          {formatPhone(customer.phone)}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="cursor-pointer"
+                          onClick={() => setEditCustomer(customer)}
+                        >
+                          <Pencil className="h-3.5 w-3.5 lg:mr-2" />
+                          <span className="hidden lg:inline">Editar</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="cursor-pointer"
+                          onClick={() => setSelectedCustomer(customer)}
+                        >
+                          <CalendarDays className="h-3.5 w-3.5 lg:mr-2" />
+                          <span className="hidden lg:inline">Histórico</span>
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

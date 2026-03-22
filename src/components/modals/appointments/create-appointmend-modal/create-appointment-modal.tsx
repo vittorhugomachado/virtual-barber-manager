@@ -3,7 +3,10 @@ import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
 import { useServices } from "@/hooks/use-service";
 import { useBarbershopStore } from "@/store/barbershop.store";
-import type { SelectedCustomer, ServiceSelection } from "@/types/create-appointment";
+import type {
+  SelectedCustomer,
+  ServiceSelection,
+} from "@/types/create-appointment";
 import { Step1Customer } from "./components/step-1";
 import { Step2Service } from "./components/step-2";
 import { Step3Date } from "./components/step-3";
@@ -63,12 +66,7 @@ export function CreateAppointmentModal({
   }, [open]);
 
   async function handleConfirm() {
-    if (
-      !customer ||
-      serviceSelections.length === 0 ||
-      !date ||
-      !barbershop
-    )
+    if (!customer || serviceSelections.length === 0 || !date || !barbershop)
       return;
 
     setSubmitting(true);
@@ -79,9 +77,7 @@ export function CreateAppointmentModal({
         const service = services.find(s => s.id === sel.serviceId);
         const durationMin = service?.duration_min ?? 30;
         const startsAt = new Date(`${date}T${sel.time}:00Z`);
-        const endsAt = new Date(
-          startsAt.getTime() + durationMin * 60 * 1000,
-        );
+        const endsAt = new Date(startsAt.getTime() + durationMin * 60 * 1000);
         return {
           barbershop_id: barbershop.id,
           customer_id: customer.id,
@@ -93,7 +89,9 @@ export function CreateAppointmentModal({
         };
       });
 
-      const { error: err } = await supabase.from("appointments").insert(inserts);
+      const { error: err } = await supabase
+        .from("appointments")
+        .insert(inserts);
       if (err) throw err;
 
       onSuccess?.();
@@ -178,20 +176,17 @@ export function CreateAppointmentModal({
               />
             )}
 
-          {showConfirm &&
-            customer &&
-            serviceSelections.length > 0 &&
-            date && (
-              <ConfirmStep
-                customer={customer}
-                serviceSelections={serviceSelections}
-                date={date}
-                onConfirm={handleConfirm}
-                onClose={handleClose}
-                submitting={submitting}
-                error={submitError}
-              />
-            )}
+          {showConfirm && customer && serviceSelections.length > 0 && date && (
+            <ConfirmStep
+              customer={customer}
+              serviceSelections={serviceSelections}
+              date={date}
+              onConfirm={handleConfirm}
+              onClose={handleClose}
+              submitting={submitting}
+              error={submitError}
+            />
+          )}
         </div>
       </div>
     </div>

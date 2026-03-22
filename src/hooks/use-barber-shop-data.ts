@@ -7,7 +7,9 @@ export function useBarbershopData() {
   const { session, loading: authLoading } = useAuth();
   const { setBarbershopWithRole, clearBarbershop } = useBarbershopStore();
   // undefined = not yet initialized, null = no user, string = loaded for that userId
-  const [loadedForId, setLoadedForId] = useState<string | null | undefined>(undefined);
+  const [loadedForId, setLoadedForId] = useState<string | null | undefined>(
+    undefined,
+  );
 
   const userId = session?.user.id ?? null;
   const loading = authLoading || (userId !== null && loadedForId !== userId);
@@ -92,7 +94,13 @@ export function useBarbershopData() {
     return () => {
       cancelled = true;
     };
-  }, [userId, authLoading, setBarbershopWithRole, clearBarbershop, loadedForId]);
+  }, [
+    userId,
+    authLoading,
+    setBarbershopWithRole,
+    clearBarbershop,
+    loadedForId,
+  ]);
 
   return { barbershop: useBarbershopStore(s => s.barbershop), loading };
 }

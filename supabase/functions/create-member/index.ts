@@ -2,11 +2,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-Deno.serve(async (req) => {
+Deno.serve(async req => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -15,10 +16,13 @@ Deno.serve(async (req) => {
     const { username, password, role, barbershop_id } = await req.json();
 
     if (!username || !password || !role || !barbershop_id) {
-      return new Response(JSON.stringify({ error: "Campos obrigatórios ausentes." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "Campos obrigatórios ausentes." }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const normalizedUsername = username.trim().toLowerCase();
@@ -37,7 +41,7 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
     const {
@@ -46,10 +50,13 @@ Deno.serve(async (req) => {
     } = await adminClient.auth.getUser(token);
 
     if (authError || !user) {
-      return new Response(JSON.stringify({ error: authError?.message ?? "Não autorizado." }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: authError?.message ?? "Não autorizado." }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const { data: barbershop, error: shopError } = await adminClient
@@ -60,10 +67,15 @@ Deno.serve(async (req) => {
       .single();
 
     if (shopError || !barbershop) {
-      return new Response(JSON.stringify({ error: "Apenas o proprietário pode adicionar membros." }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: "Apenas o proprietário pode adicionar membros.",
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const { data: existing, error: existingError } = await adminClient
@@ -81,33 +93,42 @@ Deno.serve(async (req) => {
     }
 
     if (existing) {
-      return new Response(JSON.stringify({ error: "Este nome de usuário já está em uso nessa barbearia." }), {
-        status: 409,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: "Este nome de usuário já está em uso nessa barbearia.",
+        }),
+        {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const internalEmail = `${normalizedUsername}@${barbershop_id}.member`;
 
-    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-      email: internalEmail,
-      password,
-      email_confirm: true,
-    });
+    const { data: newUser, error: createError } =
+      await adminClient.auth.admin.createUser({
+        email: internalEmail,
+        password,
+        email_confirm: true,
+      });
 
     if (createError || !newUser?.user) {
-      return new Response(JSON.stringify({ error: createError?.message ?? "Erro ao criar usuário." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: createError?.message ?? "Erro ao criar usuário.",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
-    const { error: profileError } = await adminClient
-      .from("profiles")
-      .upsert({
-        id: newUser.user.id,
-        role: "barbershop",
-      });
+    const { error: profileError } = await adminClient.from("profiles").upsert({
+      id: newUser.user.id,
+      role: "barbershop",
+    });
 
     if (profileError) {
       await adminClient.auth.admin.deleteUser(newUser.user.id);
@@ -139,11 +160,14 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({
-      error: err instanceof Error ? err.message : "Erro interno.",
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: err instanceof Error ? err.message : "Erro interno.",
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });

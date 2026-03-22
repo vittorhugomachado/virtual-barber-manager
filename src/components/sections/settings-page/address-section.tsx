@@ -24,9 +24,33 @@ import {
 } from "@/components/ui/field";
 
 const BRAZIL_STATES = [
-  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
-  "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
-  "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+  "AC",
+  "AL",
+  "AP",
+  "AM",
+  "BA",
+  "CE",
+  "DF",
+  "ES",
+  "GO",
+  "MA",
+  "MT",
+  "MS",
+  "MG",
+  "PA",
+  "PB",
+  "PR",
+  "PE",
+  "PI",
+  "RJ",
+  "RN",
+  "RS",
+  "RO",
+  "RR",
+  "SC",
+  "SP",
+  "SE",
+  "TO",
 ];
 
 function maskCep(value: string) {
@@ -75,13 +99,14 @@ export function AddressSection() {
   const watched = useWatch({ control: form.control });
 
   useEffect(() => {
-    const { street, number, neighborhood } = watched;
+    const { street, number, neighborhood, city, state } = watched;
     if (!street || !number) {
       return;
     }
-    const query = neighborhood
-      ? `${street}, ${number} - ${neighborhood}`
-      : `${street}, ${number}`;
+    const query =
+      neighborhood && city && state
+        ? `${street}, ${number}, ${neighborhood}, ${city}, ${state}`
+        : `${street}, ${number}`;
 
     const timer = setTimeout(() => {
       setMapEmbedUrl(
@@ -117,7 +142,7 @@ export function AddressSection() {
 
           // Build initial map URL from saved address
           const query = data.neighborhood
-            ? `${data.street}, ${data.number} - ${data.neighborhood}`
+            ? `${data.street}, ${data.number}, ${data.neighborhood}, ${data.city}, ${data.state}`
             : `${data.street}, ${data.number}`;
           if (query) {
             setMapEmbedUrl(
@@ -240,9 +265,7 @@ export function AddressSection() {
                         placeholder="00000-000"
                         inputMode="numeric"
                         aria-invalid={fieldState.invalid}
-                        onChange={e =>
-                          field.onChange(maskCep(e.target.value))
-                        }
+                        onChange={e => field.onChange(maskCep(e.target.value))}
                         onBlur={e => {
                           field.onBlur();
                           handleCepBlur(e.target.value);
@@ -418,7 +441,10 @@ export function AddressSection() {
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <MapPin className="h-3.5 w-3.5" />
-                  <span>Preview do mapa — verifique se o local está correto antes de salvar</span>
+                  <span>
+                    Preview do mapa — verifique se o local está correto antes de
+                    salvar
+                  </span>
                 </div>
                 <div className="overflow-hidden rounded-lg border border-border h-56">
                   <iframe

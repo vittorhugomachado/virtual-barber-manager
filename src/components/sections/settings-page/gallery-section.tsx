@@ -98,11 +98,12 @@ export function GallerySection() {
     setDeletingId(image.id);
 
     // Extract storage path from public URL
-    const url = new URL(image.url);
-    const storagePath = url.pathname.split("/object/public/gallery/")[1];
+    const storagePath = image.url.split("/object/public/gallery/")[1];
 
     if (storagePath) {
-      await supabase.storage.from("gallery").remove([storagePath]);
+      await supabase.storage
+        .from("gallery")
+        .remove([decodeURIComponent(storagePath)]);
     }
 
     const { error } = await supabase

@@ -64,13 +64,18 @@ export function UsersSection() {
   });
 
   useEffect(() => {
-    if (!barbershop) return;
+    if (!barbershop?.id) return;
+    const controller = new AbortController();
+
     supabase
       .rpc("get_barbershop_members", { p_barbershop_id: barbershop.id })
+      .abortSignal(controller.signal)
       .then(({ data, error }) => {
         setMembers(!error && data ? (data as Member[]) : []);
       });
-  }, [barbershop, fetchKey]);
+
+    return () => controller.abort();
+  }, [barbershop?.id, fetchKey]);
 
   async function onSubmit(values: FormValues) {
     if (!barbershop) return;

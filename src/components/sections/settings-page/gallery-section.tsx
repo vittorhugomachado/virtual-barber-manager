@@ -22,16 +22,20 @@ export function GallerySection() {
 
   useEffect(() => {
     if (!barbershop?.id) return;
+    const controller = new AbortController();
 
     supabase
       .from("barbershop_gallery")
       .select("id, url, order")
       .eq("barbershop_id", barbershop.id)
       .order("order", { ascending: true })
+      .abortSignal(controller.signal)
       .then(({ data, error }) => {
         if (!error && data) setImages(data);
         setLoading(false);
       });
+
+    return () => controller.abort();
   }, [barbershop?.id]);
 
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {

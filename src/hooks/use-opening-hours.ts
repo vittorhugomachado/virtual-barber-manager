@@ -10,16 +10,20 @@ export function useOpeningHours() {
 
   useEffect(() => {
     if (!barbershop?.id) return;
+    const controller = new AbortController();
 
     supabase
       .from("opening_hours")
       .select("*")
       .eq("barbershop_id", barbershop.id)
       .order("day_of_week")
+      .abortSignal(controller.signal)
       .then(({ data }) => {
         if (data) setOpeningHours(data);
         setLoading(false);
       });
+
+    return () => controller.abort();
   }, [barbershop?.id]);
 
   return { openingHours, setOpeningHours, loading };

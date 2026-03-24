@@ -157,8 +157,8 @@ export function UsersSection() {
   }
 
   return (
-    <div className="w-full max-w-180 mx-16 mt-2 mb-8 flex flex-col gap-4">
-      <div>
+    <div className="w-full max-w-180 mx-16 mt-2 mb-8 px-3 flex flex-col gap-4">
+      <div className="px-3">
         <h2 className="text-xl font-semibold">Usuários</h2>
         <p className="text-sm text-muted-foreground">
           Gerencie quem tem acesso ao painel da sua barbearia.

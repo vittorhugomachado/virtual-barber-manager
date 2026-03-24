@@ -218,8 +218,8 @@ export function OpeningHoursSection() {
   const isDirty = JSON.stringify(days) !== JSON.stringify(initialDays);
 
   return (
-    <section className="w-full max-w-180 px-6 md:px-16 mx-auto flex flex-col gap-6 mb-18">
-      <div className="flex flex-col gap-1">
+    <section className="w-full max-w-180 px-3 md:px-16 mx-auto flex flex-col gap-6 mb-18">
+      <div className="flex flex-col gap-1 px-3">
         <div className="flex flex-col w-fit mt-3">
           <h2 className="font-semibold text-2xl">Horário de funcionamento</h2>
           <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
@@ -361,7 +361,7 @@ export function OpeningHoursSection() {
       <Button
         onClick={handleSave}
         disabled={saving || !isDirty}
-        className="self-end cursor-pointer rounded-full"
+        className="self-end cursor-pointer rounded-full mx-auto"
       >
         {saving ? (
           <>

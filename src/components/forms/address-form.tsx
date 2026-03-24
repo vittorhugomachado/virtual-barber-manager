@@ -250,7 +250,7 @@ export function AddressForm() {
             Carregando...
           </CardContent>
         ) : (
-          <CardContent className="flex flex-col gap-6">
+          <CardContent className=" px-3 flex flex-col gap-6">
             <FieldGroup>
               {/* CEP + Estado */}
               <div className="flex gap-3">

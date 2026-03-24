@@ -138,7 +138,7 @@ export function GallerySection() {
           </div>
         </CardHeader>
 
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex px-3 flex-col gap-4">
           {loading ? (
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Loader2 className="h-4 w-4 animate-spin" />

@@ -328,7 +328,7 @@ export function BarbershopSettingsForm() {
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="settings-slug">Site</FieldLabel>
                   <div className="flex flex-wrap gap-2">
-                    <div className="relative min-w-[250px] flex-1">
+                    <div className="relative min-w-62.5 flex-1">
                       <span className="h-full w-37 flex items-center pl-3 rounded-l-lg absolute text-muted-foreground text-sm pointer-events-none">
                         {DOMAIN}
                       </span>

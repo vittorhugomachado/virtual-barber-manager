@@ -65,16 +65,18 @@ export function UsersSection() {
 
   useEffect(() => {
     if (!barbershop?.id) return;
-    const controller = new AbortController();
+    let mounted = true;
 
     supabase
       .rpc("get_barbershop_members", { p_barbershop_id: barbershop.id })
-      .abortSignal(controller.signal)
       .then(({ data, error }) => {
+        if (!mounted) return;
         setMembers(!error && data ? (data as Member[]) : []);
       });
 
-    return () => controller.abort();
+    return () => {
+      mounted = false;
+    };
   }, [barbershop?.id, fetchKey]);
 
   async function onSubmit(values: FormValues) {

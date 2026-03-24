@@ -119,15 +119,15 @@ export function AddressSection() {
 
   useEffect(() => {
     if (!barbershop?.id) return;
-    const controller = new AbortController();
+    let mounted = true;
 
     supabase
       .from("addresses")
       .select("*")
       .eq("barbershop_id", barbershop.id)
       .maybeSingle()
-      .abortSignal(controller.signal)
       .then(({ data }) => {
+        if (!mounted) return;
         if (data) {
           setAddressId(data.id);
           const values = {
@@ -155,7 +155,9 @@ export function AddressSection() {
         setLoading(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      mounted = false;
+    };
   }, [barbershop?.id, form]);
 
   async function handleCepBlur(cep: string) {

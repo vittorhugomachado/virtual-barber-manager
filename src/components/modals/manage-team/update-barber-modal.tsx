@@ -32,8 +32,8 @@ import {
   useBarberAvailability,
   saveBarberAvailability,
 } from "@/hooks/use-barber-availability";
-import { AvailabilitySection } from "@/components/sections/manage-team/availability-section";
-import { validateAvailability } from "@/components/sections/manage-team/availability-section.constants";
+import { AvailabilitySection } from "@/components/modals/manage-team/availability-section";
+import { validateAvailability } from "@/utils/validate-availability.constants";
 import type { Barber } from "@/types/barber";
 import {
   AlertDialog,

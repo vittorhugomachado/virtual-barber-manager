@@ -21,6 +21,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { maskPhone } from "@/utils/masked-input-phone";
+import { Copy } from "lucide-react";
 
 const formSchema = z.object({
   name: z
@@ -38,7 +39,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function SettingsForm() {
+export function BarbershopSettingsForm() {
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageUrl, setCropperImageUrl] = useState("");
   const [cropperType, setCropperType] = useState<"logo" | "banner">("logo");
@@ -48,6 +49,8 @@ export function SettingsForm() {
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const DOMAIN = import.meta.env.VITE_DOMAIN;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -206,6 +209,23 @@ export function SettingsForm() {
     toast.success("Alterações salvas!");
   }
 
+  async function handleCopySite() {
+    const slug = form.getValues("slug")?.trim();
+
+    if (!slug) {
+      form.setError("slug", { message: "Digite um slug para copiar o site" });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${DOMAIN}${slug}`);
+      toast.success("Link do site copiado!");
+    } catch (error) {
+      console.error("Erro ao copiar site:", error);
+      toast.error("Não foi possível copiar o link");
+    }
+  }
+
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
@@ -307,23 +327,35 @@ export function SettingsForm() {
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor="settings-slug">Site</FieldLabel>
-                  <div className="relative">
-                    <span className="h-full w-37 flex items-center pl-3 border border-zinc-600 border-r-0 rounded-l-lg absolute bg-zinc-900 text-muted-foreground text-sm pointer-events-none">
-                      virtualbarber.com.br/
-                    </span>
-                    <Input
-                      {...field}
-                      id="settings-slug"
-                      placeholder="nome-da-barbearia"
-                      className="pl-38"
-                      aria-invalid={fieldState.invalid}
-                      onChange={e => {
-                        const value = e.target.value
-                          .toLowerCase()
-                          .replace(/[^a-z0-9-]/g, "");
-                        field.onChange(value);
-                      }}
-                    />
+                  <div className="flex flex-wrap gap-2">
+                    <div className="relative min-w-[250px] flex-1">
+                      <span className="h-full w-37 flex items-center pl-3 rounded-l-lg absolute text-muted-foreground text-sm pointer-events-none">
+                        {DOMAIN}
+                      </span>
+                      <Input
+                        {...field}
+                        id="settings-slug"
+                        placeholder="nome-da-barbearia"
+                        className="pl-36"
+                        aria-invalid={fieldState.invalid}
+                        onChange={e => {
+                          const value = e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9-]/g, "");
+                          field.onChange(value);
+                        }}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0"
+                      onClick={handleCopySite}
+                      style={{ fontSize: "13px" }}
+                    >
+                      <Copy className="h-3 w-3" />
+                      <span className="hidden md:block">Copiar</span>
+                    </Button>
                   </div>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />

@@ -74,7 +74,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function AddressSection() {
+export function AddressForm() {
   const { barbershop } = useBarbershopStore();
   const [loading, setLoading] = useState(true);
   const [addressId, setAddressId] = useState<string | null>(null);

@@ -17,7 +17,7 @@ import {
   DAY_LABELS,
   TIME_OPTIONS,
   errorKey,
-} from "./availability-section.constants";
+} from "../../../utils/validate-availability.constants";
 
 interface AvailabilitySectionProps {
   availability: DayAvailability[];

@@ -47,6 +47,8 @@ export function LoginForm() {
   const [showOwnerPassword, setShowOwnerPassword] = useState(false);
   const [showMemberPassword, setShowMemberPassword] = useState(false);
 
+  const DOMAIN = import.meta.env.VITE_DOMAIN;
+
   const ownerForm = useForm<z.infer<typeof ownerSchema>>({
     resolver: zodResolver(ownerSchema),
     defaultValues: { email: "", password: "" },
@@ -250,7 +252,7 @@ export function LoginForm() {
                           <div className="relative">
                             {/* prefixo dentro do input */}
                             <span className="h-full w-37 flex items-center pl-3 border border-zinc-600 border-r-0 rounded-l-lg absolute bg-zinc-900 text-muted-foreground text-sm pointer-events-none">
-                              virtualbarber.com.br/
+                              {DOMAIN}
                             </span>
 
                             <Input

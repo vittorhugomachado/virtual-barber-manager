@@ -152,7 +152,7 @@ export function ManageTeamMain() {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="w-full cursor-pointer"
+                  className="w-full cursor-pointer rounded-full"
                   onClick={() => setEditBarber(barber)}
                 >
                   <Pencil className="h-3.5 w-3.5 mr-2" />
@@ -188,7 +188,7 @@ export function ManageTeamMain() {
               </span>
               <Button
                 onClick={() => setPlansOpen(true)}
-                className="opacity-100"
+                className="opacity-100 rounded-full"
               >
                 Conhecer planos
               </Button>

@@ -164,7 +164,7 @@ export function ServicesMain() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="w-full cursor-pointer mt-3"
+                    className="w-full cursor-pointer mt-3 rounded-full"
                     onClick={() => setEditService(service)}
                   >
                     <Pencil className="h-3.5 w-3.5 mr-2" />
@@ -200,7 +200,10 @@ export function ServicesMain() {
               <span className="text-sm opacity-50 text-muted-foreground font-medium text-center">
                 Faça upgrade para adicionar mais serviços
               </span>
-              <Button onClick={() => setPlansOpen(true)}>
+              <Button
+                onClick={() => setPlansOpen(true)}
+                className="rounded-full"
+              >
                 Conhecer planos
               </Button>
             </CardContent>

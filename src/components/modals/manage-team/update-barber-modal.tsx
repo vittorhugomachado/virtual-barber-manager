@@ -74,6 +74,7 @@ export function UpdateBarberModal({
   const { services } = useBarbershopServices();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [removeAvatar, setRemoveAvatar] = useState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageUrl, setCropperImageUrl] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -109,6 +110,7 @@ export function UpdateBarberModal({
         });
         setAvatarPreview(barber.avatar_url);
         setAvatarFile(null);
+        setRemoveAvatar(false);
       });
   }, [barber, form]);
 
@@ -136,6 +138,24 @@ export function UpdateBarberModal({
     }
 
     let avatarUrl = barber.avatar_url;
+
+    if (removeAvatar && barber.avatar_url) {
+      const folder = `${barbershop.owner_id}/barbers/`;
+      const { data: files } = await supabase.storage
+        .from("barbershop-assets")
+        .list(folder);
+      const matches = files?.filter(f => f.name.startsWith(barber.id)) ?? [];
+      if (matches.length > 0) {
+        await supabase.storage
+          .from("barbershop-assets")
+          .remove(matches.map(f => `${folder}${f.name}`));
+      }
+      avatarUrl = null;
+      await supabase
+        .from("barbers")
+        .update({ avatar_url: null })
+        .eq("id", barber.id);
+    }
 
     if (avatarFile) {
       const fileExt = avatarFile.name.split(".").pop();
@@ -238,6 +258,21 @@ export function UpdateBarberModal({
                 >
                   Alterar foto
                 </Button>
+                {avatarPreview && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full text-destructive hover:text-destructive"
+                    onClick={() => {
+                      setAvatarPreview(null);
+                      setAvatarFile(null);
+                      setRemoveAvatar(true);
+                    }}
+                  >
+                    Remover foto
+                  </Button>
+                )}
                 <input
                   id="update-barber-avatar"
                   type="file"

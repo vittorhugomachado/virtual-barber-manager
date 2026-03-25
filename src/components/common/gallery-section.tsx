@@ -1,5 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ImagePlus,
+  Loader2,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
@@ -128,6 +135,30 @@ export function GallerySection() {
     setDeletingId(null);
   }
 
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const openLightbox = useCallback((i: number) => setLightboxIndex(i), []);
+
+  useEffect(() => {
+    if (lightboxIndex === null) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightboxIndex(null);
+      if (e.key === "ArrowLeft")
+        setLightboxIndex(i => (i! > 0 ? i! - 1 : images.length - 1));
+      if (e.key === "ArrowRight")
+        setLightboxIndex(i => (i! < images.length - 1 ? i! + 1 : 0));
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [lightboxIndex, images.length]);
+
+  useEffect(() => {
+    document.body.style.overflow = lightboxIndex !== null ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [lightboxIndex]);
+
   return (
     <div className="w-full max-w-180 md:px-16 flex flex-col gap-6 mb-6">
       <Card className="bg-transparent border-none">
@@ -215,6 +246,240 @@ export function GallerySection() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Pré-visualização ── */}
+      {images.length > 0 && (
+        <Card className="bg-transparent border-none">
+          <CardHeader className="mt-3">
+            <div className="flex flex-col w-fit">
+              <CardTitle className="font-semibold text-2xl">
+                Pré-visualização
+              </CardTitle>
+              <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Como vai aparecer no seu site
+            </p>
+          </CardHeader>
+          <CardContent className="px-3">
+            <div className="h-72 sm:h-96 rounded-2xl overflow-hidden">
+              {images.length === 1 && (
+                <div
+                  className="group relative h-full cursor-pointer overflow-hidden rounded-2xl"
+                  onClick={() => openLightbox(0)}
+                >
+                  <img
+                    src={images[0].url}
+                    alt="preview 1"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                </div>
+              )}
+
+              {images.length === 2 && (
+                <div className="grid h-full grid-cols-2 gap-2">
+                  {images.map((img, i) => (
+                    <div
+                      key={img.id}
+                      className={`group relative cursor-pointer overflow-hidden ${i === 0 ? "rounded-l-2xl" : "rounded-r-2xl"}`}
+                      onClick={() => openLightbox(i)}
+                    >
+                      <img
+                        src={img.url}
+                        alt={`preview ${i + 1}`}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {images.length === 3 && (
+                <div className="grid h-full grid-cols-[2fr_1fr] gap-2">
+                  <div
+                    className="group relative cursor-pointer overflow-hidden rounded-l-2xl"
+                    onClick={() => openLightbox(0)}
+                  >
+                    <img
+                      src={images[0].url}
+                      alt="preview 1"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {[1, 2].map(i => (
+                      <div
+                        key={images[i].id}
+                        className={`group relative h-1/2 cursor-pointer overflow-hidden ${i === 1 ? "rounded-tr-2xl" : "rounded-br-2xl"}`}
+                        onClick={() => openLightbox(i)}
+                      >
+                        <img
+                          src={images[i].url}
+                          alt={`preview ${i + 1}`}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {images.length === 4 && (
+                <div className="grid h-full grid-cols-[2fr_1fr] gap-2">
+                  <div
+                    className="group relative cursor-pointer overflow-hidden rounded-l-2xl"
+                    onClick={() => openLightbox(0)}
+                  >
+                    <img
+                      src={images[0].url}
+                      alt="preview 1"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {[1, 2, 3].map((i, idx) => (
+                      <div
+                        key={images[i].id}
+                        className={`group relative cursor-pointer overflow-hidden ${idx === 0 ? "rounded-tr-2xl" : idx === 2 ? "rounded-br-2xl" : ""}`}
+                        style={{ height: "33.33%" }}
+                        onClick={() => openLightbox(i)}
+                      >
+                        <img
+                          src={images[i].url}
+                          alt={`preview ${i + 1}`}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {images.length >= 5 && (
+                <div className="grid h-full grid-cols-[2fr_1fr_1fr] gap-2">
+                  <div
+                    className="group relative cursor-pointer overflow-hidden rounded-l-2xl"
+                    onClick={() => openLightbox(0)}
+                  >
+                    <img
+                      src={images[0].url}
+                      alt="preview 1"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {[1, 2].map(i => (
+                      <div
+                        key={images[i].id}
+                        className="group relative h-1/2 cursor-pointer overflow-hidden"
+                        onClick={() => openLightbox(i)}
+                      >
+                        <img
+                          src={images[i].url}
+                          alt={`preview ${i + 1}`}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div
+                      className="group relative h-1/2 cursor-pointer overflow-hidden rounded-tr-2xl"
+                      onClick={() => openLightbox(3)}
+                    >
+                      <img
+                        src={images[3].url}
+                        alt="preview 4"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                    </div>
+                    <div
+                      className="group relative h-1/2 cursor-pointer overflow-hidden rounded-br-2xl"
+                      onClick={() => openLightbox(4)}
+                    >
+                      <img
+                        src={images[4].url}
+                        alt="preview 5"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                      {images.length > 5 && (
+                        <div className="absolute inset-0 flex items-end justify-end bg-black/30 p-3">
+                          <span className="rounded-md border border-neutral-300 bg-white/90 px-3 py-1.5 text-sm font-medium text-neutral-900 shadow-sm">
+                            Ver todas as fotos
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── Lightbox ── */}
+      {lightboxIndex !== null && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/95"
+          onClick={() => setLightboxIndex(null)}
+        >
+          <div
+            className="flex h-14 shrink-0 items-center justify-between px-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <span className="text-sm text-white/60">
+              {lightboxIndex + 1} / {images.length}
+            </span>
+            <button
+              onClick={() => setLightboxIndex(null)}
+              className="rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <X size={22} />
+            </button>
+          </div>
+          <div
+            className="relative flex flex-1 items-center justify-center"
+            onClick={e => e.stopPropagation()}
+          >
+            <img
+              src={images[lightboxIndex].url}
+              alt={`preview ${lightboxIndex + 1}`}
+              className="max-h-[80vh] max-w-full object-contain px-16"
+            />
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={() =>
+                    setLightboxIndex(i => (i! > 0 ? i! - 1 : images.length - 1))
+                  }
+                  className="absolute left-2 rounded-full border border-white/20 bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <button
+                  onClick={() =>
+                    setLightboxIndex(i => (i! < images.length - 1 ? i! + 1 : 0))
+                  }
+                  className="absolute right-2 rounded-full border border-white/20 bg-white/10 p-2 text-white hover:bg-white/20"
+                >
+                  <ChevronRight size={20} />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

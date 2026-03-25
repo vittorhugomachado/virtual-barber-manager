@@ -129,11 +129,11 @@ export function LoginForm() {
         </CardHeader>
         <CardContent>
           {/* Toggle de modo */}
-          <div className="flex gap-1 mb-6 p-1 bg-muted rounded-lg w-fit">
+          <div className="flex gap-1 mb-6 p-1 bg-muted rounded-full w-fit">
             <button
               type="button"
               onClick={() => setMode("owner")}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
                 mode === "owner"
                   ? "bg-background shadow-sm text-foreground"
                   : "text-muted-foreground hover:text-foreground"
@@ -144,7 +144,7 @@ export function LoginForm() {
             <button
               type="button"
               onClick={() => setMode("member")}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer ${
                 mode === "member"
                   ? "bg-background shadow-sm text-foreground"
                   : "text-muted-foreground hover:text-foreground"
@@ -222,12 +222,16 @@ export function LoginForm() {
                   type="submit"
                   form="login-form-owner"
                   disabled={isLoading}
-                  className="w-full max-w-36"
+                  className="w-full max-w-36 rounded-full"
                 >
-                  {isLoading ? "Entrando..." : "Login"}
+                  {isLoading ? "Entrando..." : "Entrar"}
                 </Button>
 
-                <Button variant="link" onClick={() => navigate("/cadastro")}>
+                <Button
+                  variant="link"
+                  onClick={() => navigate("/cadastro")}
+                  className="rounded-full"
+                >
                   Criar conta
                 </Button>
               </CardFooter>
@@ -251,7 +255,7 @@ export function LoginForm() {
 
                           <div className="relative">
                             {/* prefixo dentro do input */}
-                            <span className="h-full w-37 flex items-center pl-3 border border-zinc-600 border-r-0 rounded-l-lg absolute bg-zinc-900 text-muted-foreground text-sm pointer-events-none">
+                            <span className="h-full w-37 flex items-center pl-3 rounded-l-lg absolute text-muted-foreground text-sm pointer-events-none">
                               {DOMAIN}
                             </span>
 
@@ -259,7 +263,7 @@ export function LoginForm() {
                               {...field}
                               id="login-slug"
                               placeholder="nome-da-barbearia"
-                              className="pl-38" // espaço pro prefixo
+                              className="pl-36" // espaço pro prefixo
                               aria-invalid={fieldState.invalid}
                               onChange={e => {
                                 // opcional: normalizar slug

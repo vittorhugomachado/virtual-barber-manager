@@ -159,7 +159,7 @@ export function CustomersMain() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="cursor-pointer"
+                          className="cursor-pointer rounded-full"
                           onClick={() => setEditCustomer(customer)}
                         >
                           <Pencil className="h-3.5 w-3.5 lg:mr-2" />
@@ -168,7 +168,7 @@ export function CustomersMain() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="cursor-pointer"
+                          className="cursor-pointer rounded-full"
                           onClick={() => setSelectedCustomer(customer)}
                         >
                           <CalendarDays className="h-3.5 w-3.5 lg:mr-2" />

@@ -72,7 +72,7 @@ export function SignupForm() {
       });
 
       if (existingPhone) {
-        toast.error("Este celular já está cadastrado");
+        form.setError("phone", { message: "Este celular já está cadastrado" });
         return;
       }
 
@@ -82,16 +82,20 @@ export function SignupForm() {
       });
 
       if (authError) {
-        const mensagem =
-          Object.entries(mensagens).find(([key]) =>
-            authError.message.includes(key),
-          )?.[1] ?? "Erro ao criar conta";
-        toast.error(mensagem);
+        if (authError.message.includes("User already registered")) {
+          form.setError("email", { message: "Este email já está cadastrado" });
+        } else {
+          const mensagem =
+            Object.entries(mensagens).find(([key]) =>
+              authError.message.includes(key),
+            )?.[1] ?? "Erro ao criar conta";
+          toast.error(mensagem);
+        }
         return;
       }
 
       if (authData.user?.identities?.length === 0) {
-        toast.error("Este email já está cadastrado");
+        form.setError("email", { message: "Este email já está cadastrado" });
         return;
       }
 
@@ -108,7 +112,9 @@ export function SignupForm() {
       if (rpcError) {
         await supabase.auth.signOut();
         if (rpcError.message.includes("phone_already_exists")) {
-          toast.error("Este celular já está cadastrado");
+          form.setError("phone", {
+            message: "Este celular já está cadastrado",
+          });
         } else if (
           rpcError.message.includes("barbershops_name_max_length") ||
           rpcError.message.includes("name_max_length")

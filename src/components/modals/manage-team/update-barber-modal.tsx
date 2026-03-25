@@ -363,14 +363,35 @@ export function UpdateBarberModal({
             )}
           </form>
 
-          <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
+          <DialogFooter
+            style={{ justifyContent: "space-between" }}
+            className="flex-row flex-wrap items-center justify-between gap-2"
+          >
+            <div className="flex gap-2 w-full justify-center order-first sm:order-last sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-full"
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="rounded-full"
+                type="submit"
+                form="update-barber-form"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
             <AlertDialog>
-              <AlertDialogTrigger asChild>
+              <AlertDialogTrigger asChild className="flex">
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="text-destructive hover:text-destructive cursor-pointer"
+                  className="text-destructive mx-auto sm:mx-0 hover:text-destructive cursor-pointer order-last sm:order-first"
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
                   Excluir
@@ -416,25 +437,6 @@ export function UpdateBarberModal({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="rounded-full"
-              >
-                Cancelar
-              </Button>
-              <Button
-                className="rounded-full"
-                type="submit"
-                form="update-barber-form"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
-              </Button>
-            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

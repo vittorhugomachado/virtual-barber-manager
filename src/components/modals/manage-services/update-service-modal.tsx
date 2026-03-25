@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -213,7 +214,9 @@ export function UpdateServiceModal({
           <DialogHeader>
             <DialogTitle className="mb-4">Editar serviço</DialogTitle>
           </DialogHeader>
-
+          <DialogDescription className="sr-only">
+            Editar serviço
+          </DialogDescription>
           <form
             id="update-service-form"
             onSubmit={form.handleSubmit(onSubmit)}
@@ -221,7 +224,7 @@ export function UpdateServiceModal({
           >
             {/* Imagem */}
             <div className="flex items-center gap-4">
-              <div className="h-20 w-35 rounded-lg bg-muted overflow-hidden shrink-0">
+              <div className="h-20 w-20 rounded-lg bg-muted overflow-hidden shrink-0">
                 {imagePreview ? (
                   <img
                     src={imagePreview}
@@ -406,7 +409,7 @@ export function UpdateServiceModal({
             )}
           </form>
 
-          <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
+          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button

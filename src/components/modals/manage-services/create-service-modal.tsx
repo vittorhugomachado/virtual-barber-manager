@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,19 +35,11 @@ const formSchema = z.object({
     .string()
     .max(100, "Descrição deve ter no máximo 100 caracteres")
     .optional(),
-  price: z.preprocess(
-    val =>
-      val === "" || val === undefined || val === null ? undefined : Number(val),
-    z.number({ error: "Preço é obrigatório" }).min(0, "Preço inválido"),
-  ),
-  duration_min: z.preprocess(
-    val =>
-      val === "" || val === undefined || val === null ? undefined : Number(val),
-    z.number({ error: "Duração é obrigatória" }).min(1, "Duração inválida"),
-  ),
-  barberIds: z
-    .array(z.string())
-    .min(1, "Selecione pelo manos um barbeiro que realize o serviço"),
+  price: z.number({ error: "Preço é obrigatório" }).min(0, "Preço inválido"),
+  duration_min: z
+    .number({ error: "Duração é obrigatória" })
+    .min(1, "Duração inválida"),
+  barberIds: z.array(z.string()),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -88,7 +81,10 @@ export function CreateServiceModal({
   }, [barbers, form]);
 
   async function onSubmit(data: FormValues) {
-    if (!barbershop?.id) return;
+    if (!barbershop?.id) {
+      toast.error("Barbearia não encontrada");
+      return;
+    }
 
     const result = await createService({
       barbershopId: barbershop.id,
@@ -161,10 +157,16 @@ export function CreateServiceModal({
           <DialogHeader>
             <DialogTitle className="mb-4">Novo serviço</DialogTitle>
           </DialogHeader>
+          <DialogDescription className="sr-only">
+            Criar serviço
+          </DialogDescription>
 
           <form
             id="create-service-form"
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(onSubmit, errors => {
+              const first = Object.values(errors)[0];
+              if (first?.message) toast.error(first.message as string);
+            })}
             className="flex flex-col gap-6 mb-4"
           >
             {/* Imagem */}
@@ -272,6 +274,14 @@ export function CreateServiceModal({
                       </FieldLabel>
                       <Input
                         {...field}
+                        value={field.value ?? ""}
+                        onChange={e =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? undefined
+                              : Number(e.target.value),
+                          )
+                        }
                         id="create-service-price"
                         type="number"
                         step="0.01"
@@ -296,6 +306,14 @@ export function CreateServiceModal({
                       </FieldLabel>
                       <Input
                         {...field}
+                        value={field.value ?? ""}
+                        onChange={e =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? undefined
+                              : Number(e.target.value),
+                          )
+                        }
                         id="create-service-duration"
                         type="number"
                         min="1"
@@ -352,25 +370,25 @@ export function CreateServiceModal({
                 )}
               </div>
             )}
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-full"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                form="create-service-form"
+                disabled={form.formState.isSubmitting}
+                className="rounded-full"
+              >
+                {form.formState.isSubmitting ? "Criando..." : "Criar serviço"}
+              </Button>
+            </DialogFooter>
           </form>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="rounded-full"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              form="create-service-form"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting ? "Criando..." : "Criar serviço"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -94,6 +94,30 @@ Deno.serve(async req => {
 
     const normalizedUsername = username?.trim().toLowerCase();
 
+    if (normalizedUsername && !/^[a-z0-9_]+$/.test(normalizedUsername)) {
+      return new Response(
+        JSON.stringify({
+          error: "O nome de usuario deve usar apenas letras minusculas, numeros e _.",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    if (normalizedUsername && (normalizedUsername.length < 3 || normalizedUsername.length > 30)) {
+      return new Response(
+        JSON.stringify({
+          error: "O nome de usuario deve ter entre 3 e 30 caracteres.",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     if (normalizedUsername && normalizedUsername !== member.username) {
       const { data: existing, error: existingError } = await adminClient
         .from("barbershop_members")
@@ -117,6 +141,26 @@ Deno.serve(async req => {
           }),
           {
             status: 409,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      const internalEmail = `${normalizedUsername}@${member.barbershop_id}.member`;
+
+      const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(
+        member_id,
+        {
+          email: internalEmail,
+          email_confirm: true,
+        },
+      );
+
+      if (authUpdateError) {
+        return new Response(
+          JSON.stringify({ error: authUpdateError.message }),
+          {
+            status: 400,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           },
         );

@@ -67,6 +67,12 @@ type CreateMemberData = {
   role: "admin" | "reader";
 };
 
+const usernameSchema = z
+  .string()
+  .min(3, "Minimo 3 caracteres")
+  .max(30, "Maximo 30 caracteres")
+  .regex(/^[a-z0-9_]+$/, "Apenas letras minusculas, numeros e _");
+
 export function UsersSection() {
   const { barbershop, memberRole } = useBarbershopStore();
   const [members, setMembers] = useState<Member[] | null>(null);
@@ -79,15 +85,16 @@ export function UsersSection() {
   const [showEditPassword, setShowEditPassword] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const editUsernameValidation = usernameSchema.safeParse(editForm.username);
+  const editUsernameError =
+    editForm.username.trim().length > 0 && !editUsernameValidation.success
+      ? editUsernameValidation.error.issues[0]?.message
+      : null;
 
   const form = useForm<CreateMemberData>({
     resolver: zodResolver(
       z.object({
-        username: z
-          .string()
-          .min(3, "Mínimo 3 caracteres")
-          .max(30, "Máximo 30 caracteres")
-          .regex(/^[a-z0-9_]+$/, "Apenas letras minúsculas, números e _"),
+        username: usernameSchema,
         password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
         role: z.enum(["admin", "reader"]),
       }),
@@ -199,6 +206,13 @@ export function UsersSection() {
   async function handleEditMember(values: EditMemberData) {
     if (!editMember || memberRole !== "owner") {
       toast.error("Apenas o proprietario pode editar usuarios.");
+      return;
+    }
+
+    if (values.username && !usernameSchema.safeParse(values.username).success) {
+      toast.error(
+        "O nome de usuario deve ter 3 a 30 caracteres e usar apenas letras minusculas, numeros e _.",
+      );
       return;
     }
 
@@ -481,11 +495,12 @@ export function UsersSection() {
             <DialogTitle>Editar membro — @{editMember?.username}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4">
-            <div>
+            <Field data-invalid={!!editUsernameError}>
               <FieldLabel htmlFor="edit-username">Nome de usuário</FieldLabel>
               <Input
                 id="edit-username"
                 value={editForm.username}
+                aria-invalid={!!editUsernameError}
                 onChange={e =>
                   setEditForm({
                     ...editForm,
@@ -494,7 +509,10 @@ export function UsersSection() {
                 }
                 placeholder="Novo nome de usuário"
               />
-            </div>
+              {editUsernameError && (
+                <FieldError errors={[{ message: editUsernameError }]} />
+              )}
+            </Field>
             <div>
               <FieldLabel htmlFor="edit-password">
                 Nova senha (opcional)
@@ -528,7 +546,10 @@ export function UsersSection() {
             <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => handleEditMember(editForm)}>
+            <Button
+              disabled={!!editUsernameError}
+              onClick={() => handleEditMember(editForm)}
+            >
               Salvar alterações
             </Button>
           </DialogFooter>

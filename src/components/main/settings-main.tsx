@@ -4,7 +4,7 @@ import { UsersSection } from "../common/user-section";
 import { Separator } from "@/components/ui/separator";
 import { OpeningHoursSection } from "../common/opening-hours-section";
 import { AddressForm } from "../forms/address-form";
-import { GallerySection } from "../common/gallery-section";
+import { BarbershopGallery } from "../common/barbershop-gallery";
 
 export function SettingsMain() {
   return (
@@ -15,7 +15,7 @@ export function SettingsMain() {
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
       <OpeningHoursSection />
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
-      <GallerySection />
+      <BarbershopGallery />
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
       <UsersSection />
       {/* <Separator className="my-4 max-w-180 mx-16" />

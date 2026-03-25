@@ -3,7 +3,15 @@ import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Plus, Shield, Eye, Trash2, Loader2, EyeOff } from "lucide-react";
+import {
+  Plus,
+  Shield,
+  Eye,
+  Trash2,
+  Loader2,
+  EyeOff,
+  KeyRound,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +76,17 @@ export function UsersSection() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<Member | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [editPasswordMember, setEditPasswordMember] = useState<Member | null>(
+    null,
+  );
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  const passwordForm = useForm<{ password: string }>({
+    resolver: zodResolver(
+      z.object({ password: z.string().min(6, "Mínimo 6 caracteres") }),
+    ) as Resolver<{ password: string }>,
+    defaultValues: { password: "" },
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as Resolver<FormValues>,
@@ -167,6 +186,29 @@ export function UsersSection() {
     setRemovingId(null);
   }
 
+  async function handleUpdatePassword(values: { password: string }) {
+    if (!editPasswordMember) return;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const res = await supabase.functions.invoke("update-member-password", {
+      body: {
+        member_id: editPasswordMember.user_id,
+        password: values.password,
+      },
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    });
+
+    if (res.error || res.data?.error) {
+      toast.error(res.data?.error ?? res.error?.message);
+      return;
+    }
+
+    toast.success("Senha atualizada!");
+    setEditPasswordMember(null);
+    passwordForm.reset();
+  }
+
   return (
     <div className="w-full max-w-180 mx-16 mt-2 mb-8 px-3 flex flex-col gap-4">
       <div className="px-3">
@@ -210,6 +252,18 @@ export function UsersSection() {
                       </>
                     )}
                   </Badge>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 cursor-pointer"
+                    onClick={() => {
+                      setEditPasswordMember(member);
+                      setShowNewPassword(false);
+                      passwordForm.reset();
+                    }}
+                  >
+                    <KeyRound className="h-4 w-4" />
+                  </Button>
                   <Button
                     size="icon"
                     variant="ghost"
@@ -375,6 +429,88 @@ export function UsersSection() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 "Adicionar"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!editPasswordMember}
+        onOpenChange={open => {
+          if (!open) {
+            setEditPasswordMember(null);
+            passwordForm.reset();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Alterar senha — @{editPasswordMember?.username}
+            </DialogTitle>
+          </DialogHeader>
+          <form
+            id="update-password-form"
+            onSubmit={passwordForm.handleSubmit(handleUpdatePassword)}
+            className="flex flex-col gap-4 mb-2"
+          >
+            <Controller
+              name="password"
+              control={passwordForm.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="new-member-password">
+                    Nova senha
+                  </FieldLabel>
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      id="new-member-password"
+                      type={showNewPassword ? "text" : "password"}
+                      placeholder="Mínimo 6 caracteres"
+                      aria-invalid={fieldState.invalid}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowNewPassword(v => !v)}
+                      tabIndex={-1}
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+          </form>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full"
+              onClick={() => setEditPasswordMember(null)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="update-password-form"
+              className="rounded-full"
+              disabled={passwordForm.formState.isSubmitting}
+            >
+              {passwordForm.formState.isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Salvar"
               )}
             </Button>
           </DialogFooter>

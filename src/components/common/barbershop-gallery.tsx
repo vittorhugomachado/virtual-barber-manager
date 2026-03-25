@@ -30,7 +30,7 @@ type GalleryImage = {
   order: number;
 };
 
-export function GallerySection() {
+export function BarbershopGallery() {
   const { barbershop } = useBarbershopStore();
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);

@@ -22,8 +22,8 @@ function getGreeting() {
   const hour = new Date(
     new Date().getTime() - 3 * 60 * 60 * 1000,
   ).getUTCHours();
-  if (hour < 12) return "Bom dia";
-  if (hour < 18) return "Boa tarde";
+  if (hour >= 4 && hour < 13) return "Bom dia";
+  if (hour >= 13 && hour < 19) return "Boa tarde";
   return "Boa noite";
 }
 

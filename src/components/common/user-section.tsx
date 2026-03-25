@@ -30,6 +30,16 @@ import {
 } from "@/components/ui/field";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Member = {
   id: string;
@@ -56,6 +66,7 @@ export function UsersSection() {
   const [fetchKey, setFetchKey] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<Member | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<FormValues>({
@@ -204,7 +215,7 @@ export function UsersSection() {
                     variant="ghost"
                     className="h-8 w-8 text-destructive hover:text-destructive cursor-pointer"
                     disabled={removingId === member.id}
-                    onClick={() => handleRemove(member.id)}
+                    onClick={() => setConfirmRemove(member)}
                   >
                     {removingId === member.id ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -369,6 +380,38 @@ export function UsersSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={!!confirmRemove}
+        onOpenChange={open => {
+          if (!open) setConfirmRemove(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover usuário</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover{" "}
+              <strong>@{confirmRemove?.username}</strong>? Ele perderá o acesso
+              ao painel imediatamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (confirmRemove) {
+                  handleRemove(confirmRemove.id);
+                  setConfirmRemove(null);
+                }
+              }}
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

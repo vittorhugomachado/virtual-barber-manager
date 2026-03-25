@@ -52,7 +52,7 @@ export function Step3Date({
       <Button
         onClick={handleContinue}
         disabled={!selectedDateObj}
-        className="cursor-pointer w-full"
+        className="cursor-pointer w-full rounded-full"
       >
         Continuar
       </Button>

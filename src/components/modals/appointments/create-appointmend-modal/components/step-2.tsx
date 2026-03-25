@@ -125,7 +125,7 @@ export function Step2Service({
       <Button
         onClick={() => selected.length > 0 && onSelect(selected)}
         disabled={selected.length === 0}
-        className="cursor-pointer w-full mt-1"
+        className="cursor-pointer w-full mt-1 rounded-full"
       >
         Continuar
         {selected.length > 1 ? ` (${selected.length} serviços)` : ""}

@@ -40,7 +40,8 @@ export function useAppointments(startDate?: Date, endDate?: Date) {
       .gte("starts_at", startIso)
       .lte("starts_at", endIso)
       .order("starts_at")
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error("[useAppointments] error:", error);
         setAppointments(data ? (data as AppointmentWithRelations[]) : []);
         setLoading(false);
       });

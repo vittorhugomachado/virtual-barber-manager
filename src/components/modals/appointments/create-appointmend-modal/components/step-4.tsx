@@ -711,7 +711,7 @@ export function Step4BarberTime({
           }
         }}
         disabled={!allSelected || !isShopOpen}
-        className="cursor-pointer w-full"
+        className="cursor-pointer w-full rounded-full"
       >
         Confirmar horários
       </Button>

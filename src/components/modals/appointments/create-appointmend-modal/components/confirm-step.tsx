@@ -179,7 +179,7 @@ export function ConfirmStep({
         <Button
           onClick={onConfirm}
           disabled={submitting}
-          className="cursor-pointer flex-1"
+          className="cursor-pointer flex-1 rounded-full"
         >
           {submitting ? "Salvando…" : "Confirmar agendamento"}
         </Button>

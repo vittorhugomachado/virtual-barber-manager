@@ -47,7 +47,7 @@ function toDayConfigs(hours: OpeningHours[]): DayConfig[] {
     if (dayHours.length === 0) {
       return {
         day_of_week: i,
-        is_open: i !== 0,
+        is_open: false,
         periods: [{ opens_at: "08:00", closes_at: "18:00" }],
       };
     }

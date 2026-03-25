@@ -49,19 +49,11 @@ const formSchema = z.object({
     .string()
     .max(100, "Descrição deve ter no máximo 100 caracteres")
     .optional(),
-  price: z.preprocess(
-    val =>
-      val === "" || val === undefined || val === null ? undefined : Number(val),
-    z.number({ error: "Preço é obrigatório" }).min(0, "Preço inválido"),
-  ),
-  duration_min: z.preprocess(
-    val =>
-      val === "" || val === undefined || val === null ? undefined : Number(val),
-    z.number({ error: "Duração é obrigatória" }).min(1, "Duração inválida"),
-  ),
-  barberIds: z
-    .array(z.string())
-    .min(1, "Selecione pelo manos um barbeiro que realize o serviço"),
+  price: z.number({ error: "Preço é obrigatório" }).min(0, "Preço inválido"),
+  duration_min: z
+    .number({ error: "Duração é obrigatória" })
+    .min(1, "Duração inválida"),
+  barberIds: z.array(z.string()),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -100,8 +92,8 @@ export function UpdateServiceModal({
     defaultValues: {
       name: "",
       description: "",
-      price: 0,
-      duration_min: 0,
+      price: undefined,
+      duration_min: undefined,
       barberIds: [],
     },
   });
@@ -248,7 +240,10 @@ export function UpdateServiceModal({
           </DialogDescription>
           <form
             id="update-service-form"
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(onSubmit, errors => {
+              const first = Object.values(errors)[0];
+              if (first?.message) toast.error(first.message as string);
+            })}
             className="flex flex-col gap-6 mb-4 px-1"
           >
             {/* Imagem */}
@@ -371,6 +366,14 @@ export function UpdateServiceModal({
                       </FieldLabel>
                       <Input
                         {...field}
+                        value={field.value ?? ""}
+                        onChange={e =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? undefined
+                              : Number(e.target.value),
+                          )
+                        }
                         id="update-service-price"
                         type="number"
                         step="0.01"
@@ -395,6 +398,14 @@ export function UpdateServiceModal({
                       </FieldLabel>
                       <Input
                         {...field}
+                        value={field.value ?? ""}
+                        onChange={e =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? undefined
+                              : Number(e.target.value),
+                          )
+                        }
                         id="update-service-duration"
                         type="number"
                         min="1"

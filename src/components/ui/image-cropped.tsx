@@ -141,7 +141,12 @@ export function ImageCropper({
           >
             Cancelar
           </Button>
-          <Button type="button" disabled={isProcessing} onClick={handleConfirm}>
+          <Button
+            type="button"
+            disabled={isProcessing}
+            onClick={handleConfirm}
+            className="rounded-full"
+          >
             {isProcessing ? "Processando..." : "Confirmar"}
           </Button>
         </DialogFooter>

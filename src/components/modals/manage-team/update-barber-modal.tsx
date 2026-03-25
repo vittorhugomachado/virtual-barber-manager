@@ -180,13 +180,27 @@ export function UpdateBarberModal({
     if (!barber) return;
     setDeleting(true);
     const success = await deleteBarber(barber.id);
-    setDeleting(false);
 
     if (!success) {
+      setDeleting(false);
       toast.error("Erro ao excluir barbeiro");
       return;
     }
 
+    if (barber.avatar_url && barbershop) {
+      const folder = `${barbershop.owner_id}/barbers/`;
+      const { data: files } = await supabase.storage
+        .from("barbershop-assets")
+        .list(folder);
+      const matches = files?.filter(f => f.name.startsWith(barber.id)) ?? [];
+      if (matches.length > 0) {
+        await supabase.storage
+          .from("barbershop-assets")
+          .remove(matches.map(f => `${folder}${f.name}`));
+      }
+    }
+
+    setDeleting(false);
     toast.success("Barbeiro excluído!");
     onDeleted(barber.id);
     onClose();

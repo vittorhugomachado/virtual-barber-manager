@@ -279,7 +279,7 @@ export function SignupForm() {
             type="submit"
             form="signup-form"
             disabled={isLoading}
-            className="w-full max-w-xs"
+            className="w-full max-w-xs rounded-full"
           >
             {isLoading ? "Criando conta..." : "Criar conta"}
           </Button>

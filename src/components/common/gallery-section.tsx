@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
+  GripVertical,
   ImagePlus,
   Loader2,
   Trash2,
@@ -135,6 +136,59 @@ export function GallerySection() {
     setDeletingId(null);
   }
 
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  const displayedImages = useMemo(() => {
+    if (!draggedId || !dragOverId || draggedId === dragOverId) return images;
+    const from = images.findIndex(img => img.id === draggedId);
+    const to = images.findIndex(img => img.id === dragOverId);
+    if (from === -1 || to === -1) return images;
+    const reordered = [...images];
+    const [moved] = reordered.splice(from, 1);
+    reordered.splice(to, 0, moved);
+    return reordered;
+  }, [images, draggedId, dragOverId]);
+
+  async function saveOrder(ordered: GalleryImage[]) {
+    setSavingOrder(true);
+    await Promise.all(
+      ordered.map((img, idx) =>
+        supabase
+          .from("barbershop_gallery")
+          .update({ order: idx })
+          .eq("id", img.id),
+      ),
+    );
+    setImages(ordered.map((img, idx) => ({ ...img, order: idx })));
+    setSavingOrder(false);
+    toast.success("Ordem salva!");
+  }
+
+  function handleDragStart(e: React.DragEvent, id: string) {
+    setDraggedId(id);
+    // congela o ghost image para evitar flicker durante re-renders
+    const el = e.currentTarget as HTMLElement;
+    const clone = el.cloneNode(true) as HTMLElement;
+    clone.style.cssText = `position:fixed;top:-9999px;width:${el.offsetWidth}px;height:${el.offsetHeight}px;border-radius:8px;overflow:hidden;`;
+    document.body.appendChild(clone);
+    e.dataTransfer.setDragImage(clone, el.offsetWidth / 2, el.offsetHeight / 2);
+    setTimeout(() => document.body.removeChild(clone), 0);
+  }
+
+  function handleDragEnter(id: string) {
+    if (dragOverId !== id) setDragOverId(id);
+  }
+
+  function handleDrop() {
+    if (draggedId && dragOverId && draggedId !== dragOverId) {
+      saveOrder(displayedImages);
+    }
+    setDraggedId(null);
+    setDragOverId(null);
+  }
+
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const openLightbox = useCallback((i: number) => setLightboxIndex(i), []);
@@ -144,13 +198,13 @@ export function GallerySection() {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") setLightboxIndex(null);
       if (e.key === "ArrowLeft")
-        setLightboxIndex(i => (i! > 0 ? i! - 1 : images.length - 1));
+        setLightboxIndex(i => (i! > 0 ? i! - 1 : displayedImages.length - 1));
       if (e.key === "ArrowRight")
-        setLightboxIndex(i => (i! < images.length - 1 ? i! + 1 : 0));
+        setLightboxIndex(i => (i! < displayedImages.length - 1 ? i! + 1 : 0));
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [lightboxIndex, images.length]);
+  }, [lightboxIndex, displayedImages.length]);
 
   useEffect(() => {
     document.body.style.overflow = lightboxIndex !== null ? "hidden" : "";
@@ -182,36 +236,81 @@ export function GallerySection() {
                   Nenhuma imagem na galeria ainda.
                 </p>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {images.map(image => (
-                    <div
-                      key={image.id}
-                      className="relative group rounded-lg overflow-hidden border border-border aspect-square"
-                    >
-                      <img
-                        src={image.url}
-                        alt="Foto da galeria"
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          disabled={deletingId === image.id}
-                          onClick={() => handleDelete(image)}
-                          className="h-8 w-8"
-                        >
-                          {deletingId === image.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
+                <>
+                  {images.length > 1 && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <GripVertical className="h-3 w-3" />
+                      Arraste as imagens para reordenar
+                    </p>
+                  )}
+                  <div
+                    className="grid grid-cols-2 sm:grid-cols-3 gap-3"
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={handleDrop}
+                  >
+                    {images.map((image, idx) => (
+                      <div
+                        key={image.id}
+                        draggable
+                        onDragStart={e => handleDragStart(e, image.id)}
+                        onDragEnter={() => handleDragEnter(image.id)}
+                        onDragEnd={() => {
+                          setDraggedId(null);
+                          setDragOverId(null);
+                        }}
+                        className={[
+                          "relative group rounded-lg overflow-hidden border aspect-square select-none transition-all duration-150",
+                          draggedId === image.id
+                            ? "opacity-40 scale-95 border-dashed border-border"
+                            : "border-border",
+                          dragOverId === image.id && draggedId !== image.id
+                            ? "ring-2 ring-blue-500 scale-[1.02]"
+                            : "",
+                        ].join(" ")}
+                      >
+                        <img
+                          src={image.url}
+                          alt={`Foto ${idx + 1}`}
+                          className="w-full h-full object-cover pointer-events-none cursor-pointer"
+                        />
+
+                        {/* badge de posição */}
+                        <span className="absolute top-1.5 left-1.5 bg-black/50 text-white text-xs font-medium rounded-md px-1.5 py-0.5">
+                          {idx + 1}
+                        </span>
+
+                        {/* handle de drag */}
+                        <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-md p-0.5 cursor-pointer">
+                          <GripVertical className="h-4 w-4 text-white" />
+                        </div>
+
+                        {/* overlay de delete */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3 cursor-pointer">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            disabled={deletingId === image.id}
+                            onClick={() => handleDelete(image)}
+                            className="h-8 w-8"
+                          >
+                            {deletingId === image.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                  {savingOrder && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Salvando ordem...
+                    </p>
+                  )}
+                </>
               )}
 
               <input
@@ -248,7 +347,7 @@ export function GallerySection() {
       </Card>
 
       {/* ── Pré-visualização ── */}
-      {images.length > 0 && (
+      {displayedImages.length > 0 && (
         <Card className="bg-transparent border-none">
           <CardHeader className="mt-3">
             <div className="flex flex-col w-fit">
@@ -263,13 +362,13 @@ export function GallerySection() {
           </CardHeader>
           <CardContent className="px-3">
             <div className="h-72 sm:h-96 rounded-2xl overflow-hidden">
-              {images.length === 1 && (
+              {displayedImages.length === 1 && (
                 <div
                   className="group relative h-full cursor-pointer overflow-hidden rounded-2xl"
                   onClick={() => openLightbox(0)}
                 >
                   <img
-                    src={images[0].url}
+                    src={displayedImages[0].url}
                     alt="preview 1"
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
@@ -277,9 +376,9 @@ export function GallerySection() {
                 </div>
               )}
 
-              {images.length === 2 && (
+              {displayedImages.length === 2 && (
                 <div className="grid h-full grid-cols-2 gap-2">
-                  {images.map((img, i) => (
+                  {displayedImages.map((img, i) => (
                     <div
                       key={img.id}
                       className={`group relative cursor-pointer overflow-hidden ${i === 0 ? "rounded-l-2xl" : "rounded-r-2xl"}`}
@@ -296,14 +395,14 @@ export function GallerySection() {
                 </div>
               )}
 
-              {images.length === 3 && (
+              {displayedImages.length === 3 && (
                 <div className="grid h-full grid-cols-[2fr_1fr] gap-2">
                   <div
                     className="group relative cursor-pointer overflow-hidden rounded-l-2xl"
                     onClick={() => openLightbox(0)}
                   >
                     <img
-                      src={images[0].url}
+                      src={displayedImages[0].url}
                       alt="preview 1"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
@@ -312,12 +411,12 @@ export function GallerySection() {
                   <div className="flex flex-col gap-2">
                     {[1, 2].map(i => (
                       <div
-                        key={images[i].id}
+                        key={displayedImages[i].id}
                         className={`group relative h-1/2 cursor-pointer overflow-hidden ${i === 1 ? "rounded-tr-2xl" : "rounded-br-2xl"}`}
                         onClick={() => openLightbox(i)}
                       >
                         <img
-                          src={images[i].url}
+                          src={displayedImages[i].url}
                           alt={`preview ${i + 1}`}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
@@ -328,14 +427,14 @@ export function GallerySection() {
                 </div>
               )}
 
-              {images.length === 4 && (
+              {displayedImages.length === 4 && (
                 <div className="grid h-full grid-cols-[2fr_1fr] gap-2">
                   <div
                     className="group relative cursor-pointer overflow-hidden rounded-l-2xl"
                     onClick={() => openLightbox(0)}
                   >
                     <img
-                      src={images[0].url}
+                      src={displayedImages[0].url}
                       alt="preview 1"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
@@ -344,13 +443,13 @@ export function GallerySection() {
                   <div className="flex flex-col gap-2">
                     {[1, 2, 3].map((i, idx) => (
                       <div
-                        key={images[i].id}
+                        key={displayedImages[i].id}
                         className={`group relative cursor-pointer overflow-hidden ${idx === 0 ? "rounded-tr-2xl" : idx === 2 ? "rounded-br-2xl" : ""}`}
                         style={{ height: "33.33%" }}
                         onClick={() => openLightbox(i)}
                       >
                         <img
-                          src={images[i].url}
+                          src={displayedImages[i].url}
                           alt={`preview ${i + 1}`}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
@@ -361,14 +460,14 @@ export function GallerySection() {
                 </div>
               )}
 
-              {images.length >= 5 && (
+              {displayedImages.length >= 5 && (
                 <div className="grid h-full grid-cols-[2fr_1fr_1fr] gap-2">
                   <div
                     className="group relative cursor-pointer overflow-hidden rounded-l-2xl"
                     onClick={() => openLightbox(0)}
                   >
                     <img
-                      src={images[0].url}
+                      src={displayedImages[0].url}
                       alt="preview 1"
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
@@ -377,12 +476,12 @@ export function GallerySection() {
                   <div className="flex flex-col gap-2">
                     {[1, 2].map(i => (
                       <div
-                        key={images[i].id}
+                        key={displayedImages[i].id}
                         className="group relative h-1/2 cursor-pointer overflow-hidden"
                         onClick={() => openLightbox(i)}
                       >
                         <img
-                          src={images[i].url}
+                          src={displayedImages[i].url}
                           alt={`preview ${i + 1}`}
                           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
@@ -396,7 +495,7 @@ export function GallerySection() {
                       onClick={() => openLightbox(3)}
                     >
                       <img
-                        src={images[3].url}
+                        src={displayedImages[3].url}
                         alt="preview 4"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
@@ -407,12 +506,12 @@ export function GallerySection() {
                       onClick={() => openLightbox(4)}
                     >
                       <img
-                        src={images[4].url}
+                        src={displayedImages[4].url}
                         alt="preview 5"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
-                      {images.length > 5 && (
+                      {displayedImages.length > 5 && (
                         <div className="absolute inset-0 flex items-end justify-end bg-black/30 p-3">
                           <span className="rounded-md border border-neutral-300 bg-white/90 px-3 py-1.5 text-sm font-medium text-neutral-900 shadow-sm">
                             Ver todas as fotos
@@ -439,7 +538,7 @@ export function GallerySection() {
             onClick={e => e.stopPropagation()}
           >
             <span className="text-sm text-white/60">
-              {lightboxIndex + 1} / {images.length}
+              {lightboxIndex + 1} / {displayedImages.length}
             </span>
             <button
               onClick={() => setLightboxIndex(null)}
@@ -453,15 +552,17 @@ export function GallerySection() {
             onClick={e => e.stopPropagation()}
           >
             <img
-              src={images[lightboxIndex].url}
+              src={displayedImages[lightboxIndex].url}
               alt={`preview ${lightboxIndex + 1}`}
               className="max-h-[80vh] max-w-full object-contain px-16"
             />
-            {images.length > 1 && (
+            {displayedImages.length > 1 && (
               <>
                 <button
                   onClick={() =>
-                    setLightboxIndex(i => (i! > 0 ? i! - 1 : images.length - 1))
+                    setLightboxIndex(i =>
+                      i! > 0 ? i! - 1 : displayedImages.length - 1,
+                    )
                   }
                   className="absolute left-2 rounded-full border border-white/20 bg-white/10 p-2 text-white hover:bg-white/20"
                 >
@@ -469,7 +570,9 @@ export function GallerySection() {
                 </button>
                 <button
                   onClick={() =>
-                    setLightboxIndex(i => (i! < images.length - 1 ? i! + 1 : 0))
+                    setLightboxIndex(i =>
+                      i! < displayedImages.length - 1 ? i! + 1 : 0,
+                    )
                   }
                   className="absolute right-2 rounded-full border border-white/20 bg-white/10 p-2 text-white hover:bg-white/20"
                 >

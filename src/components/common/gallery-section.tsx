@@ -13,6 +13,16 @@ import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type GalleryImage = {
   id: string;
@@ -26,6 +36,7 @@ export function GallerySection() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<GalleryImage | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -291,7 +302,7 @@ export function GallerySection() {
                             variant="destructive"
                             size="icon"
                             disabled={deletingId === image.id}
-                            onClick={() => handleDelete(image)}
+                            onClick={() => setConfirmDelete(image)}
                             className="h-8 w-8"
                           >
                             {deletingId === image.id ? (
@@ -583,6 +594,43 @@ export function GallerySection() {
           </div>
         </div>
       )}
+      <AlertDialog
+        open={!!confirmDelete}
+        onOpenChange={open => {
+          if (!open) setConfirmDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir imagem</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta imagem? Essa ação não pode ser
+              desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {confirmDelete && (
+            <img
+              src={confirmDelete.url}
+              alt="Imagem a excluir"
+              className="w-full h-40 object-cover rounded-lg"
+            />
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (confirmDelete) {
+                  handleDelete(confirmDelete);
+                  setConfirmDelete(null);
+                }
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

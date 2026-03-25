@@ -111,6 +111,9 @@ Deno.serve(async req => {
         email: internalEmail,
         password,
         email_confirm: true,
+        user_metadata: {
+          role: "barbershop_member",
+        },
       });
 
     if (createError || !newUser?.user) {
@@ -127,7 +130,8 @@ Deno.serve(async req => {
 
     const { error: profileError } = await adminClient.from("profiles").upsert({
       id: newUser.user.id,
-      role: "barbershop",
+      role: "barbershop_member",
+      name: normalizedUsername,
     });
 
     if (profileError) {

@@ -64,13 +64,10 @@ Deno.serve(async req => {
       .single();
 
     if (memberError || !member) {
-      return new Response(
-        JSON.stringify({ error: "Membro nao encontrado." }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        },
-      );
+      return new Response(JSON.stringify({ error: "Membro nao encontrado." }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const { data: barbershop, error: shopError } = await adminClient
@@ -97,7 +94,8 @@ Deno.serve(async req => {
     if (normalizedUsername && !/^[a-z0-9_]+$/.test(normalizedUsername)) {
       return new Response(
         JSON.stringify({
-          error: "O nome de usuario deve usar apenas letras minusculas, numeros e _.",
+          error:
+            "O nome de usuario deve usar apenas letras minusculas, numeros e _.",
         }),
         {
           status: 400,
@@ -106,7 +104,10 @@ Deno.serve(async req => {
       );
     }
 
-    if (normalizedUsername && (normalizedUsername.length < 3 || normalizedUsername.length > 30)) {
+    if (
+      normalizedUsername &&
+      (normalizedUsername.length < 3 || normalizedUsername.length > 30)
+    ) {
       return new Response(
         JSON.stringify({
           error: "O nome de usuario deve ter entre 3 e 30 caracteres.",
@@ -148,13 +149,11 @@ Deno.serve(async req => {
 
       const internalEmail = `${normalizedUsername}@${member.barbershop_id}.member`;
 
-      const { error: authUpdateError } = await adminClient.auth.admin.updateUserById(
-        member_id,
-        {
+      const { error: authUpdateError } =
+        await adminClient.auth.admin.updateUserById(member_id, {
           email: internalEmail,
           email_confirm: true,
-        },
-      );
+        });
 
       if (authUpdateError) {
         return new Response(
@@ -177,13 +176,23 @@ Deno.serve(async req => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+      const { error: profileError } = await adminClient
+        .from("profiles")
+        .update({ name: normalizedUsername })
+        .eq("id", member_id);
+
+      if (profileError) {
+        return new Response(JSON.stringify({ error: profileError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     if (password) {
-      const { error: updateError } = await adminClient.auth.admin.updateUserById(
-        member_id,
-        { password },
-      );
+      const { error: updateError } =
+        await adminClient.auth.admin.updateUserById(member_id, { password });
 
       if (updateError) {
         return new Response(JSON.stringify({ error: updateError.message }), {
@@ -194,7 +203,10 @@ Deno.serve(async req => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Membro atualizado com sucesso!" }),
+      JSON.stringify({
+        success: true,
+        message: "Membro atualizado com sucesso!",
+      }),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

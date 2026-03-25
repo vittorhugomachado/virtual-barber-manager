@@ -85,6 +85,7 @@ export function UpdateServiceModal({
   const { barbers } = useBarbers();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageUrl, setCropperImageUrl] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -122,13 +123,36 @@ export function UpdateServiceModal({
         });
         setImagePreview(service.image_url);
         setImageFile(null);
+        setRemoveImage(false);
       });
   }, [service, form]);
+
+  async function deleteStorageImage(serviceId: string) {
+    const folder = `${barbershop!.owner_id}/services/`;
+    const { data: files } = await supabase.storage
+      .from("barbershop-assets")
+      .list(folder);
+    const matches = files?.filter(f => f.name.startsWith(serviceId)) ?? [];
+    if (matches.length > 0) {
+      await supabase.storage
+        .from("barbershop-assets")
+        .remove(matches.map(f => `${folder}${f.name}`));
+    }
+  }
 
   async function onSubmit(data: FormValues) {
     if (!service || !barbershop?.id) return;
 
     let imageUrl = service.image_url;
+
+    if (removeImage && service.image_url) {
+      await deleteStorageImage(service.id);
+      imageUrl = null;
+      await supabase
+        .from("services")
+        .update({ image_url: null })
+        .eq("id", service.id);
+    }
 
     if (imageFile) {
       const fileExt = imageFile.name.split(".").pop();
@@ -195,13 +219,18 @@ export function UpdateServiceModal({
     if (!service) return;
     setDeleting(true);
     const success = await deleteService(service.id);
-    setDeleting(false);
 
     if (!success) {
+      setDeleting(false);
       toast.error("Erro ao excluir serviço");
       return;
     }
 
+    if (service.image_url && barbershop) {
+      await deleteStorageImage(service.id);
+    }
+
+    setDeleting(false);
     toast.success("Serviço excluído!");
     onDeleted(service.id);
     onClose();
@@ -248,6 +277,21 @@ export function UpdateServiceModal({
                 >
                   Alterar imagem
                 </Button>
+                {imagePreview && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full text-destructive hover:text-destructive"
+                    onClick={() => {
+                      setImagePreview(null);
+                      setImageFile(null);
+                      setRemoveImage(true);
+                    }}
+                  >
+                    Remover foto
+                  </Button>
+                )}
                 <input
                   id="update-service-image"
                   type="file"

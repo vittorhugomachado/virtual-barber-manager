@@ -10,7 +10,7 @@ import {
   Trash2,
   Loader2,
   EyeOff,
-  KeyRound,
+  Pencil,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,40 +56,42 @@ type Member = {
   username: string;
 };
 
-const formSchema = z.object({
-  username: z
-    .string()
-    .min(3, "Mínimo 3 caracteres")
-    .max(30, "Máximo 30 caracteres")
-    .regex(/^[a-z0-9_]+$/, "Apenas letras minúsculas, números e _"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-  role: z.enum(["admin", "reader"]),
-});
+type EditMemberData = {
+  username?: string;
+  password?: string;
+};
 
-type FormValues = z.infer<typeof formSchema>;
+type CreateMemberData = {
+  username: string;
+  password: string;
+  role: "admin" | "reader";
+};
 
 export function UsersSection() {
-  const { barbershop } = useBarbershopStore();
+  const { barbershop, memberRole } = useBarbershopStore();
   const [members, setMembers] = useState<Member[] | null>(null);
   const [fetchKey, setFetchKey] = useState(0);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<Member | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [editPasswordMember, setEditPasswordMember] = useState<Member | null>(
-    null,
-  );
-  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [editMember, setEditMember] = useState<Member | null>(null);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editForm, setEditForm] = useState({ username: "", password: "" });
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
 
-  const passwordForm = useForm<{ password: string }>({
+  const form = useForm<CreateMemberData>({
     resolver: zodResolver(
-      z.object({ password: z.string().min(6, "Mínimo 6 caracteres") }),
-    ) as Resolver<{ password: string }>,
-    defaultValues: { password: "" },
-  });
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema) as Resolver<FormValues>,
+      z.object({
+        username: z
+          .string()
+          .min(3, "Mínimo 3 caracteres")
+          .max(30, "Máximo 30 caracteres")
+          .regex(/^[a-z0-9_]+$/, "Apenas letras minúsculas, números e _"),
+        password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+        role: z.enum(["admin", "reader"]),
+      }),
+    ) as Resolver<CreateMemberData>,
     defaultValues: { username: "", password: "", role: "reader" },
   });
 
@@ -109,8 +111,11 @@ export function UsersSection() {
     };
   }, [barbershop?.id, fetchKey]);
 
-  async function onSubmit(values: FormValues) {
-    if (!barbershop) return;
+  async function handleCreateMember(values: CreateMemberData) {
+    if (!barbershop || memberRole !== "owner") {
+      toast.error("Apenas o proprietario pode adicionar usuarios.");
+      return;
+    }
 
     const {
       data: { session },
@@ -161,11 +166,16 @@ export function UsersSection() {
 
     toast.success("Usuário adicionado com sucesso.");
     form.reset();
-    setDialogOpen(false);
+    setShowCreateDialog(false);
     setFetchKey(k => k + 1);
   }
 
-  async function handleRemove(memberId: string) {
+  async function handleRemoveMember(memberId: string) {
+    if (memberRole !== "owner") {
+      toast.error("Apenas o proprietario pode remover usuarios.");
+      return;
+    }
+
     setRemovingId(memberId);
     const {
       data: { session },
@@ -186,16 +196,36 @@ export function UsersSection() {
     setRemovingId(null);
   }
 
-  async function handleUpdatePassword(values: { password: string }) {
-    if (!editPasswordMember) return;
+  async function handleEditMember(values: EditMemberData) {
+    if (!editMember || memberRole !== "owner") {
+      toast.error("Apenas o proprietario pode editar usuarios.");
+      return;
+    }
+
     const {
       data: { session },
     } = await supabase.auth.getSession();
-    const res = await supabase.functions.invoke("update-member-password", {
-      body: {
-        member_id: editPasswordMember.user_id,
-        password: values.password,
-      },
+
+    const body: EditMemberData & { member_id: string } = {
+      member_id: editMember.user_id,
+    };
+
+    if (values.username && values.username !== editMember.username) {
+      body.username = values.username;
+    }
+
+    if (values.password && values.password.length >= 6) {
+      body.password = values.password;
+    }
+
+    // Se não tiver nada para atualizar
+    if (!body.username && !body.password) {
+      toast.error("Nenhuma alteração detectada");
+      return;
+    }
+
+    const res = await supabase.functions.invoke("update-member", {
+      body,
       headers: { Authorization: `Bearer ${session?.access_token}` },
     });
 
@@ -204,9 +234,10 @@ export function UsersSection() {
       return;
     }
 
-    toast.success("Senha atualizada!");
-    setEditPasswordMember(null);
-    passwordForm.reset();
+    toast.success(res.data?.message || "Membro atualizado com sucesso!");
+    setEditMember(null);
+    setShowEditDialog(false);
+    setFetchKey(k => k + 1);
   }
 
   return (
@@ -217,6 +248,12 @@ export function UsersSection() {
           Gerencie quem tem acesso ao painel da sua barbearia.
         </p>
       </div>
+
+      {memberRole !== "owner" && (
+        <p className="px-3 text-sm text-muted-foreground">
+          Apenas o proprietario da barbearia pode gerenciar usuarios.
+        </p>
+      )}
 
       <div className="flex flex-col gap-2">
         {members === null ? (
@@ -257,12 +294,12 @@ export function UsersSection() {
                     variant="ghost"
                     className="h-8 w-8 cursor-pointer"
                     onClick={() => {
-                      setEditPasswordMember(member);
-                      setShowNewPassword(false);
-                      passwordForm.reset();
+                      setEditMember(member);
+                      setEditForm({ username: member.username, password: "" });
+                      setShowEditDialog(true);
                     }}
                   >
-                    <KeyRound className="h-4 w-4" />
+                    <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
                     size="icon"
@@ -287,19 +324,21 @@ export function UsersSection() {
       <Button
         variant="outline"
         className="w-fit cursor-pointer"
-        onClick={() => setDialogOpen(true)}
+        disabled={memberRole !== "owner"}
+        onClick={() => setShowCreateDialog(true)}
       >
         <Plus className="h-4 w-4 mr-2" />
         Novo usuário
       </Button>
 
+      {/* Dialog de criação de usuário */}
       <Dialog
-        open={dialogOpen}
+        open={showCreateDialog}
         onOpenChange={open => {
-          setDialogOpen(open);
+          setShowCreateDialog(open);
           if (!open) {
             form.reset();
-            setShowPassword(false);
+            setShowCreatePassword(false);
           }
         }}
       >
@@ -310,7 +349,7 @@ export function UsersSection() {
 
           <form
             id="add-member-form"
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(handleCreateMember)}
             className="flex flex-col gap-4 mb-2"
           >
             <FieldGroup>
@@ -348,7 +387,7 @@ export function UsersSection() {
                       <Input
                         {...field}
                         id="member-password"
-                        type={showPassword ? "text" : "password"}
+                        type={showCreatePassword ? "text" : "password"}
                         placeholder="Mínimo 6 caracteres"
                         aria-invalid={fieldState.invalid}
                         className="pr-10"
@@ -356,10 +395,10 @@ export function UsersSection() {
                       <button
                         type="button"
                         className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                        onClick={() => setShowPassword(v => !v)}
+                        onClick={() => setShowCreatePassword(v => !v)}
                         tabIndex={-1}
                       >
-                        {showPassword ? (
+                        {showCreatePassword ? (
                           <EyeOff className="h-4 w-4" />
                         ) : (
                           <Eye className="h-4 w-4" />
@@ -414,7 +453,7 @@ export function UsersSection() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setDialogOpen(false)}
+              onClick={() => setShowCreateDialog(false)}
               className="rounded-full"
             >
               Cancelar
@@ -435,88 +474,68 @@ export function UsersSection() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={!!editPasswordMember}
-        onOpenChange={open => {
-          if (!open) {
-            setEditPasswordMember(null);
-            passwordForm.reset();
-          }
-        }}
-      >
+      {/* Dialog de edição de usuário */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              Alterar senha — @{editPasswordMember?.username}
-            </DialogTitle>
+            <DialogTitle>Editar membro — @{editMember?.username}</DialogTitle>
           </DialogHeader>
-          <form
-            id="update-password-form"
-            onSubmit={passwordForm.handleSubmit(handleUpdatePassword)}
-            className="flex flex-col gap-4 mb-2"
-          >
-            <Controller
-              name="password"
-              control={passwordForm.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="new-member-password">
-                    Nova senha
-                  </FieldLabel>
-                  <div className="relative">
-                    <Input
-                      {...field}
-                      id="new-member-password"
-                      type={showNewPassword ? "text" : "password"}
-                      placeholder="Mínimo 6 caracteres"
-                      aria-invalid={fieldState.invalid}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                      onClick={() => setShowNewPassword(v => !v)}
-                      tabIndex={-1}
-                    >
-                      {showNewPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
+          <div className="flex flex-col gap-4">
+            <div>
+              <FieldLabel htmlFor="edit-username">Nome de usuário</FieldLabel>
+              <Input
+                id="edit-username"
+                value={editForm.username}
+                onChange={e =>
+                  setEditForm({
+                    ...editForm,
+                    username: e.target.value.toLowerCase(),
+                  })
+                }
+                placeholder="Novo nome de usuário"
+              />
+            </div>
+            <div>
+              <FieldLabel htmlFor="edit-password">
+                Nova senha (opcional)
+              </FieldLabel>
+              <div className="relative">
+                <Input
+                  id="edit-password"
+                  type={showEditPassword ? "text" : "password"}
+                  value={editForm.password}
+                  onChange={e =>
+                    setEditForm({ ...editForm, password: e.target.value })
+                  }
+                  placeholder="Deixe em branco para não alterar"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 flex items-center pr-3"
+                  onClick={() => setShowEditPassword(v => !v)}
+                >
+                  {showEditPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
                   )}
-                </Field>
-              )}
-            />
-          </form>
+                </button>
+              </div>
+            </div>
+          </div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-full"
-              onClick={() => setEditPasswordMember(null)}
-            >
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              form="update-password-form"
-              className="rounded-full"
-              disabled={passwordForm.formState.isSubmitting}
-            >
-              {passwordForm.formState.isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                "Salvar"
-              )}
+            <Button onClick={() => handleEditMember(editForm)}>
+              Salvar alterações
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Dialog de confirmação de remoção */}
       <AlertDialog
         open={!!confirmRemove}
         onOpenChange={open => {
@@ -538,7 +557,7 @@ export function UsersSection() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
                 if (confirmRemove) {
-                  handleRemove(confirmRemove.id);
+                  handleRemoveMember(confirmRemove.id);
                   setConfirmRemove(null);
                 }
               }}

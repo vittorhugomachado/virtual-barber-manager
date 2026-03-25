@@ -36,6 +36,9 @@ export function ProtectedRoute({
   if (memberRole === "reader" && pathname !== "/agenda")
     return <Navigate to="/agenda" replace />;
 
+  if (pathname === "/configuracoes" && memberRole !== "owner")
+    return <Navigate to="/" replace />;
+
   if (withSidebar) {
     return (
       <SidebarProvider>

@@ -13,9 +13,9 @@ Deno.serve(async req => {
   }
 
   try {
-    const { member_id, username, password } = await req.json();
+    const { member_id, username, password, role } = await req.json();
 
-    if (!member_id || (!username && !password)) {
+    if (!member_id || (!username && !password && !role)) {
       return new Response(
         JSON.stringify({ error: "Nenhuma alteracao valida foi enviada." }),
         {
@@ -119,6 +119,18 @@ Deno.serve(async req => {
       );
     }
 
+    if (role && role !== "admin" && role !== "reader") {
+      return new Response(
+        JSON.stringify({
+          error: "O perfil de acesso deve ser admin ou reader.",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     if (normalizedUsername && normalizedUsername !== member.username) {
       const { data: existing, error: existingError } = await adminClient
         .from("barbershop_members")
@@ -196,6 +208,20 @@ Deno.serve(async req => {
 
       if (updateError) {
         return new Response(JSON.stringify({ error: updateError.message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    if (role && role !== member.role) {
+      const { error: roleError } = await adminClient
+        .from("barbershop_members")
+        .update({ role })
+        .eq("user_id", member_id);
+
+      if (roleError) {
+        return new Response(JSON.stringify({ error: roleError.message }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });

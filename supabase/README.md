@@ -399,7 +399,7 @@ Personalização visual da página pública de cada barbearia.
 
 ## ⚙️ Funções SQL (Functions)
 
-Funções são blocos de lógica executados diretamente no banco. Usamos duas categorias:
+Funções são blocos de lógica executados diretamente no banco. Usamos quatro categorias:
 
 ### Funções de negócio (chamadas pelo frontend)
 
@@ -414,32 +414,17 @@ Cria uma barbearia completa em uma única transação atômica. Faz:
 #### `get_member_auth_email(p_username, p_slug)`
 Retorna o email sintético de um membro a partir do username e slug da barbearia. Usado no login de membros.
 
-#### `get_my_barbershop_id()`
-Retorna o ID da barbearia do usuário autenticado (seja como dono ou como membro).
+#### get_my_member_barbershop_id()
+Retorna o barbershop_id do membro autenticado. Usada pelo hook useBarbershopData() quando o usuário não é dono de nenhuma barbearia — se retornar null, o frontend faz signOut automaticamente.
 
-#### `get_my_member_barbershop_id()`
-Retorna o `barbershop_id` do membro autenticado.
-
-#### `is_barbershop_member(p_barbershop_id)`
-Retorna `true` se o usuário autenticado é membro da barbearia informada.
-
-#### `is_barbershop_admin(p_barbershop_id)`
-Retorna `true` se o usuário autenticado é membro com `role = 'admin'`.
-
-#### `user_has_barbershop_access(p_barbershop_id)`
-Retorna `true` se o usuário é dono **ou** membro da barbearia.
+| Tabela | Policy |
+|---|---|
+| `appointments` | `member can manage appointments` |
+| `barbershop_members` | `members_select` |
+| `customers` | `member can view customers` |
 
 #### `check_phone_exists(p_phone)`
 Retorna `true` se o telefone já está cadastrado em alguma barbearia.
-
-#### `add_member_by_email(p_email, p_role, p_barbershop_id)`
-Adiciona um usuário existente como membro de uma barbearia (legado — preferir Edge Function `create-member`).
-
-#### `remove_member(p_member_id)`
-Remove um membro. Só o dono da barbearia pode executar.
-
-#### `mark_no_show_appointments()`
-Marca como `no_show` todos os agendamentos com status `scheduled` que já passaram há mais de 40 minutos (considerando UTC-3). Executada via cron job.
 
 #### `get_barbershop_members(p_barbershop_id)`
 Retorna todos os membros de uma barbearia (id, user_id, role, username).
@@ -477,6 +462,51 @@ Impede deletar um cliente que ainda tem agendamentos com status `scheduled`.
 
 #### `update_updated_at()` / `set_updated_at()`
 Atualiza automaticamente o campo `updated_at` antes de qualquer UPDATE. Aplicado em quase todas as tabelas.
+
+---
+
+### Funções helper (usadas em policies RLS)
+
+#### `is_barbershop_admin(p_barbershop_id)`
+Retorna `true` se o usuário autenticado é membro com `role = 'admin'`.
+Não é chamada diretamente pelo frontend — é usada como helper em 5 policies RLS:
+
+| Tabela | Policy |
+|---|---|
+| `customers` | `admin can manage customers` |
+| `services` | `admin can manage services` |
+| `barbers` | `admin can manage barbers` |
+| `barber_services` | `admin can manage barber_services` |
+| `barber_availability` | `admin can manage barber_availability` |
+
+
+#### `is_barbershop_member(p_barbershop_id)`
+Retorna `true` se o usuário autenticado é membro da barbearia informada.
+Não é chamada diretamente pelo frontend — é usada como helper em 3 policies RLS:
+---
+
+### Funções de agendamento automático (cron jobs)
+
+#### `mark_no_show_appointments()`
+Marca como `no_show` todos os agendamentos com status `scheduled` que já
+passaram há mais de 40 minutos sem atualização manual (considerando UTC-3).
+
+Não é chamada pelo frontend — é executada automaticamente pelo cron job
+`mark-no-show-appointments` a cada **5 minutos** (`*/5 * * * *`).
+
+O frontend permite que a barbearia mude o status manualmente pelo painel
+de agendamentos. Essa função serve como fallback automático para os casos
+em que ninguém atualizou o status manualmente.
+
+> O intervalo de `3 hours` no SQL compensa o fuso horário BRT (UTC-3),
+> já que os timestamps são armazenados em UTC no banco.
+
+---
+
+### Funções legadas (não usar em código novo)
+
+#### `add_member_by_email(p_email, p_role, p_barbershop_id)`
+Adiciona um usuário existente como membro de uma barbearia (legado — preferir Edge Function `create-member`).
 
 ---
 

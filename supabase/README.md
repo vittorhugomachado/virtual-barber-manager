@@ -417,12 +417,6 @@ Retorna o email sintético de um membro a partir do username e slug da barbearia
 #### `get_my_member_barbershop_id()`
 Retorna o barbershop_id do membro autenticado. Usada pelo hook useBarbershopData() quando o usuário não é dono de nenhuma barbearia — se retornar null, o frontend faz signOut automaticamente.
 
-| Tabela | Policy |
-|---|---|
-| `appointments` | `member can manage appointments` |
-| `barbershop_members` | `members_select` |
-| `customers` | `member can view customers` |
-
 #### `check_phone_exists(p_phone)`
 Retorna `true` se o telefone já está cadastrado em alguma barbearia.
 
@@ -484,6 +478,12 @@ Não é chamada diretamente pelo frontend — é usada como helper em 5 policies
 #### `is_barbershop_member(p_barbershop_id)`
 Retorna `true` se o usuário autenticado é membro da barbearia informada.
 Não é chamada diretamente pelo frontend — é usada como helper em 3 policies RLS:
+
+| Tabela | Policy |
+|---|---|
+| `appointments` | `member can manage appointments` |
+| `barbershop_members` | `members_select` |
+| `customers` | `member can view customers` |
 ---
 
 ### Funções de agendamento automático (cron jobs)
@@ -618,18 +618,34 @@ Remove completamente um membro — deleta o usuário de `auth.users` (em cascata
 
 ---
 
-### `update-member-password`
-**Endpoint:** `POST /functions/v1/update-member-password`
+### `update-member`
+**Endpoint:** `POST /functions/v1/update-member`
 
-Altera a senha de um membro. Só o dono da barbearia pode executar.
+Atualiza dados de um membro da equipe. Usa a `service_role` porque precisa
+atualizar diretamente `auth.users` para alterar email e senha.
+
+**Fluxo:**
+1. Valida que o requester é dono da barbearia
+2. Se `username` foi alterado:
+   - Verifica se o novo username já está em uso nessa barbearia
+   - Atualiza o email sintético em `auth.users` → `{novo_username}@{barbershop_id}.member`
+   - Atualiza `barbershop_members.username`
+   - Atualiza `profiles.name`
+3. Se `password` foi enviado → atualiza senha em `auth.users`
+4. Se `role` foi alterado → atualiza `barbershop_members.role`
 
 **Body esperado:**
 ```json
 {
   "member_id": "uuid",
-  "password": "string"
+  "username": "string (opcional)",
+  "password": "string (opcional)",
+  "role": "admin" | "reader" (opcional)"
 }
 ```
+
+> Pelo menos um dos campos opcionais deve ser enviado.
+> `member_id` aqui é o `user_id` do `auth.users`, não o ID de `barbershop_members`.
 
 ---
 
@@ -643,16 +659,29 @@ O Supabase Storage armazena arquivos (imagens) em buckets. No projeto há 3 buck
 | `Virtual_barber` | ✅ Sim | 10 MB | `image/*` | Uso geral de assets da plataforma |
 | `gallery` | ✅ Sim | Sem limite | Sem restrição | Fotos da galeria de barbearias |
 
-### Como as imagens são organizadas no `barbershop-assets`
+### Como as imagens são organizadas nos buckets
 
-O caminho dos arquivos segue a convenção:
+#### Bucket `barbershop-assets` — convenção de paths:
 ```
-{owner_id}/services/{service_id}.{ext}
-{owner_id}/barbers/{barber_id}.{ext}
+{owner_id}/logo.{ext}                          ← logo da barbearia
+{owner_id}/barbers/{barber_id}.{ext}           ← foto do barbeiro
+{owner_id}/services/{service_id}.{ext}         ← imagem do serviço
 ```
 
-As imagens são salvas com **signed URLs** que expiram em 1 ano. Isso garante que mesmo sendo um bucket público, as URLs não são advinhadas facilmente.
+> Note: o `owner_id` é o ID do `profiles` do dono, não o `barbershop_id`.
 
+As imagens de barbeiros e serviços são salvas com **signed URLs** que expiram
+em 1 ano — a URL salva no banco contém um token de autenticação.
+A logo é salva com URL pública simples (sem token).
+
+#### Bucket `gallery` — convenção de paths:
+```
+{barbershop_id}/{timestamp}-{random}.{ext}     ← fotos da galeria
+```
+
+> A galeria usa `barbershop_id` (não `owner_id`) e gera um nome único
+> com timestamp + string aleatória para evitar colisões.
+> As URLs da galeria são públicas simples (sem token).
 ---
 
 ## 🧩 Extensions

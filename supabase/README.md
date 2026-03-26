@@ -63,10 +63,12 @@ O Supabase gerencia autenticação na tabela interna `auth.users` (schema `auth`
 
 ### Como funciona o fluxo de cadastro
 
-1. Usuário se cadastra (email/senha ou Google)
+1. Usuário se cadastra (barbearia com email e senha, cliente com OAuth)
 2. Supabase cria o registro em `auth.users`
-3. O trigger `trg_create_profile` dispara automaticamente
-4. A função `handle_new_user()` detecta o provider e cria o registro em `public.profiles` com o role correto:
+3. O trigger `trg_create_profile` dispara automaticamente — pertence ao
+   schema `auth` e não aparece no Dashboard em Database → Triggers
+4. A função `handle_new_user()` detecta o provider e cria o registro em
+   `public.profiles` com o role correto:
    - Provider `email` → `role = 'barbershop'`
    - Provider OAuth (Google, etc.) → `role = 'customer'`
 
@@ -88,15 +90,22 @@ const { data: profile } = await supabase
   .single()
 ```
 
+
 ### Email sintético de membros
 
-Membros da barbearia não têm email real. O sistema cria um email interno no formato:
+Membros da barbearia não têm email real. A Edge Function `create-member`
+cria um email interno no formato:
 ```
 {username}@{barbershop_id}.member
 ```
+
 Exemplo: `vitor@1fdd7b3a-066e-4394-a267-7b5c7fce794f.member`
 
-Isso permite que eles façam login sem expor emails reais. A função `get_member_auth_email()` monta esse email a partir do username e slug da barbearia.
+Isso permite que eles façam login sem expor emails reais. No login do membro função `get_member_auth_email()` é chamada no frontend via `supabase.rpc()`
+recebendo o `username` e o `slug` da barbearia como parâmetros, e retorna
+a string do email sintético com o `barbershop_id`. Esse email é então usado
+no `signInWithPassword` do Supabase Auth, que faz a validação real
+das credenciais.
 
 ---
 
@@ -112,10 +121,10 @@ Define o papel de um usuário na plataforma.
 | Valor | Descrição |
 |---|---|
 | `barbershop` | Dono de barbearia |
-| `barber` | Barbeiro (não usado ativamente, reservado) |
+| `barber` | Barbeiro (legado, não usar em código novo) |
 | `customer` | Cliente que agenda via app |
-| `member` | Membro da equipe de uma barbearia |
-| `barbershop_member` | Alias legado, não usar em código novo |
+| `barbershop_member` | Membro da equipe de uma barbearia |
+| `member` | Legado, não usar em código novo |
 
 #### `member_role`
 Define o nível de acesso de um membro dentro de uma barbearia.
@@ -148,7 +157,10 @@ Todas as tabelas ficam no schema `public` e têm **RLS habilitado**. Abaixo est�
 ---
 
 ### `profiles`
-Espelho de `auth.users`. Criado automaticamente via trigger no cadastro.
+Espelho de `auth.users`. Criado automaticamente pelo trigger
+`trg_create_profile` — que pertence ao schema `auth` e não aparece
+no Dashboard — quando um novo usuário é registrado em `auth.users`
+pelo Supabase Auth.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
@@ -174,9 +186,11 @@ Registro de cada barbearia cadastrada na plataforma.
 | `description` | text | Descrição da barbearia |
 | `logo_url` | text | URL do logo |
 | `banner_url` | text | URL do banner |
-| `is_active` | boolean | Se a barbearia está ativa |
 | `plan` | text | Plano contratado: `iniciante`, `profissional`, `master` |
 | `template` | text | Template visual da página pública |
+| `is_active` | boolean | Se a barbearia está ativa |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 > **Slug:** Gerado automaticamente pela função `register_barbershop()` a partir do nome. Acentos e caracteres especiais são removidos. Em caso de duplicata, 4 ou 15 chars do UUID são adicionados como sufixo.
 
@@ -198,6 +212,8 @@ Barbeiros vinculados a uma barbearia.
 | `description` | text | Bio/descrição |
 | `avatar_url` | text | Foto do barbeiro |
 | `is_active` | boolean | Se está ativo (limite do plano é verificado aqui) |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -214,6 +230,8 @@ Serviços oferecidos por uma barbearia.
 | `duration_min` | numeric | Duração em minutos |
 | `price` | numeric | Preço |
 | `is_active` | boolean | Se está ativo |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -238,6 +256,8 @@ Clientes de cada barbearia. Um cliente pode existir em múltiplas barbearias.
 | `name` | text | Nome do cliente |
 | `email` | text | Email |
 | `phone` | text | Telefone |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 > Clientes OAuth (login pelo Google) precisam ter um registro aqui criado **pelo frontend** após o primeiro login, pois o trigger não conhece o contexto da barbearia acessada.
 
@@ -253,10 +273,12 @@ Agendamentos. É a tabela central do sistema.
 | `customer_id` | uuid | FK para `customers` |
 | `barber_id` | uuid | FK para `barbers` |
 | `service_id` | uuid | FK para `services` |
-| `status` | appointment_status | Status atual |
+| `notes` | text | Observações |
 | `starts_at` | timestamptz | Início do agendamento |
 | `ends_at` | timestamptz | Fim do agendamento |
-| `notes` | text | Observações |
+| `status` | appointment_status | Status atual |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -265,6 +287,7 @@ Horários de funcionamento de cada barbearia por dia da semana.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `day_of_week` | smallint | 0=Domingo, 1=Segunda, ..., 6=Sábado |
 | `opens_at` | time | Horário de abertura |
@@ -281,6 +304,7 @@ Exceções ou personalizações de disponibilidade por barbeiro. Permite que um 
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barber_id` | uuid | FK para `barbers` |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `day_of_week` | smallint | Dia da semana |
@@ -288,6 +312,8 @@ Exceções ou personalizações de disponibilidade por barbeiro. Permite que um 
 | `use_custom_hours` | boolean | Se usa horário customizado |
 | `starts_at` | time | Início do horário customizado |
 | `ends_at` | time | Fim do horário customizado |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -296,10 +322,12 @@ Membros da equipe de uma barbearia. São funcionários com acesso ao painel de g
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `user_id` | uuid | FK para `auth.users` |
 | `username` | text | Nome de login (único por barbearia) |
 | `role` | member_role | `admin` ou `reader` |
+| `created_at` | timestamptz | Data de criação |
 
 ---
 
@@ -308,17 +336,20 @@ Endereço físico de uma barbearia.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `country` | text | País (default: `Brasil`) |
 | `state` | brazilian_state | Estado (enum com todos os 27 estados) |
+| `zip_code` | char | CEP |
 | `city` | text | Cidade |
 | `neighborhood` | text | Bairro |
 | `street` | text | Rua |
 | `number` | text | Número |
 | `complement` | text | Complemento (opcional) |
-| `zip_code` | char | CEP |
 | `latitude` | float | Coordenada geográfica (opcional) |
 | `longitude` | float | Coordenada geográfica (opcional) |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -327,9 +358,11 @@ Fotos da galeria de uma barbearia, exibidas na página pública.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `url` | text | URL da imagem |
 | `order` | integer | Ordem de exibição |
+| `created_at` | timestamptz | Data de criação |
 
 ---
 
@@ -338,10 +371,13 @@ Links de redes sociais de uma barbearia.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `instagram` | text | URL do Instagram |
 | `facebook` | text | URL do Facebook |
 | `tiktok` | text | URL do TikTok |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -350,17 +386,20 @@ Personalização visual da página pública de cada barbearia.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
+| `theme_is_dark` | boolean | Tema escuro ou claro |
 | `primary_color` | text | Cor primária (hex) |
 | `text_color` | text | Cor do texto (hex) |
 | `text_button_color` | text | Cor do texto nos botões (hex) |
-| `theme_is_dark` | boolean | Tema escuro ou claro |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
 ## ⚙️ Funções SQL (Functions)
 
-Funções são blocos de lógica executados diretamente no banco. Usamos duas categorias:
+Funções são blocos de lógica executados diretamente no banco. Usamos quatro categorias:
 
 ### Funções de negócio (chamadas pelo frontend)
 
@@ -375,32 +414,11 @@ Cria uma barbearia completa em uma única transação atômica. Faz:
 #### `get_member_auth_email(p_username, p_slug)`
 Retorna o email sintético de um membro a partir do username e slug da barbearia. Usado no login de membros.
 
-#### `get_my_barbershop_id()`
-Retorna o ID da barbearia do usuário autenticado (seja como dono ou como membro).
-
 #### `get_my_member_barbershop_id()`
-Retorna o `barbershop_id` do membro autenticado.
-
-#### `is_barbershop_member(p_barbershop_id)`
-Retorna `true` se o usuário autenticado é membro da barbearia informada.
-
-#### `is_barbershop_admin(p_barbershop_id)`
-Retorna `true` se o usuário autenticado é membro com `role = 'admin'`.
-
-#### `user_has_barbershop_access(p_barbershop_id)`
-Retorna `true` se o usuário é dono **ou** membro da barbearia.
+Retorna o barbershop_id do membro autenticado. Usada pelo hook useBarbershopData() quando o usuário não é dono de nenhuma barbearia — se retornar null, o frontend faz signOut automaticamente.
 
 #### `check_phone_exists(p_phone)`
 Retorna `true` se o telefone já está cadastrado em alguma barbearia.
-
-#### `add_member_by_email(p_email, p_role, p_barbershop_id)`
-Adiciona um usuário existente como membro de uma barbearia (legado — preferir Edge Function `create-member`).
-
-#### `remove_member(p_member_id)`
-Remove um membro. Só o dono da barbearia pode executar.
-
-#### `mark_no_show_appointments()`
-Marca como `no_show` todos os agendamentos com status `scheduled` que já passaram há mais de 40 minutos (considerando UTC-3). Executada via cron job.
 
 #### `get_barbershop_members(p_barbershop_id)`
 Retorna todos os membros de uma barbearia (id, user_id, role, username).
@@ -441,6 +459,58 @@ Atualiza automaticamente o campo `updated_at` antes de qualquer UPDATE. Aplicado
 
 ---
 
+### Funções helper (usadas em policies RLS)
+Não são chamadas pelo frontend — são executadas automaticamente pelo PostgreSQL toda vez que uma query passa por uma policy RLS.
+
+#### `is_barbershop_admin(p_barbershop_id)`
+Retorna `true` se o usuário autenticado é membro com `role = 'admin'`.
+Não é chamada diretamente pelo frontend — é usada como helper em 5 policies RLS:
+
+| Tabela | Policy |
+|---|---|
+| `customers` | `admin can manage customers` |
+| `services` | `admin can manage services` |
+| `barbers` | `admin can manage barbers` |
+| `barber_services` | `admin can manage barber_services` |
+| `barber_availability` | `admin can manage barber_availability` |
+
+
+#### `is_barbershop_member(p_barbershop_id)`
+Retorna `true` se o usuário autenticado é membro da barbearia informada.
+Não é chamada diretamente pelo frontend — é usada como helper em 3 policies RLS:
+
+| Tabela | Policy |
+|---|---|
+| `appointments` | `member can manage appointments` |
+| `barbershop_members` | `members_select` |
+| `customers` | `member can view customers` |
+---
+
+### Funções de agendamento automático (cron jobs)
+
+#### `mark_no_show_appointments()`
+Marca como `no_show` todos os agendamentos com status `scheduled` que já
+passaram há mais de 40 minutos sem atualização manual (considerando UTC-3).
+
+Não é chamada pelo frontend — é executada automaticamente pelo cron job
+`mark-no-show-appointments` a cada **5 minutos** (`*/5 * * * *`).
+
+O frontend permite que a barbearia mude o status manualmente pelo painel
+de agendamentos. Essa função serve como fallback automático para os casos
+em que ninguém atualizou o status manualmente.
+
+> O intervalo de `3 hours` no SQL compensa o fuso horário BRT (UTC-3),
+> já que os timestamps são armazenados em UTC no banco.
+
+---
+
+### Funções legadas (não usar em código novo)
+
+#### `add_member_by_email(p_email, p_role, p_barbershop_id)`
+Adiciona um usuário existente como membro de uma barbearia (legado — preferir Edge Function `create-member`).
+
+---
+
 ## 🔁 Triggers
 
 Triggers são gatilhos que executam funções automaticamente em resposta a eventos no banco.
@@ -462,8 +532,6 @@ Triggers são gatilhos que executam funções automaticamente em resposta a even
 | `trg_services_updated_at` | `services` | UPDATE (BEFORE) | `update_updated_at()` |
 | `trg_addresses_updated_at` | `addresses` | UPDATE (BEFORE) | `update_updated_at()` |
 | `trg_profiles_updated_at` | `profiles` | UPDATE (BEFORE) | `update_updated_at()` |
-
-> ⚠️ Existe um trigger `trg_create_profile` também em `public.profiles` que pode causar loop — deve ser removido. Apenas o trigger em `auth.users` é necessário.
 
 ---
 
@@ -550,18 +618,34 @@ Remove completamente um membro — deleta o usuário de `auth.users` (em cascata
 
 ---
 
-### `update-member-password`
-**Endpoint:** `POST /functions/v1/update-member-password`
+### `update-member`
+**Endpoint:** `POST /functions/v1/update-member`
 
-Altera a senha de um membro. Só o dono da barbearia pode executar.
+Atualiza dados de um membro da equipe. Usa a `service_role` porque precisa
+atualizar diretamente `auth.users` para alterar email e senha.
+
+**Fluxo:**
+1. Valida que o requester é dono da barbearia
+2. Se `username` foi alterado:
+   - Verifica se o novo username já está em uso nessa barbearia
+   - Atualiza o email sintético em `auth.users` → `{novo_username}@{barbershop_id}.member`
+   - Atualiza `barbershop_members.username`
+   - Atualiza `profiles.name`
+3. Se `password` foi enviado → atualiza senha em `auth.users`
+4. Se `role` foi alterado → atualiza `barbershop_members.role`
 
 **Body esperado:**
 ```json
 {
   "member_id": "uuid",
-  "password": "string"
+  "username": "string (opcional)",
+  "password": "string (opcional)",
+  "role": "admin" | "reader" (opcional)"
 }
 ```
+
+> Pelo menos um dos campos opcionais deve ser enviado.
+> `member_id` aqui é o `user_id` do `auth.users`, não o ID de `barbershop_members`.
 
 ---
 
@@ -575,16 +659,29 @@ O Supabase Storage armazena arquivos (imagens) em buckets. No projeto há 3 buck
 | `Virtual_barber` | ✅ Sim | 10 MB | `image/*` | Uso geral de assets da plataforma |
 | `gallery` | ✅ Sim | Sem limite | Sem restrição | Fotos da galeria de barbearias |
 
-### Como as imagens são organizadas no `barbershop-assets`
+### Como as imagens são organizadas nos buckets
 
-O caminho dos arquivos segue a convenção:
+#### Bucket `barbershop-assets` — convenção de paths:
 ```
-{owner_id}/services/{service_id}.{ext}
-{owner_id}/barbers/{barber_id}.{ext}
+{owner_id}/logo.{ext}                          ← logo da barbearia
+{owner_id}/barbers/{barber_id}.{ext}           ← foto do barbeiro
+{owner_id}/services/{service_id}.{ext}         ← imagem do serviço
 ```
 
-As imagens são salvas com **signed URLs** que expiram em 1 ano. Isso garante que mesmo sendo um bucket público, as URLs não são advinhadas facilmente.
+> Note: o `owner_id` é o ID do `profiles` do dono, não o `barbershop_id`.
 
+As imagens de barbeiros e serviços são salvas com **signed URLs** que expiram
+em 1 ano — a URL salva no banco contém um token de autenticação.
+A logo é salva com URL pública simples (sem token).
+
+#### Bucket `gallery` — convenção de paths:
+```
+{barbershop_id}/{timestamp}-{random}.{ext}     ← fotos da galeria
+```
+
+> A galeria usa `barbershop_id` (não `owner_id`) e gera um nome único
+> com timestamp + string aleatória para evitar colisões.
+> As URLs da galeria são públicas simples (sem token).
 ---
 
 ## 🧩 Extensions

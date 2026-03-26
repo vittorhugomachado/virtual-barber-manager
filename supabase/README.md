@@ -414,7 +414,7 @@ Cria uma barbearia completa em uma única transação atômica. Faz:
 #### `get_member_auth_email(p_username, p_slug)`
 Retorna o email sintético de um membro a partir do username e slug da barbearia. Usado no login de membros.
 
-#### get_my_member_barbershop_id()
+#### `get_my_member_barbershop_id()`
 Retorna o barbershop_id do membro autenticado. Usada pelo hook useBarbershopData() quando o usuário não é dono de nenhuma barbearia — se retornar null, o frontend faz signOut automaticamente.
 
 | Tabela | Policy |
@@ -466,6 +466,7 @@ Atualiza automaticamente o campo `updated_at` antes de qualquer UPDATE. Aplicado
 ---
 
 ### Funções helper (usadas em policies RLS)
+Não são chamadas pelo frontend — são executadas automaticamente pelo PostgreSQL toda vez que uma query passa por uma policy RLS.
 
 #### `is_barbershop_admin(p_barbershop_id)`
 Retorna `true` se o usuário autenticado é membro com `role = 'admin'`.
@@ -531,8 +532,6 @@ Triggers são gatilhos que executam funções automaticamente em resposta a even
 | `trg_services_updated_at` | `services` | UPDATE (BEFORE) | `update_updated_at()` |
 | `trg_addresses_updated_at` | `addresses` | UPDATE (BEFORE) | `update_updated_at()` |
 | `trg_profiles_updated_at` | `profiles` | UPDATE (BEFORE) | `update_updated_at()` |
-
-> ⚠️ Existe um trigger `trg_create_profile` também em `public.profiles` que pode causar loop — deve ser removido. Apenas o trigger em `auth.users` é necessário.
 
 ---
 

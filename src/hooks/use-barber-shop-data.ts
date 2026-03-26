@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "./use-auth";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { supabase } from "@/lib/supabase/supabase";
@@ -6,37 +6,36 @@ import { supabase } from "@/lib/supabase/supabase";
 export function useBarbershopData() {
   const { session, loading: authLoading } = useAuth();
   const { setBarbershopWithRole, clearBarbershop } = useBarbershopStore();
-  // undefined = not yet initialized, null = no user, string = loaded for that userId
-  const [loadedForId, setLoadedForId] = useState<string | null | undefined>(
-    undefined,
-  );
+  const loadedForId = useRef<string | null | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
 
   const userId = session?.user.id ?? null;
-  const loading = authLoading || (userId !== null && loadedForId !== userId);
+  const loading = authLoading || isLoading;
 
   useEffect(() => {
     if (authLoading) return;
 
-    if (!userId) {
-      if (loadedForId !== null && loadedForId !== undefined) {
-        clearBarbershop();
-        setLoadedForId(null);
-      }
-      return;
-    }
-
-    if (loadedForId === userId) return;
-
-    clearBarbershop();
-
     let cancelled = false;
 
     async function load() {
-      // 1. Tenta carregar como owner
+      if (!userId) {
+        if (loadedForId.current !== null && loadedForId.current !== undefined) {
+          clearBarbershop();
+          loadedForId.current = null;
+        }
+        setIsLoading(false);
+        return;
+      }
+
+      if (loadedForId.current === userId) return;
+
+      clearBarbershop();
+      setIsLoading(true);
+
       const { data: ownerData } = await supabase
         .from("barbershops")
         .select("*, profiles(name)")
-        .eq("owner_id", userId!)
+        .eq("owner_id", userId)
         .maybeSingle();
 
       if (cancelled) return;
@@ -46,11 +45,11 @@ export function useBarbershopData() {
           { ...ownerData, owner_name: ownerData.profiles?.name ?? "" },
           "owner",
         );
-        setLoadedForId(userId);
+        loadedForId.current = userId;
+        setIsLoading(false);
         return;
       }
 
-      // 2. Tenta carregar como membro
       const { data: barbershopId, error: rpcError } = await supabase.rpc(
         "get_my_member_barbershop_id",
       );
@@ -58,8 +57,8 @@ export function useBarbershopData() {
       if (cancelled) return;
 
       if (rpcError || !barbershopId) {
-        // Usuário autenticado mas sem vínculo — conta pode ter sido excluída
         await supabase.auth.signOut();
+        setIsLoading(false);
         return;
       }
 
@@ -72,7 +71,7 @@ export function useBarbershopData() {
         supabase
           .from("barbershop_members")
           .select("role, username")
-          .eq("user_id", userId!)
+          .eq("user_id", userId)
           .single(),
       ]);
 
@@ -86,7 +85,8 @@ export function useBarbershopData() {
         );
       }
 
-      setLoadedForId(userId);
+      loadedForId.current = userId;
+      setIsLoading(false);
     }
 
     load();
@@ -94,13 +94,7 @@ export function useBarbershopData() {
     return () => {
       cancelled = true;
     };
-  }, [
-    userId,
-    authLoading,
-    setBarbershopWithRole,
-    clearBarbershop,
-    loadedForId,
-  ]);
+  }, [userId, authLoading, setBarbershopWithRole, clearBarbershop]);
 
   return { barbershop: useBarbershopStore(s => s.barbershop), loading };
 }

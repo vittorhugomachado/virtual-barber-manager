@@ -416,7 +416,7 @@ export function UsersSection() {
             members.map(member => (
               <Card key={member.id}>
                 <CardContent className="flex flex-col sm:flex-row sm:justify-between items-center justify-center px-5">
-                  <div className="flex flex-col items-center sm:items-start gap-0.5 mb-2 min-w-0">
+                  <div className="flex flex-col items-center sm:items-start gap-0.5 mb-2 sm:mb-0 min-w-0">
                     <span className="font-medium truncate">
                       @{member.username}
                     </span>

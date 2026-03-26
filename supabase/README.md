@@ -121,10 +121,10 @@ Define o papel de um usuário na plataforma.
 | Valor | Descrição |
 |---|---|
 | `barbershop` | Dono de barbearia |
-| `barber` | Barbeiro (não usado ativamente, reservado) |
+| `barber` | Barbeiro (legado, não usar em código novo) |
 | `customer` | Cliente que agenda via app |
-| `member` | Membro da equipe de uma barbearia |
-| `barbershop_member` | Alias legado, não usar em código novo |
+| `barbershop_member` | Membro da equipe de uma barbearia |
+| `member` | Legado, não usar em código novo |
 
 #### `member_role`
 Define o nível de acesso de um membro dentro de uma barbearia.
@@ -157,7 +157,10 @@ Todas as tabelas ficam no schema `public` e têm **RLS habilitado**. Abaixo est�
 ---
 
 ### `profiles`
-Espelho de `auth.users`. Criado automaticamente via trigger no cadastro.
+Espelho de `auth.users`. Criado automaticamente pelo trigger
+`trg_create_profile` — que pertence ao schema `auth` e não aparece
+no Dashboard — quando um novo usuário é registrado em `auth.users`
+pelo Supabase Auth.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
@@ -183,9 +186,11 @@ Registro de cada barbearia cadastrada na plataforma.
 | `description` | text | Descrição da barbearia |
 | `logo_url` | text | URL do logo |
 | `banner_url` | text | URL do banner |
-| `is_active` | boolean | Se a barbearia está ativa |
 | `plan` | text | Plano contratado: `iniciante`, `profissional`, `master` |
 | `template` | text | Template visual da página pública |
+| `is_active` | boolean | Se a barbearia está ativa |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 > **Slug:** Gerado automaticamente pela função `register_barbershop()` a partir do nome. Acentos e caracteres especiais são removidos. Em caso de duplicata, 4 ou 15 chars do UUID são adicionados como sufixo.
 
@@ -207,6 +212,8 @@ Barbeiros vinculados a uma barbearia.
 | `description` | text | Bio/descrição |
 | `avatar_url` | text | Foto do barbeiro |
 | `is_active` | boolean | Se está ativo (limite do plano é verificado aqui) |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -223,6 +230,8 @@ Serviços oferecidos por uma barbearia.
 | `duration_min` | numeric | Duração em minutos |
 | `price` | numeric | Preço |
 | `is_active` | boolean | Se está ativo |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -247,6 +256,8 @@ Clientes de cada barbearia. Um cliente pode existir em múltiplas barbearias.
 | `name` | text | Nome do cliente |
 | `email` | text | Email |
 | `phone` | text | Telefone |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 > Clientes OAuth (login pelo Google) precisam ter um registro aqui criado **pelo frontend** após o primeiro login, pois o trigger não conhece o contexto da barbearia acessada.
 
@@ -262,10 +273,12 @@ Agendamentos. É a tabela central do sistema.
 | `customer_id` | uuid | FK para `customers` |
 | `barber_id` | uuid | FK para `barbers` |
 | `service_id` | uuid | FK para `services` |
-| `status` | appointment_status | Status atual |
+| `notes` | text | Observações |
 | `starts_at` | timestamptz | Início do agendamento |
 | `ends_at` | timestamptz | Fim do agendamento |
-| `notes` | text | Observações |
+| `status` | appointment_status | Status atual |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -274,6 +287,7 @@ Horários de funcionamento de cada barbearia por dia da semana.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `day_of_week` | smallint | 0=Domingo, 1=Segunda, ..., 6=Sábado |
 | `opens_at` | time | Horário de abertura |
@@ -290,6 +304,7 @@ Exceções ou personalizações de disponibilidade por barbeiro. Permite que um 
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barber_id` | uuid | FK para `barbers` |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `day_of_week` | smallint | Dia da semana |
@@ -297,6 +312,8 @@ Exceções ou personalizações de disponibilidade por barbeiro. Permite que um 
 | `use_custom_hours` | boolean | Se usa horário customizado |
 | `starts_at` | time | Início do horário customizado |
 | `ends_at` | time | Fim do horário customizado |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -305,10 +322,12 @@ Membros da equipe de uma barbearia. São funcionários com acesso ao painel de g
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `user_id` | uuid | FK para `auth.users` |
 | `username` | text | Nome de login (único por barbearia) |
 | `role` | member_role | `admin` ou `reader` |
+| `created_at` | timestamptz | Data de criação |
 
 ---
 
@@ -317,17 +336,20 @@ Endereço físico de uma barbearia.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `country` | text | País (default: `Brasil`) |
 | `state` | brazilian_state | Estado (enum com todos os 27 estados) |
+| `zip_code` | char | CEP |
 | `city` | text | Cidade |
 | `neighborhood` | text | Bairro |
 | `street` | text | Rua |
 | `number` | text | Número |
 | `complement` | text | Complemento (opcional) |
-| `zip_code` | char | CEP |
 | `latitude` | float | Coordenada geográfica (opcional) |
 | `longitude` | float | Coordenada geográfica (opcional) |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -336,9 +358,11 @@ Fotos da galeria de uma barbearia, exibidas na página pública.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `url` | text | URL da imagem |
 | `order` | integer | Ordem de exibição |
+| `created_at` | timestamptz | Data de criação |
 
 ---
 
@@ -347,10 +371,13 @@ Links de redes sociais de uma barbearia.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
 | `instagram` | text | URL do Instagram |
 | `facebook` | text | URL do Facebook |
 | `tiktok` | text | URL do TikTok |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 
@@ -359,11 +386,14 @@ Personalização visual da página pública de cada barbearia.
 
 | Coluna | Tipo | Descrição |
 |---|---|---|
+| `id` | uuid | ID único |
 | `barbershop_id` | uuid | FK para `barbershops` |
+| `theme_is_dark` | boolean | Tema escuro ou claro |
 | `primary_color` | text | Cor primária (hex) |
 | `text_color` | text | Cor do texto (hex) |
 | `text_button_color` | text | Cor do texto nos botões (hex) |
-| `theme_is_dark` | boolean | Tema escuro ou claro |
+| `created_at` | timestamptz | Data de criação |
+| `updated_at` | timestamptz | Última atualização |
 
 ---
 

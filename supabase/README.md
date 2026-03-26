@@ -63,10 +63,12 @@ O Supabase gerencia autenticação na tabela interna `auth.users` (schema `auth`
 
 ### Como funciona o fluxo de cadastro
 
-1. Usuário se cadastra (email/senha ou Google)
+1. Usuário se cadastra (barbearia com email e senha, cliente com OAuth)
 2. Supabase cria o registro em `auth.users`
-3. O trigger `trg_create_profile` dispara automaticamente
-4. A função `handle_new_user()` detecta o provider e cria o registro em `public.profiles` com o role correto:
+3. O trigger `trg_create_profile` dispara automaticamente — pertence ao
+   schema `auth` e não aparece no Dashboard em Database → Triggers
+4. A função `handle_new_user()` detecta o provider e cria o registro em
+   `public.profiles` com o role correto:
    - Provider `email` → `role = 'barbershop'`
    - Provider OAuth (Google, etc.) → `role = 'customer'`
 
@@ -88,15 +90,22 @@ const { data: profile } = await supabase
   .single()
 ```
 
+
 ### Email sintético de membros
 
-Membros da barbearia não têm email real. O sistema cria um email interno no formato:
+Membros da barbearia não têm email real. A Edge Function `create-member`
+cria um email interno no formato:
 ```
 {username}@{barbershop_id}.member
 ```
+
 Exemplo: `vitor@1fdd7b3a-066e-4394-a267-7b5c7fce794f.member`
 
-Isso permite que eles façam login sem expor emails reais. A função `get_member_auth_email()` monta esse email a partir do username e slug da barbearia.
+Isso permite que eles façam login sem expor emails reais. No login do membro função `get_member_auth_email()` é chamada no frontend via `supabase.rpc()`
+recebendo o `username` e o `slug` da barbearia como parâmetros, e retorna
+a string do email sintético com o `barbershop_id`. Esse email é então usado
+no `signInWithPassword` do Supabase Auth, que faz a validação real
+das credenciais.
 
 ---
 

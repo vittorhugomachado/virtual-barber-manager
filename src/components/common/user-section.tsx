@@ -90,6 +90,12 @@ const usernameSchema = z
   .max(30, "Maximo 30 caracteres")
   .regex(/^[a-z0-9_]+$/, "Apenas letras minusculas, numeros e _");
 
+const createMemberSchema = z.object({
+  username: usernameSchema,
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  role: z.enum(["admin", "reader"]),
+});
+
 function getRoleLabel(role: "admin" | "reader") {
   return role === "admin" ? "Admin" : "Leitor";
 }
@@ -172,13 +178,7 @@ export function UsersSection() {
       : null;
 
   const form = useForm<CreateMemberData>({
-    resolver: zodResolver(
-      z.object({
-        username: usernameSchema,
-        password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-        role: z.enum(["admin", "reader"]),
-      }),
-    ) as Resolver<CreateMemberData>,
+    resolver: zodResolver(createMemberSchema) as Resolver<CreateMemberData>,
     defaultValues: { username: "", password: "", role: "reader" },
   });
 
@@ -497,7 +497,7 @@ export function UsersSection() {
             }
           }}
         >
-          <DialogContent className="sm:max-w-md">
+          {showCreateDialog && <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Adicionar usuário</DialogTitle>
             </DialogHeader>
@@ -521,6 +521,7 @@ export function UsersSection() {
                       <Input
                         {...field}
                         id="member-username"
+                        autoComplete="username"
                         placeholder="ex: joao_silva"
                         aria-invalid={fieldState.invalid}
                         onChange={e =>
@@ -544,6 +545,7 @@ export function UsersSection() {
                         <Input
                           {...field}
                           id="member-password"
+                          autoComplete="new-password"
                           type={showCreatePassword ? "text" : "password"}
                           placeholder="Mínimo 6 caracteres"
                           aria-invalid={fieldState.invalid}
@@ -628,12 +630,12 @@ export function UsersSection() {
                 )}
               </Button>
             </DialogFooter>
-          </DialogContent>
+          </DialogContent>}
         </Dialog>
 
         {/* Dialog de edição de usuário */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="sm:max-w-md">
+          {showEditDialog && <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Editar membro — @{editMember?.username}</DialogTitle>
             </DialogHeader>
@@ -642,6 +644,7 @@ export function UsersSection() {
                 <FieldLabel htmlFor="edit-username">Nome de usuário</FieldLabel>
                 <Input
                   id="edit-username"
+                  autoComplete="username"
                   value={editForm.username}
                   aria-invalid={!!editUsernameError}
                   onChange={e =>
@@ -694,6 +697,7 @@ export function UsersSection() {
                 <div className="relative">
                   <Input
                     id="edit-password"
+                    autoComplete="new-password"
                     type={showEditPassword ? "text" : "password"}
                     value={editForm.password}
                     onChange={e =>
@@ -730,7 +734,7 @@ export function UsersSection() {
                 Salvar alterações
               </Button>
             </DialogFooter>
-          </DialogContent>
+          </DialogContent>}
         </Dialog>
 
         {/* Dialog de confirmação de remoção */}

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { supabase } from "@/lib/supabase/supabase";
 import { useNavigate } from "react-router";
+import { getSupabaseClient } from "@/lib/supabase/lazy-supabase";
 
 export function useLogout() {
   const navigate = useNavigate();
@@ -11,6 +11,7 @@ export function useLogout() {
     setIsLoading(true);
 
     try {
+      const supabase = await getSupabaseClient();
       await supabase.auth.signOut();
       navigate("/entrar");
     } finally {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "./use-auth";
 import { useBarbershopStore } from "@/store/barbershop.store";
-import { supabase } from "@/lib/supabase/supabase";
+import { getSupabaseClient } from "@/lib/supabase/lazy-supabase";
 
 export function useBarbershopData() {
   const { session, loading: authLoading } = useAuth();
@@ -18,6 +18,10 @@ export function useBarbershopData() {
     let cancelled = false;
 
     async function load() {
+      const supabase = await getSupabaseClient();
+
+      if (cancelled) return;
+
       if (!userId) {
         if (loadedForId.current !== null && loadedForId.current !== undefined) {
           clearBarbershop();
@@ -89,7 +93,7 @@ export function useBarbershopData() {
       setIsLoading(false);
     }
 
-    load();
+    void load();
 
     return () => {
       cancelled = true;

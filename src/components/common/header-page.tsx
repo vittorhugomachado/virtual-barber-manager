@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getOptimizedPublicImageUrl } from "@/lib/supabase/storage/get-optimized-public-image-url";
 
 interface HeaderPageProps {
   page: string;
@@ -28,6 +29,11 @@ export function HeaderPage({ page }: HeaderPageProps) {
       ? "Administrador"
       : "Leitor"
     : (barbershop?.name ?? "");
+  const optimizedLogoUrl = getOptimizedPublicImageUrl(barbershop?.logo_url, {
+    width: 96,
+    height: 96,
+    quality: 70,
+  });
 
   return (
     <header className="w-full relative flex items-center justify-center md:justify-start gap-2 min-w-0 md:pl-12 mb-4 mt-3 md:mb-3.5">
@@ -48,7 +54,22 @@ export function HeaderPage({ page }: HeaderPageProps) {
             <button className="flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity focus:outline-none">
               <Avatar className="h-12 w-12">
                 {!isMember && (
-                  <AvatarImage src={barbershop?.logo_url ?? undefined} />
+                  <AvatarImage
+                    src={optimizedLogoUrl}
+                    srcSet={
+                      optimizedLogoUrl
+                        ? `${getOptimizedPublicImageUrl(barbershop?.logo_url, {
+                            width: 48,
+                            height: 48,
+                            quality: 70,
+                          })} 1x, ${optimizedLogoUrl} 2x`
+                        : undefined
+                    }
+                    sizes="48px"
+                    width={48}
+                    height={48}
+                    decoding="async"
+                  />
                 )}
                 <AvatarFallback>
                   <User />

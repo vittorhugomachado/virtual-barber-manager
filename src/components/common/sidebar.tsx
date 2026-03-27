@@ -67,6 +67,10 @@ export function SidebarComponent() {
           <img
             src="./logo.png"
             alt="logo"
+            width={150}
+            height={151}
+            loading="eager"
+            decoding="async"
             className="w-6 mx-auto pb-4 pt-3 border-b"
           />
         )}

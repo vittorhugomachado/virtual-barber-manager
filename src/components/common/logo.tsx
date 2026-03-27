@@ -4,11 +4,19 @@ export function Logo({ style }: { style?: string }) {
       <img
         src="/logo-dark.png"
         alt="logo"
+        width={600}
+        height={63}
+        loading="eager"
+        decoding="async"
         className="hidden dark:block object-contain"
       />
       <img
         src="/logo-light.png"
         alt="logo"
+        width={600}
+        height={61}
+        loading="eager"
+        decoding="async"
         className="object-contain dark:hidden"
       />
     </div>

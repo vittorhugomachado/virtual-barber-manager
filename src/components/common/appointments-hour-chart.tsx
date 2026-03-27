@@ -8,9 +8,9 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { ChevronLeft, ChevronRight, Clock, StoreIcon } from "lucide-react";
+import { getSupabaseClient } from "@/lib/supabase/lazy-supabase";
 
 const chartConfig = {
   concluido: { label: "Concluído", color: "#22c55e" },
@@ -79,6 +79,8 @@ export function AppointmentsHourChart({
   useEffect(() => {
     if (isControlled || !barbershop?.id) return;
 
+    let cancelled = false;
+
     const dateStr = toLocalDateStr(selectedDate);
     const dayStart = `${dateStr}T00:00:00Z`;
     const dayEnd = `${dateStr}T23:59:59Z`;
@@ -86,6 +88,7 @@ export function AppointmentsHourChart({
 
     async function fetchData() {
       setLoading(true);
+      const supabase = await getSupabaseClient();
 
       const [{ data: hoursData }, { data: aptsData }] = await Promise.all([
         supabase
@@ -105,6 +108,9 @@ export function AppointmentsHourChart({
         !hoursData ||
         hoursData.length === 0 ||
         hoursData.every(r => !r.is_open);
+
+      if (cancelled) return;
+
       setIsClosed(closed);
 
       const buckets = Array.from({ length: 24 }, () => ({
@@ -137,6 +143,10 @@ export function AppointmentsHourChart({
     }
 
     void fetchData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [barbershop, selectedDate, isControlled]);
 
   function changeDate(delta: number) {

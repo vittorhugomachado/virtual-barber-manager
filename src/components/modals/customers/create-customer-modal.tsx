@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,7 +92,9 @@ export function CreateCustomerModal({
           <DialogHeader>
             <DialogTitle className="mb-4">Novo cliente</DialogTitle>
           </DialogHeader>
-
+          <DialogDescription className="sr-only">
+            Criar novo cliente
+          </DialogDescription>
           <form
             id="create-customer-form"
             onSubmit={form.handleSubmit(onSubmit)}

@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -233,7 +234,9 @@ export function UpdateBarberModal({
           <DialogHeader>
             <DialogTitle className="mb-4">Editar barbeiro</DialogTitle>
           </DialogHeader>
-
+          <DialogDescription className="sr-only">
+            Editar barbeiro
+          </DialogDescription>
           <form
             id="update-barber-form"
             onSubmit={form.handleSubmit(onSubmit)}

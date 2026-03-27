@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -500,7 +501,9 @@ export function UsersSection() {
             <DialogHeader>
               <DialogTitle>Adicionar usuário</DialogTitle>
             </DialogHeader>
-
+            <DialogDescription className="sr-only">
+              Criar novo usuário
+            </DialogDescription>
             <form
               id="add-member-form"
               onSubmit={form.handleSubmit(handleCreateMember)}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ImageCropper } from "../ui/image-cropped";
 import { supabase } from "@/lib/supabase/supabase";
 import { handleUploadBanner } from "@/lib/supabase/storage/handle-upload-banner";
 import { handleUploadLogo } from "@/lib/supabase/storage/handle-upload-logo";
@@ -23,6 +22,12 @@ import {
 import { maskPhone } from "@/utils/masked-input-phone";
 import { Copy } from "lucide-react";
 import { getOptimizedPublicImageUrl } from "@/lib/supabase/storage/get-optimized-public-image-url";
+
+const ImageCropper = lazy(() =>
+  import("../ui/image-cropped").then(module => ({
+    default: module.ImageCropper,
+  })),
+);
 
 const formSchema = z.object({
   name: z
@@ -442,17 +447,21 @@ export function BarbershopSettingsForm() {
       >
         {form.formState.isSubmitting ? "Salvando..." : "Salvar alterações"}
       </Button>
-      <ImageCropper
-        open={cropperOpen}
-        imageUrl={cropperImageUrl}
-        aspect={cropperType === "logo" ? 1 : 4}
-        cropShape={cropperType === "logo" ? "round" : "rect"}
-        onConfirm={(croppedFile: File) => {
-          setCropperOpen(false);
-          handleImageUpload(croppedFile, cropperType);
-        }}
-        onCancel={() => setCropperOpen(false)}
-      />
+      {cropperOpen && (
+        <Suspense fallback={null}>
+          <ImageCropper
+            open={cropperOpen}
+            imageUrl={cropperImageUrl}
+            aspect={cropperType === "logo" ? 1 : 4}
+            cropShape={cropperType === "logo" ? "round" : "rect"}
+            onConfirm={(croppedFile: File) => {
+              setCropperOpen(false);
+              handleImageUpload(croppedFile, cropperType);
+            }}
+            onCancel={() => setCropperOpen(false)}
+          />
+        </Suspense>
+      )}
     </form>
   );
 }

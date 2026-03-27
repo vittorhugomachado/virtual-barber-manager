@@ -8,6 +8,7 @@ import { ManageTeamSkeleton } from "@/components/skeleton/manage-team-skeleton";
 import { ServicesSkeleton } from "@/components/skeleton/services-skeleton";
 import { CustomersSkeleton } from "@/components/skeleton/customers-skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { ReportsSkeleton } from "@/components/skeleton/reports-skeleton";
 
 const DashboardPage = lazy(() =>
   import("@/pages/dashboard-page").then(module => ({
@@ -174,7 +175,7 @@ export function AppRoutes() {
         <Route
           path="/relatorios"
           element={
-            <ProtectedPageLoader fallback={<DashboardSkeleton />}>
+            <ProtectedPageLoader fallback={<ReportsSkeleton />}>
               <ReportsPage />
             </ProtectedPageLoader>
           }

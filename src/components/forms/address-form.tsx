@@ -234,7 +234,7 @@ export function AddressForm() {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="w-full max-w-180 md:px-16 flex flex-col gap-6 mb-6"
+      className="w-full max-w-180 lg:mx-auto md:px-16 flex flex-col gap-6 mb-6"
     >
       <Card className="bg-transparent border-none">
         <CardHeader className="mt-3">

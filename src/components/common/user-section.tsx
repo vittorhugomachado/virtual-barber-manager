@@ -389,7 +389,7 @@ export function UsersSection() {
 
   return (
     <TooltipProvider delayDuration={120}>
-      <div className="w-full max-w-180 mx-16 mt-2 mb-8 px-3 flex flex-col gap-4">
+      <div className="w-full max-w-180 lg:mx-auto mt-2 mb-8 px-3 flex flex-col gap-4">
         <div className="px-3">
           <h2 className="text-xl font-semibold">Usuários</h2>
           <p className="text-sm text-muted-foreground">
@@ -497,244 +497,252 @@ export function UsersSection() {
             }
           }}
         >
-          {showCreateDialog && <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Adicionar usuário</DialogTitle>
-            </DialogHeader>
-            <DialogDescription className="sr-only">
-              Criar novo usuário
-            </DialogDescription>
-            <form
-              id="add-member-form"
-              onSubmit={form.handleSubmit(handleCreateMember)}
-              className="flex flex-col gap-4 mb-2"
-            >
-              <FieldGroup>
-                <Controller
-                  name="username"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="member-username">
-                        Nome de usuário
-                      </FieldLabel>
-                      <Input
-                        {...field}
-                        id="member-username"
-                        autoComplete="username"
-                        placeholder="ex: joao_silva"
-                        aria-invalid={fieldState.invalid}
-                        onChange={e =>
-                          field.onChange(e.target.value.toLowerCase())
-                        }
-                      />
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
-
-                <Controller
-                  name="password"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel htmlFor="member-password">Senha</FieldLabel>
-                      <div className="relative">
+          {showCreateDialog && (
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Adicionar usuário</DialogTitle>
+              </DialogHeader>
+              <DialogDescription className="sr-only">
+                Criar novo usuário
+              </DialogDescription>
+              <form
+                id="add-member-form"
+                onSubmit={form.handleSubmit(handleCreateMember)}
+                className="flex flex-col gap-4 mb-2"
+              >
+                <FieldGroup>
+                  <Controller
+                    name="username"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="member-username">
+                          Nome de usuário
+                        </FieldLabel>
                         <Input
                           {...field}
-                          id="member-password"
-                          autoComplete="new-password"
-                          type={showCreatePassword ? "text" : "password"}
-                          placeholder="Mínimo 6 caracteres"
+                          id="member-username"
+                          autoComplete="username"
+                          placeholder="ex: joao_silva"
                           aria-invalid={fieldState.invalid}
-                          className="pr-10"
+                          onChange={e =>
+                            field.onChange(e.target.value.toLowerCase())
+                          }
                         />
-                        <button
-                          type="button"
-                          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowCreatePassword(v => !v)}
-                          tabIndex={-1}
-                        >
-                          {showCreatePassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
-                      </div>
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
 
-                <Controller
-                  name="role"
-                  control={form.control}
-                  render={({ field, fieldState }) => (
-                    <Field data-invalid={fieldState.invalid}>
-                      <FieldLabel>Perfil de acesso</FieldLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">
-                            <div className="flex items-center gap-2">
-                              <Shield className="h-4 w-4" />
-                              Admin — acesso completo
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="reader">
-                            <div className="flex items-center gap-2">
+                  <Controller
+                    name="password"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel htmlFor="member-password">Senha</FieldLabel>
+                        <div className="relative">
+                          <Input
+                            {...field}
+                            id="member-password"
+                            autoComplete="new-password"
+                            type={showCreatePassword ? "text" : "password"}
+                            placeholder="Mínimo 6 caracteres"
+                            aria-invalid={fieldState.invalid}
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                            onClick={() => setShowCreatePassword(v => !v)}
+                            tabIndex={-1}
+                          >
+                            {showCreatePassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
                               <Eye className="h-4 w-4" />
-                              Leitor — apenas agenda
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
-              </FieldGroup>
-            </form>
+                            )}
+                          </button>
+                        </div>
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowCreateDialog(false)}
-                className="rounded-full"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                form="add-member-form"
-                disabled={form.formState.isSubmitting}
-                className="cursor-pointer rounded-full"
-              >
-                {form.formState.isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Adicionar"
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>}
+                  <Controller
+                    name="role"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel>Perfil de acesso</FieldLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">
+                              <div className="flex items-center gap-2">
+                                <Shield className="h-4 w-4" />
+                                Admin — acesso completo
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="reader">
+                              <div className="flex items-center gap-2">
+                                <Eye className="h-4 w-4" />
+                                Leitor — apenas agenda
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                </FieldGroup>
+              </form>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCreateDialog(false)}
+                  className="rounded-full"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  form="add-member-form"
+                  disabled={form.formState.isSubmitting}
+                  className="cursor-pointer rounded-full"
+                >
+                  {form.formState.isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Adicionar"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          )}
         </Dialog>
 
         {/* Dialog de edição de usuário */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          {showEditDialog && <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Editar membro — @{editMember?.username}</DialogTitle>
-            </DialogHeader>
-            <div className="flex flex-col gap-4">
-              <Field data-invalid={!!editUsernameError}>
-                <FieldLabel htmlFor="edit-username">Nome de usuário</FieldLabel>
-                <Input
-                  id="edit-username"
-                  autoComplete="username"
-                  value={editForm.username}
-                  aria-invalid={!!editUsernameError}
-                  onChange={e =>
-                    setEditForm({
-                      ...editForm,
-                      username: e.target.value.toLowerCase(),
-                    })
-                  }
-                  placeholder="Novo nome de usuário"
-                />
-                {editUsernameError && (
-                  <FieldError errors={[{ message: editUsernameError }]} />
-                )}
-              </Field>
-              <div>
-                <FieldLabel>Perfil de acesso</FieldLabel>
-                <Select
-                  onValueChange={(value: "admin" | "reader") =>
-                    setEditForm({ ...editForm, role: value })
-                  }
-                  value={editForm.role}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4" />
-                        Admin — acesso completo
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="reader">
-                      <div className="flex items-center gap-2">
-                        <Eye className="h-4 w-4" />
-                        Leitor — apenas agenda
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {getRoleLabel(editForm.role)} —{" "}
-                  {getRoleDescription(editForm.role)}
-                </p>
-              </div>
-              <div>
-                <FieldLabel htmlFor="edit-password">
-                  Nova senha (opcional)
-                </FieldLabel>
-                <div className="relative">
+          {showEditDialog && (
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  Editar membro — @{editMember?.username}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col gap-4">
+                <Field data-invalid={!!editUsernameError}>
+                  <FieldLabel htmlFor="edit-username">
+                    Nome de usuário
+                  </FieldLabel>
                   <Input
-                    id="edit-password"
-                    autoComplete="new-password"
-                    type={showEditPassword ? "text" : "password"}
-                    value={editForm.password}
+                    id="edit-username"
+                    autoComplete="username"
+                    value={editForm.username}
+                    aria-invalid={!!editUsernameError}
                     onChange={e =>
-                      setEditForm({ ...editForm, password: e.target.value })
+                      setEditForm({
+                        ...editForm,
+                        username: e.target.value.toLowerCase(),
+                      })
                     }
-                    placeholder="Deixe em branco para não alterar"
-                    className="pr-10"
+                    placeholder="Novo nome de usuário"
                   />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 flex items-center pr-3"
-                    onClick={() => setShowEditPassword(v => !v)}
+                  {editUsernameError && (
+                    <FieldError errors={[{ message: editUsernameError }]} />
+                  )}
+                </Field>
+                <div>
+                  <FieldLabel>Perfil de acesso</FieldLabel>
+                  <Select
+                    onValueChange={(value: "admin" | "reader") =>
+                      setEditForm({ ...editForm, role: value })
+                    }
+                    value={editForm.role}
                   >
-                    {showEditPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Admin — acesso completo
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="reader">
+                        <div className="flex items-center gap-2">
+                          <Eye className="h-4 w-4" />
+                          Leitor — apenas agenda
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {getRoleLabel(editForm.role)} —{" "}
+                    {getRoleDescription(editForm.role)}
+                  </p>
+                </div>
+                <div>
+                  <FieldLabel htmlFor="edit-password">
+                    Nova senha (opcional)
+                  </FieldLabel>
+                  <div className="relative">
+                    <Input
+                      id="edit-password"
+                      autoComplete="new-password"
+                      type={showEditPassword ? "text" : "password"}
+                      value={editForm.password}
+                      onChange={e =>
+                        setEditForm({ ...editForm, password: e.target.value })
+                      }
+                      placeholder="Deixe em branco para não alterar"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3"
+                      onClick={() => setShowEditPassword(v => !v)}
+                    >
+                      {showEditPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowEditDialog(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                disabled={!!editUsernameError}
-                onClick={() => handleEditMember(editForm)}
-              >
-                Salvar alterações
-              </Button>
-            </DialogFooter>
-          </DialogContent>}
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowEditDialog(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  disabled={!!editUsernameError}
+                  onClick={() => handleEditMember(editForm)}
+                >
+                  Salvar alterações
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          )}
         </Dialog>
 
         {/* Dialog de confirmação de remoção */}

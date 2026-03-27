@@ -4,7 +4,6 @@ import { AppointmentsHourChart } from "@/components/common/appointments-hour-cha
 import { BarbersChart } from "@/components/common/barbers-chart";
 import { ServicesChart } from "@/components/common/services-chart";
 import { WeekdayChart } from "@/components/common/weekday-chart";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Cell, Pie, PieChart } from "recharts";
 import {
   Ban,
@@ -19,6 +18,7 @@ import {
   Percent,
   Ticket,
 } from "lucide-react";
+import { ReportsSkeleton } from "../skeleton/reports-skeleton";
 
 // ─── Tipos de período ─────────────────────────────────────────────────────────
 
@@ -380,7 +380,7 @@ export function ReportsMain() {
           Selecione um intervalo de datas para ver os relatórios.
         </p>
       ) : loading ? (
-        <LoadingSkeleton />
+        <ReportsSkeleton />
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
@@ -440,58 +440,5 @@ export function ReportsMain() {
         </>
       )}
     </main>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <>
-      <div className="bg-card border rounded-xl overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-3 border-b">
-          <Skeleton className="h-4 w-4 rounded" />
-          <Skeleton className="h-4 w-48" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2">
-          <div className="grid grid-cols-2 gap-px border-r bg-border">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="bg-card p-4 space-y-2">
-                <Skeleton className="h-3 w-20" />
-                <Skeleton className="h-8 w-14" />
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-center p-8">
-            <Skeleton className="h-40 w-40 rounded-full" />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="bg-card border rounded-xl p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-4 w-4 rounded" />
-            </div>
-            <Skeleton className="h-8 w-20" />
-            <Skeleton className="h-3 w-32" />
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-card border rounded-xl overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b">
-              <Skeleton className="h-4 w-4 rounded" />
-              <Skeleton className="h-4 w-36" />
-            </div>
-            <div className="p-4">
-              <Skeleton className="h-56 w-full rounded-lg" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
   );
 }

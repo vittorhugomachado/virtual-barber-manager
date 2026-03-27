@@ -15,10 +15,9 @@ export function DashboardSkeleton() {
           <div key={i} className="bg-card border rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-4 w-4 rounded" />
             </div>
             <Skeleton className="h-8 w-20" />
-            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-3 w-25" />
           </div>
         ))}
       </div>
@@ -36,10 +35,9 @@ export function DashboardSkeleton() {
               <div key={i} className="flex items-center gap-3 px-4 py-3">
                 <Skeleton className="h-4 w-12 shrink-0" />
                 <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                  <Skeleton className="h-4 w-36" />
-                  <Skeleton className="h-3 w-48" />
+                  <Skeleton className="h-4 w-21" />
+                  <Skeleton className="h-3 w-38" />
                 </div>
-                <Skeleton className="h-6 w-20 rounded-full shrink-0" />
               </div>
             ))}
           </div>

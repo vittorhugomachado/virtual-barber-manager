@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/field";
 import { maskPhone } from "@/utils/masked-input-phone";
 import { Copy } from "lucide-react";
+import { getOptimizedPublicImageUrl } from "@/lib/supabase/storage/get-optimized-public-image-url";
 
 const formSchema = z.object({
   name: z
@@ -51,6 +52,11 @@ export function BarbershopSettingsForm() {
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const DOMAIN = import.meta.env.VITE_DOMAIN;
+  const optimizedLogoUrl = getOptimizedPublicImageUrl(barbershop?.logo_url, {
+    width: 280,
+    height: 280,
+    quality: 75,
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -245,7 +251,12 @@ export function BarbershopSettingsForm() {
           {/* Logo */}
           <div className="w-full flex items-center gap-4">
             <Avatar className="h-23 w-23 md:h-35 md:w-35">
-              <AvatarImage src={barbershop?.logo_url ?? undefined} />
+              <AvatarImage
+                src={optimizedLogoUrl}
+                width={140}
+                height={140}
+                decoding="async"
+              />
               <AvatarFallback>
                 {barbershop?.name?.slice(0, 2).toUpperCase() ?? "BB"}
               </AvatarFallback>

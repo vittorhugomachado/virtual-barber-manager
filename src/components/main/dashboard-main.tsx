@@ -1,8 +1,7 @@
-import { useMemo } from "react";
+import { lazy, Suspense, useMemo } from "react";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
-import { AppointmentsHourChart } from "@/components/common/appointments-hour-chart";
 import {
   CalendarCheck,
   CalendarDays,
@@ -17,6 +16,12 @@ import {
   APPOINTMENT_STATUS_COLORS,
   APPOINTMENT_STATUS_LABELS,
 } from "@/types/create-appointment";
+
+const AppointmentsHourChart = lazy(() =>
+  import("@/components/common/appointments-hour-chart").then(module => ({
+    default: module.AppointmentsHourChart,
+  })),
+);
 
 function getGreeting() {
   const hour = new Date(
@@ -302,7 +307,23 @@ export function BarbershopDashboardMain() {
         </div>
       </div>
 
-      <AppointmentsHourChart />
+      <Suspense fallback={<ChartCardSkeleton />}>
+        <AppointmentsHourChart />
+      </Suspense>
     </main>
+  );
+}
+
+function ChartCardSkeleton() {
+  return (
+    <div className="bg-card border rounded-xl overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b">
+        <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+        <div className="h-4 w-40 rounded bg-muted animate-pulse" />
+      </div>
+      <div className="p-4">
+        <div className="h-56 w-full rounded-lg bg-muted animate-pulse" />
+      </div>
+    </div>
   );
 }

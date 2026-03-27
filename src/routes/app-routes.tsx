@@ -1,20 +1,59 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router";
 import { PublicRoute } from "./public-route";
 import { ProtectedRoute } from "./protected-route";
-import { DashboardPage } from "@/pages/dashboard-page";
-import { SignupPage } from "@/pages/signup-page";
-import { LoginPage } from "@/pages/login-page";
-import { SettingPage } from "@/pages/settings-page";
-import { ManageServicePage } from "@/pages/manage-service-page";
-import { ManageTeamPage } from "@/pages/manage-team-page";
-import { ReportsPage } from "@/pages/reports-page";
-import { AppointmentsPage } from "@/pages/appointments-page";
-import { CustomersPage } from "@/pages/customers-page";
 import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
 import { SettingsSkeleton } from "@/components/skeleton/settings-skeleton";
 import { ManageTeamSkeleton } from "@/components/skeleton/manage-team-skeleton";
 import { ServicesSkeleton } from "@/components/skeleton/services-skeleton";
 import { CustomersSkeleton } from "@/components/skeleton/customers-skeleton";
+import { Spinner } from "@/components/ui/spinner";
+
+const DashboardPage = lazy(() =>
+  import("@/pages/dashboard-page").then(module => ({
+    default: module.DashboardPage,
+  })),
+);
+const SignupPage = lazy(() =>
+  import("@/pages/signup-page").then(module => ({
+    default: module.SignupPage,
+  })),
+);
+const LoginPage = lazy(() =>
+  import("@/pages/login-page").then(module => ({
+    default: module.LoginPage,
+  })),
+);
+const SettingPage = lazy(() =>
+  import("@/pages/settings-page").then(module => ({
+    default: module.SettingPage,
+  })),
+);
+const ManageServicePage = lazy(() =>
+  import("@/pages/manage-service-page").then(module => ({
+    default: module.ManageServicePage,
+  })),
+);
+const ManageTeamPage = lazy(() =>
+  import("@/pages/manage-team-page").then(module => ({
+    default: module.ManageTeamPage,
+  })),
+);
+const ReportsPage = lazy(() =>
+  import("@/pages/reports-page").then(module => ({
+    default: module.ReportsPage,
+  })),
+);
+const AppointmentsPage = lazy(() =>
+  import("@/pages/appointments-page").then(module => ({
+    default: module.AppointmentsPage,
+  })),
+);
+const CustomersPage = lazy(() =>
+  import("@/pages/customers-page").then(module => ({
+    default: module.CustomersPage,
+  })),
+);
 
 const skeletons: Record<string, React.ReactNode> = {
   "/": <DashboardSkeleton />,
@@ -41,6 +80,30 @@ function ProtectedRouteWithSkeleton({
   );
 }
 
+function ProtectedPageLoader({
+  fallback,
+  children,
+}: {
+  fallback: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return <Suspense fallback={fallback}>{children}</Suspense>;
+}
+
+function PublicPageLoader({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-screen h-screen flex items-center justify-center">
+          <Spinner className="size-10" />
+        </div>
+      }
+    >
+      {children}
+    </Suspense>
+  );
+}
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -49,7 +112,9 @@ export function AppRoutes() {
         path="/entrar"
         element={
           <PublicRoute>
-            <LoginPage />
+            <PublicPageLoader>
+              <LoginPage />
+            </PublicPageLoader>
           </PublicRoute>
         }
       />
@@ -57,20 +122,71 @@ export function AppRoutes() {
         path="/cadastro"
         element={
           <PublicRoute>
-            <SignupPage />
+            <PublicPageLoader>
+              <SignupPage />
+            </PublicPageLoader>
           </PublicRoute>
         }
       />
 
       {/* Rotas protegidas com sidebar */}
       <Route element={<ProtectedRouteWithSkeleton />}>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/agenda" element={<AppointmentsPage />} />
-        <Route path="/clientes" element={<CustomersPage />} />
-        <Route path="/equipe" element={<ManageTeamPage />} />
-        <Route path="/servicos" element={<ManageServicePage />} />
-        <Route path="/relatorios" element={<ReportsPage />} />
-        <Route path="/configuracoes" element={<SettingPage />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedPageLoader fallback={<DashboardSkeleton />}>
+              <DashboardPage />
+            </ProtectedPageLoader>
+          }
+        />
+        <Route
+          path="/agenda"
+          element={
+            <ProtectedPageLoader fallback={<DashboardSkeleton />}>
+              <AppointmentsPage />
+            </ProtectedPageLoader>
+          }
+        />
+        <Route
+          path="/clientes"
+          element={
+            <ProtectedPageLoader fallback={<CustomersSkeleton />}>
+              <CustomersPage />
+            </ProtectedPageLoader>
+          }
+        />
+        <Route
+          path="/equipe"
+          element={
+            <ProtectedPageLoader fallback={<ManageTeamSkeleton />}>
+              <ManageTeamPage />
+            </ProtectedPageLoader>
+          }
+        />
+        <Route
+          path="/servicos"
+          element={
+            <ProtectedPageLoader fallback={<ServicesSkeleton />}>
+              <ManageServicePage />
+            </ProtectedPageLoader>
+          }
+        />
+        <Route
+          path="/relatorios"
+          element={
+            <ProtectedPageLoader fallback={<DashboardSkeleton />}>
+              <ReportsPage />
+            </ProtectedPageLoader>
+          }
+        />
+        <Route
+          path="/configuracoes"
+          element={
+            <ProtectedPageLoader fallback={<SettingsSkeleton />}>
+              <SettingPage />
+            </ProtectedPageLoader>
+          }
+        />
       </Route>
     </Routes>
   );

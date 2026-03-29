@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { maskPhone } from "@/utils/masked-input-phone";
 import {
+  BadgeCheck,
   ChevronLeft,
   Phone,
   Search,
@@ -289,27 +290,22 @@ export function Step1Customer({
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10">
                     <User className="h-3.5 w-3.5 text-primary" />
                   </div>
-                  <div className="flex flex-1 flex-col gap-1 min-w-0 md:flex-row md:items-center md:justify-between">
-                    <div className="min-w-0">
-                      <span className="block truncate text-sm font-medium">
+                  <div className="flex flex-1 items-center justify-between min-w-0">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <span className="truncate text-sm font-medium">
                         {customer.name}
                       </span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {customer.source === "customers"
-                          ? "Cadastro manual"
-                          : "Cliente autenticado"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 md:ml-3">
-                      {customer.phone && (
-                        <span className="text-xs text-muted-foreground">
-                          {maskPhone(customer.phone)}
+                      {customer.source === "customers_auth" && (
+                        <span title="Cliente criado com verificação de celular">
+                          <BadgeCheck className="h-4 w-4 shrink-0 text-blue-500" />
                         </span>
                       )}
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-                        {customer.source === "customers" ? "CRM" : "APP"}
-                      </span>
                     </div>
+                    {customer.phone && (
+                      <span className="ml-3 shrink-0 text-xs text-muted-foreground">
+                        {maskPhone(customer.phone)}
+                      </span>
+                    )}
                   </div>
                 </div>
               </button>

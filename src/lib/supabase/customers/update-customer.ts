@@ -19,9 +19,31 @@ export async function updateCustomer({
   name,
   phone,
 }: UpdateCustomerParams): Promise<UpdateCustomerResult> {
+  const normalizedPhone = phone.replace(/\D/g, "");
+
+  const { data: existingCustomer, error: existingError } = await supabase
+    .from("customers")
+    .select("*")
+    .eq("barbershop_id", barbershopId)
+    .eq("phone", normalizedPhone)
+    .neq("id", id)
+    .maybeSingle();
+
+  if (existingError) {
+    return { status: "error" };
+  }
+
+  if (existingCustomer) {
+    return { status: "conflict", existing: existingCustomer };
+  }
+
   const { error } = await supabase
     .from("customers")
-    .update({ name, phone, updated_at: new Date().toISOString() })
+    .update({
+      name,
+      phone: normalizedPhone,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id);
 
   if (error) {
@@ -30,7 +52,7 @@ export async function updateCustomer({
         .from("customers")
         .select("*")
         .eq("barbershop_id", barbershopId)
-        .eq("phone", phone)
+        .eq("phone", normalizedPhone)
         .neq("id", id)
         .single();
 

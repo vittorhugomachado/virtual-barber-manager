@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -86,7 +87,10 @@ export function UpdateCustomerModal({
   useEffect(() => {
     if (!customer) return;
     Promise.resolve().then(() => {
-      form.reset({ name: customer.name, phone: customer.phone ?? "" });
+      form.reset({
+        name: customer.name,
+        phone: maskPhone(customer.phone ?? ""),
+      });
     });
   }, [customer, form]);
 
@@ -140,7 +144,9 @@ export function UpdateCustomerModal({
           <DialogHeader>
             <DialogTitle className="mb-4">Editar cliente</DialogTitle>
           </DialogHeader>
-          <AlertDialogDescription>Editar cliente</AlertDialogDescription>
+          <DialogDescription className="sr-only">
+            Editar cliente
+          </DialogDescription>
           <form
             id="update-customer-form"
             onSubmit={form.handleSubmit(onSubmit)}

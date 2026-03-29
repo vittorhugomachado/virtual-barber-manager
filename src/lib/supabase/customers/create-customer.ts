@@ -19,6 +19,21 @@ export async function createCustomer({
 }: CreateCustomerParams): Promise<CreateCustomerResult> {
   const normalizedPhone = phone.replace(/\D/g, "");
 
+  const { data: existingCustomer, error: existingError } = await supabase
+    .from("customers")
+    .select("*")
+    .eq("barbershop_id", barbershopId)
+    .eq("phone", normalizedPhone)
+    .maybeSingle();
+
+  if (existingError) {
+    return { status: "error" };
+  }
+
+  if (existingCustomer) {
+    return { status: "conflict", existing: existingCustomer };
+  }
+
   const { data, error } = await supabase
     .from("customers")
     .insert({ barbershop_id: barbershopId, name, phone: normalizedPhone })

@@ -167,7 +167,7 @@ export function Step1Customer({
 
     if (result.status === "conflict") {
       setPhoneError(
-        `Telefone ja cadastrado para "${result.existing.name}". Busque pelo cliente existente.`,
+        `Telefone já cadastrado para "${result.existing.name}". Busque pelo cliente existente.`,
       );
       setSubmitting(false);
       return;

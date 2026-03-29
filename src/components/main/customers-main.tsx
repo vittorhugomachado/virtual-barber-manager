@@ -9,8 +9,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CalendarDays, Phone, Plus, Search, Users } from "lucide-react";
-import { useCustomers } from "@/hooks/use-customers";
+import {
+  BadgeCheck,
+  CalendarDays,
+  Phone,
+  Plus,
+  Search,
+  Users,
+} from "lucide-react";
+import { useAllCustomers } from "@/hooks/use-all-customers";
 import { CustomersSkeleton } from "@/components/skeleton/customers-skeleton";
 import { CreateCustomerModal } from "@/components/modals/customers/create-customer-modal";
 import { CustomerHistoryModal } from "@/components/modals/customers/customer-history-modal";
@@ -32,7 +39,7 @@ function formatPhone(phone: string | null) {
 }
 
 export function CustomersMain() {
-  const { customers, setCustomers, loading } = useCustomers();
+  const { customers, setCustomers, loading } = useAllCustomers();
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
@@ -109,6 +116,7 @@ export function CustomersMain() {
               {filtered.map(customer => {
                 const phoneDigits = getPhoneDigits(customer.phone);
                 const hasPhone = phoneDigits.length > 0;
+                const isManualCustomer = customer.source !== "customers_auth";
 
                 return (
                   <TableRow key={customer.id}>
@@ -117,6 +125,11 @@ export function CustomersMain() {
                         <span className="font-medium truncate block">
                           {customer.name}
                         </span>
+                        {customer.source === "customers_auth" && (
+                          <span title="Cliente criado com verificacao de celular">
+                            <BadgeCheck className="h-4 w-4 shrink-0 text-blue-500" />
+                          </span>
+                        )}
                         <span className="text-sm text-muted-foreground inline-flex items-center gap-1 md:hidden min-w-0">
                           <Phone className="h-3.5 w-3.5 shrink-0" />
                           {hasPhone ? (
@@ -160,7 +173,15 @@ export function CustomersMain() {
                           size="sm"
                           variant="outline"
                           className="cursor-pointer rounded-full"
-                          onClick={() => setEditCustomer(customer)}
+                          onClick={() =>
+                            isManualCustomer && setEditCustomer(customer)
+                          }
+                          disabled={!isManualCustomer}
+                          title={
+                            isManualCustomer
+                              ? "Editar cliente"
+                              : "Clientes autenticados nao sao editados por este fluxo"
+                          }
                         >
                           <Pencil className="h-3.5 w-3.5 lg:mr-2" />
                           <span className="hidden lg:inline">Editar</span>

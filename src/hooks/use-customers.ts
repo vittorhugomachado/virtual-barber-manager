@@ -23,7 +23,10 @@ export function useCustomers() {
         }
 
         const customerIds = customersData.map(customer => customer.id);
-        const statsMap = new Map<string, { total: number; last: string | null }>();
+        const statsMap = new Map<
+          string,
+          { total: number; last: string | null }
+        >();
 
         if (customerIds.length > 0) {
           const { data: appointmentsData } = await supabase
@@ -31,7 +34,11 @@ export function useCustomers() {
             .select("customer_id, starts_at")
             .eq("barbershop_id", barbershop.id)
             .in("customer_id", customerIds)
-            .not("status", "in", "(cancelled_by_customer,cancelled_by_barbershop)");
+            .not(
+              "status",
+              "in",
+              "(cancelled_by_customer,cancelled_by_barbershop)",
+            );
 
           for (const appointment of appointmentsData ?? []) {
             const current = statsMap.get(appointment.customer_id);
@@ -59,6 +66,7 @@ export function useCustomers() {
               ...customer,
               total_appointments: stats?.total ?? 0,
               last_appointment: stats?.last ?? null,
+              source: "customers" as const,
             };
           }),
         );

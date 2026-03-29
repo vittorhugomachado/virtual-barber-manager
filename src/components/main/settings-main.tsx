@@ -41,7 +41,7 @@ export function SettingsMain() {
       <DeferredSection fallback={<GallerySectionSkeleton />}>
         <BarbershopGallery />
       </DeferredSection>
-      <Separator className="my-4 max-w-180 px-6 md:px-16" />
+      <Separator className="my-4 max-w-180 px-6 sm:mx-auto md:px-16" />
       <DeferredSection fallback={<UsersSectionSkeleton />}>
         <UsersSection />
       </DeferredSection>
@@ -83,14 +83,18 @@ function DeferredSection({
 
   return (
     <div ref={ref} className="w-full">
-      {shouldRender ? <Suspense fallback={fallback}>{children}</Suspense> : fallback}
+      {shouldRender ? (
+        <Suspense fallback={fallback}>{children}</Suspense>
+      ) : (
+        fallback
+      )}
     </div>
   );
 }
 
 function FormSectionSkeleton() {
   return (
-    <div className="w-full max-w-180 md:px-16 flex flex-col gap-6 mb-6">
+    <div className="w-full max-w-180 sm:mx-auto md:px-16 flex flex-col gap-6 mb-6">
       <div className="px-3 mt-3 space-y-2">
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-4 w-full max-w-96" />
@@ -138,7 +142,7 @@ function HoursSectionSkeleton() {
 
 function GallerySectionSkeleton() {
   return (
-    <div className="w-full max-w-180 md:px-16 flex flex-col gap-6 mb-6">
+    <div className="w-full max-w-180 sm:mx-auto md:px-16 flex flex-col gap-6 mb-6">
       <div className="px-3 mt-3 space-y-2">
         <Skeleton className="h-8 w-32" />
         <Skeleton className="h-4 w-52" />
@@ -155,14 +159,17 @@ function GallerySectionSkeleton() {
 
 function UsersSectionSkeleton() {
   return (
-    <div className="w-full max-w-180 mx-16 mt-2 mb-8 px-3 flex flex-col gap-4">
+    <div className="w-full max-w-180 sm:mx-auto mt-2 mb-8 px-3 flex flex-col gap-4">
       <div className="px-3 space-y-2">
         <Skeleton className="h-7 w-32" />
         <Skeleton className="h-4 w-full max-w-96" />
       </div>
       <div className="space-y-2">
         {Array.from({ length: 2 }).map((_, index) => (
-          <div key={index} className="border rounded-xl p-5 flex justify-between items-center gap-4">
+          <div
+            key={index}
+            className="border rounded-xl p-5 flex justify-between items-center gap-4"
+          >
             <Skeleton className="h-5 w-28" />
             <div className="flex items-center gap-3">
               <Skeleton className="h-6 w-24 rounded-full" />

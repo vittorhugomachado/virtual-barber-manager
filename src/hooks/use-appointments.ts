@@ -34,7 +34,12 @@ export function useAppointments(startDate?: Date, endDate?: Date) {
     supabase
       .from("appointments")
       .select(
-        `*, customer:customers(id, name, phone), barber:barbers(id, name), service:services(id, name, duration_min, price)`,
+        `
+  *,
+  customer:customers_auth!appointments_customer_id_fkey(id, name, phone, auth_user_id),
+  barber:barbers!appointments_barber_id_fkey(id, name),
+  service:services!appointments_service_id_fkey(id, name, duration_min, price)
+`,
       )
       .eq("barbershop_id", barbershop.id)
       .gte("starts_at", startIso)
@@ -46,7 +51,7 @@ export function useAppointments(startDate?: Date, endDate?: Date) {
         setLoading(false);
       });
   }, [barbershop?.id, startIso, endIso, tick]);
-
+  console.log(appointments, barbershop);
   return {
     appointments,
     setAppointments,

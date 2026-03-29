@@ -444,8 +444,9 @@ export function Step4BarberTime({
     if (serviceIds.length === 0) return;
     supabase
       .from("barber_services")
-      .select("barber_id, service_id")
+      .select("barber_id, service_id, barbers!inner(id, is_active)")
       .in("service_id", serviceIds)
+      .eq("barbers.is_active", true)
       .then(({ data }) => {
         const map: Record<string, string[]> = {};
         for (const row of data ?? []) {

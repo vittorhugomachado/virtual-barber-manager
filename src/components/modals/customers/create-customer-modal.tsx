@@ -157,6 +157,7 @@ export function CreateCustomerModal({
               type="submit"
               form="create-customer-form"
               disabled={form.formState.isSubmitting}
+              className="rounded-full"
             >
               {form.formState.isSubmitting ? "Criando..." : "Criar cliente"}
             </Button>

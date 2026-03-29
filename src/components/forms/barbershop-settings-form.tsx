@@ -273,6 +273,7 @@ export function BarbershopSettingsForm() {
                 size="sm"
                 disabled={uploadingLogo}
                 onClick={() => logoInputRef.current?.click()}
+                className="rounded-full"
               >
                 {uploadingLogo ? "Enviando..." : "Alterar foto"}
               </Button>

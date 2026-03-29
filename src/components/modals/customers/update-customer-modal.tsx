@@ -256,6 +256,7 @@ export function UpdateCustomerModal({
                 type="submit"
                 form="update-customer-form"
                 disabled={form.formState.isSubmitting}
+                className="rounded-full"
               >
                 {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
               </Button>

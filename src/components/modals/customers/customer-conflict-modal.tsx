@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -52,7 +53,9 @@ export function CustomerConflictModal({
         <DialogHeader>
           <DialogTitle>Cliente já cadastrado</DialogTitle>
         </DialogHeader>
-
+        <DialogDescription className="sr-only">
+          Já existe um cliente com esse celular
+        </DialogDescription>
         <div className="flex flex-col gap-4 py-2">
           <p className="text-sm text-muted-foreground">
             Já existe um cliente com esse número de celular:

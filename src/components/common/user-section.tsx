@@ -478,7 +478,7 @@ export function UsersSection() {
 
         <Button
           variant="outline"
-          className="w-fit cursor-pointer"
+          className="w-fit cursor-pointer rounded-full"
           disabled={memberRole !== "owner"}
           onClick={() => setShowCreateDialog(true)}
         >
@@ -731,12 +731,14 @@ export function UsersSection() {
                 <Button
                   variant="outline"
                   onClick={() => setShowEditDialog(false)}
+                  className="rounded-full"
                 >
                   Cancelar
                 </Button>
                 <Button
                   disabled={!!editUsernameError}
                   onClick={() => handleEditMember(editForm)}
+                  className="rounded-full"
                 >
                   Salvar alterações
                 </Button>

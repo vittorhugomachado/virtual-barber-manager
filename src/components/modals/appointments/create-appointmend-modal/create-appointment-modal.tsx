@@ -65,6 +65,31 @@ export function CreateAppointmentModal({
     if (!open) reset();
   }, [open]);
 
+  async function resolveCustomerAuthId(
+    name: string,
+    phone: string,
+  ): Promise<string | null> {
+    const normalizedPhone = phone.replace(/\D/g, "");
+
+    // Try to find existing customers_auth entry by phone
+    const { data: existing } = await supabase
+      .from("customers_auth")
+      .select("id")
+      .eq("phone", normalizedPhone)
+      .maybeSingle();
+
+    if (existing) return existing.id;
+
+    // Create a new customers_auth entry (auth_user_id = null for manual customers)
+    const { data: created } = await supabase
+      .from("customers_auth")
+      .insert({ name, phone: normalizedPhone })
+      .select("id")
+      .single();
+
+    return created?.id ?? null;
+  }
+
   async function handleConfirm() {
     if (!customer || serviceSelections.length === 0 || !date || !barbershop)
       return;
@@ -73,6 +98,12 @@ export function CreateAppointmentModal({
     setSubmitError(null);
 
     try {
+      const customerAuthId = await resolveCustomerAuthId(
+        customer.name,
+        customer.phone,
+      );
+      if (!customerAuthId) throw new Error("customer_auth_not_resolved");
+
       const inserts = serviceSelections.map(sel => {
         const service = services.find(s => s.id === sel.serviceId);
         const durationMin = service?.duration_min ?? 30;
@@ -80,7 +111,7 @@ export function CreateAppointmentModal({
         const endsAt = new Date(startsAt.getTime() + durationMin * 60 * 1000);
         return {
           barbershop_id: barbershop.id,
-          customer_id: customer.id,
+          customer_id: customerAuthId,
           barber_id: sel.barberId,
           service_id: sel.serviceId,
           starts_at: startsAt.toISOString(),
@@ -96,8 +127,19 @@ export function CreateAppointmentModal({
 
       onSuccess?.();
       handleClose();
-    } catch {
-      setSubmitError("Erro ao criar agendamento. Tente novamente.");
+    } catch (err: unknown) {
+      const pgError = err as { code?: string };
+      if (pgError?.code === "23P01") {
+        setSubmitError(
+          "Horário indisponível: o profissional já possui um agendamento neste horário.",
+        );
+      } else if (pgError?.code === "23503") {
+        setSubmitError(
+          "Dados inválidos: cliente, profissional ou serviço não encontrado. Recarregue a página e tente novamente.",
+        );
+      } else {
+        setSubmitError("Erro ao criar agendamento. Tente novamente.");
+      }
       setSubmitting(false);
     }
   }

@@ -31,6 +31,12 @@ export function Step2Service({
     return acc + Number(s?.price ?? 0);
   }, 0);
 
+  //CONSOLE PARA DEBUG
+  // console.log("compoenente step 2 ", {
+  //   selected,
+  //   activeServices,
+  // });
+
   return (
     <div className="flex flex-col gap-5 px-4 py-5">
       <button

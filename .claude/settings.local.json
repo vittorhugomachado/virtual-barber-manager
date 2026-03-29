@@ -17,7 +17,8 @@
       "Bash(powershell -Command \"Rename-Item -Path 'C:\\\\Users\\\\Vitor Hugo\\\\OneDrive\\\\Desktop\\\\virtual-barber-front-end\\\\model-1' -NewName 'vintage'\")",
       "Bash(powershell -Command \"Get-Process | Where-Object { $_.MainWindowTitle -like '*model-1*' -or $_.Name -eq 'node' -or $_.Name -eq 'Code' } | Select-Object Name, Id, MainWindowTitle\")",
       "Bash(powershell -Command \"Get-Process node -ErrorAction SilentlyContinue | Select-Object Id, Name\")",
-      "Bash(powershell -Command \"Stop-Process -Name node -Force\")"
+      "Bash(powershell -Command \"Stop-Process -Name node -Force\")",
+      "Bash(find 'c:/Users/Vitor Hugo/OneDrive/Desktop/virtual-barber-front-end/virtual-barber-app/src' -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.js -o -name *.jsx \\\\\\))"
     ]
   }
 }

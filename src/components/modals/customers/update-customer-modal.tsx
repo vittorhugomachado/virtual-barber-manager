@@ -140,7 +140,7 @@ export function UpdateCustomerModal({
           <DialogHeader>
             <DialogTitle className="mb-4">Editar cliente</DialogTitle>
           </DialogHeader>
-
+          <AlertDialogDescription>Editar cliente</AlertDialogDescription>
           <form
             id="update-customer-form"
             onSubmit={form.handleSubmit(onSubmit)}

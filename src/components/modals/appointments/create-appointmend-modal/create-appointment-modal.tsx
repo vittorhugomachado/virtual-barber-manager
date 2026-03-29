@@ -65,31 +65,6 @@ export function CreateAppointmentModal({
     if (!open) reset();
   }, [open]);
 
-  async function resolveCustomerAuthId(
-    name: string,
-    phone: string,
-  ): Promise<string | null> {
-    const normalizedPhone = phone.replace(/\D/g, "");
-
-    // Try to find existing customers_auth entry by phone
-    const { data: existing } = await supabase
-      .from("customers_auth")
-      .select("id")
-      .eq("phone", normalizedPhone)
-      .maybeSingle();
-
-    if (existing) return existing.id;
-
-    // Create a new customers_auth entry (auth_user_id = null for manual customers)
-    const { data: created } = await supabase
-      .from("customers_auth")
-      .insert({ name, phone: normalizedPhone })
-      .select("id")
-      .single();
-
-    return created?.id ?? null;
-  }
-
   async function handleConfirm() {
     if (!customer || serviceSelections.length === 0 || !date || !barbershop)
       return;
@@ -98,12 +73,7 @@ export function CreateAppointmentModal({
     setSubmitError(null);
 
     try {
-      const customerAuthId = await resolveCustomerAuthId(
-        customer.name,
-        customer.phone,
-      );
-      if (!customerAuthId) throw new Error("customer_auth_not_resolved");
-
+      const isManualCustomer = customer.source === "customers";
       const inserts = serviceSelections.map(sel => {
         const service = services.find(s => s.id === sel.serviceId);
         const durationMin = service?.duration_min ?? 30;
@@ -111,7 +81,8 @@ export function CreateAppointmentModal({
         const endsAt = new Date(startsAt.getTime() + durationMin * 60 * 1000);
         return {
           barbershop_id: barbershop.id,
-          customer_id: customerAuthId,
+          customer_id: isManualCustomer ? null : customer.id,
+          manual_customer_id: isManualCustomer ? customer.id : null,
           barber_id: sel.barberId,
           service_id: sel.serviceId,
           starts_at: startsAt.toISOString(),
@@ -128,7 +99,12 @@ export function CreateAppointmentModal({
       onSuccess?.();
       handleClose();
     } catch (err: unknown) {
-      const pgError = err as { code?: string };
+      const pgError = err as { code?: string; message?: string };
+      console.error("[createAppointment] erro:", {
+        code: pgError?.code,
+        message: pgError?.message,
+        inserts: serviceSelections,
+      });
       if (pgError?.code === "23P01") {
         setSubmitError(
           "Horário indisponível: o profissional já possui um agendamento neste horário.",
@@ -136,6 +112,10 @@ export function CreateAppointmentModal({
       } else if (pgError?.code === "23503") {
         setSubmitError(
           "Dados inválidos: cliente, profissional ou serviço não encontrado. Recarregue a página e tente novamente.",
+        );
+      } else if (pgError?.code === "P0001") {
+        setSubmitError(
+          "Horário fora do funcionamento da barbearia. Escolha um horário dentro do expediente.",
         );
       } else {
         setSubmitError("Erro ao criar agendamento. Tente novamente.");
@@ -145,6 +125,19 @@ export function CreateAppointmentModal({
   }
 
   if (!open) return null;
+
+  //CONSOLE PARA DEBUG
+  // console.log("componente pai:", {
+  //   step,
+  //   customer,
+  //   date,
+  //   dateObj,
+  //   services,
+  //   serviceIds,
+  //   serviceSelections,
+  //   submitting,
+  //   submitError,
+  // });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">

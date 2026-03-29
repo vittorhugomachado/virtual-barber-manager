@@ -27,6 +27,12 @@ export function Step3Date({
     onSelect(iso, selectedDateObj);
   }
 
+  //CONSOLE PARA DEBUG
+  // console.log("compoenente step 3 ", {
+  //   openingHours,
+  //   selectedDateObj,
+  // });
+
   return (
     <div className="flex flex-col gap-5 px-2 py-5">
       <button

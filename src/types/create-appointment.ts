@@ -44,6 +44,7 @@ export interface AppointmentWithRelations {
     id: string;
     name: string;
     phone: string | null;
+    source?: "customers" | "customers_auth";
   } | null;
   barber: {
     id: string;
@@ -74,6 +75,7 @@ export interface SelectedCustomer {
   name: string;
   phone: string;
   isNew?: boolean;
+  source?: "customers" | "customers_auth";
 }
 
 export interface TimeSlot {

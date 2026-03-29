@@ -53,6 +53,31 @@ export function ConfirmStep({
     return acc + Number(s?.price ?? 0);
   }, 0);
 
+  //CONSOLE PARA DEBUG
+  // console.log("ConfirmStep:", {
+  //   // props recebidas
+  //   customer,
+  //   serviceSelections,
+  //   date,
+  //   submitting,
+  //   error,
+  //   // dados resolvidos
+  //   dateLabel,
+  //   totalDuration,
+  //   totalPrice,
+  //   // dados externos
+  //   services,
+  //   barbers,
+  //   // selections resolvidas
+  //   selectionsResolved: serviceSelections.map(sel => ({
+  //     serviceId: sel.serviceId,
+  //     barberId: sel.barberId,
+  //     time: sel.time,
+  //     serviceName: services.find(s => s.id === sel.serviceId)?.name,
+  //     barberName: barbers.find(b => b.id === sel.barberId)?.name,
+  //   })),
+  // });
+
   return (
     <div className="flex flex-col gap-4 px-4 py-5">
       {/* Customer + date */}

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -7,9 +7,9 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,6 @@ import {
 import { Trash2 } from "lucide-react";
 import { updateCustomer } from "@/lib/supabase/customers/update-customer";
 import { deleteCustomer } from "@/lib/supabase/customers/delete-customer";
-import { useState } from "react";
 import type { Customer } from "@/types/customer";
 import { maskPhone } from "@/utils/masked-input-phone";
 import { CustomerConflictModal } from "./customer-conflict-modal";
@@ -41,11 +40,11 @@ import { useBarbershopStore } from "@/store/barbershop.store";
 import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
 
 const formSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
+  name: z.string().min(1, "Nome e obrigatorio"),
   phone: z
     .string()
-    .min(1, "Telefone é obrigatório")
-    .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Formato inválido: (XX) XXXXX-XXXX"),
+    .min(1, "Telefone e obrigatorio")
+    .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Formato invalido: (XX) XXXXX-XXXX"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -73,9 +72,11 @@ export function UpdateCustomerModal({
     null,
   );
   const [conflictOpen, setConflictOpen] = useState(false);
+  const customerField =
+    customer?.source === "customers_auth" ? "customer_id" : "manual_customer_id";
   const { count: futureCount, loading: countLoading } =
     useFutureAppointmentsCount(
-      "customer_id",
+      customerField,
       open ? (customer?.id ?? null) : null,
     );
 
@@ -86,6 +87,7 @@ export function UpdateCustomerModal({
 
   useEffect(() => {
     if (!customer) return;
+
     Promise.resolve().then(() => {
       form.reset({
         name: customer.name,
@@ -94,7 +96,6 @@ export function UpdateCustomerModal({
     });
   }, [customer, form]);
 
-  // atualiza o onSubmit:
   async function onSubmit(data: FormValues) {
     if (!customer || !barbershop?.id) return;
 
@@ -123,23 +124,31 @@ export function UpdateCustomerModal({
 
   async function handleDelete() {
     if (!customer) return;
+
     setDeleting(true);
-    const success = await deleteCustomer(customer.id);
+    const result = await deleteCustomer(customer.id);
     setDeleting(false);
 
-    if (!success) {
-      toast.error("Erro ao excluir cliente");
+    if (result.status === "conflict") {
+      toast.error(
+        "Este cliente possui agendamentos vinculados e nao pode ser excluido.",
+      );
       return;
     }
 
-    toast.success("Cliente excluído!");
+    if (result.status !== "deleted") {
+      toast.error("Erro ao excluir cliente.");
+      return;
+    }
+
+    toast.success("Cliente excluido!");
     onDeleted(customer.id);
     onClose();
   }
 
   return (
     <>
-      <Dialog open={open} onOpenChange={o => !o && onClose()}>
+      <Dialog open={open} onOpenChange={nextOpen => !nextOpen && onClose()}>
         <DialogContent className="max-w-md w-[calc(100%-2rem)]">
           <DialogHeader>
             <DialogTitle className="mb-4">Editar cliente</DialogTitle>
@@ -147,10 +156,11 @@ export function UpdateCustomerModal({
           <DialogDescription className="sr-only">
             Editar cliente
           </DialogDescription>
+
           <form
             id="update-customer-form"
             onSubmit={form.handleSubmit(onSubmit)}
-            className="flex flex-col gap-6 mb-4"
+            className="mb-4 flex flex-col gap-6"
           >
             <FieldGroup>
               <Controller
@@ -177,15 +187,17 @@ export function UpdateCustomerModal({
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="create-customer-phone">
+                    <FieldLabel htmlFor="update-customer-phone">
                       Telefone
                     </FieldLabel>
                     <Input
                       {...field}
-                      id="create-customer-phone"
+                      id="update-customer-phone"
                       placeholder="(51) 99999-9999"
                       aria-invalid={fieldState.invalid}
-                      onChange={e => field.onChange(maskPhone(e.target.value))}
+                      onChange={event =>
+                        field.onChange(maskPhone(event.target.value))
+                      }
                     />
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
@@ -195,6 +207,7 @@ export function UpdateCustomerModal({
               />
             </FieldGroup>
           </form>
+
           <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -202,9 +215,9 @@ export function UpdateCustomerModal({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="text-destructive hover:text-destructive cursor-pointer"
+                  className="cursor-pointer text-destructive hover:text-destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
+                  <Trash2 className="mr-1 h-4 w-4" />
                   Excluir
                 </Button>
               </AlertDialogTrigger>
@@ -216,10 +229,10 @@ export function UpdateCustomerModal({
                       : "Excluir cliente?"}
                   </AlertDialogTitle>
                   <AlertDialogDescription asChild>
-                    <div className="flex flex-col gap-2 mt-2">
+                    <div className="mt-2 flex flex-col gap-2">
                       {!countLoading && futureCount > 0 ? (
-                        <span className="text-orange-500 font-medium">
-                          ⚠️ Existem {futureCount} agendamento
+                        <span className="font-medium text-orange-500">
+                          Existem {futureCount} agendamento
                           {futureCount !== 1 ? "s" : ""} futuro
                           {futureCount !== 1 ? "s" : ""} vinculado
                           {futureCount !== 1 ? "s" : ""} a este cliente.
@@ -227,7 +240,7 @@ export function UpdateCustomerModal({
                         </span>
                       ) : (
                         <span>
-                          Essa ação não pode ser desfeita. O cliente será
+                          Essa acao nao pode ser desfeita. O cliente sera
                           removido permanentemente.
                         </span>
                       )}
@@ -270,6 +283,7 @@ export function UpdateCustomerModal({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
       <CustomerConflictModal
         open={conflictOpen}
         customer={conflictCustomer}
@@ -284,17 +298,24 @@ export function UpdateCustomerModal({
           onEditExisting?.(existing);
         }}
         onDelete={async existing => {
-          const success = await deleteCustomer(existing.id);
-          if (success) {
+          const result = await deleteCustomer(existing.id);
+
+          if (result.status === "deleted") {
             setConflictOpen(false);
             setConflictCustomer(null);
             onDeleted(existing.id);
-            toast.success(
-              "Cliente excluído. Agora você pode salvar novamente.",
-            );
-          } else {
-            toast.error("Erro ao excluir cliente.");
+            toast.success("Cliente excluido. Agora voce pode salvar novamente.");
+            return;
           }
+
+          if (result.status === "conflict") {
+            toast.error(
+              "Este cliente possui agendamentos vinculados e nao pode ser excluido.",
+            );
+            return;
+          }
+
+          toast.error("Erro ao excluir cliente.");
         }}
       />
     </>

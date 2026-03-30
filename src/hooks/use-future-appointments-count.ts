@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 
-type FilterField = "service_id" | "barber_id" | "customer_id";
+type FilterField =
+  | "service_id"
+  | "barber_id"
+  | "customer_id"
+  | "manual_customer_id";
 
 export function useFutureAppointmentsCount(
   field: FilterField,
@@ -13,7 +17,10 @@ export function useFutureAppointmentsCount(
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!id || !barbershopId) return;
+    if (!id || !barbershopId) {
+      setCount(0);
+      return;
+    }
 
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -25,6 +32,7 @@ export function useFutureAppointmentsCount(
         const { data, error } = await supabase
           .from("appointments")
           .select("id")
+          .eq("barbershop_id", barbershopId)
           .eq(field, id!)
           .gte("starts_at", new Date().toISOString())
           .not(

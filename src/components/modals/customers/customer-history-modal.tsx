@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -113,9 +114,11 @@ export function CustomerHistoryModal({
     <Dialog open={open} onOpenChange={nextOpen => !nextOpen && onClose()}>
       <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Historico de {customer.name}</DialogTitle>
+          <DialogTitle>Histórico de {customer.name}</DialogTitle>
         </DialogHeader>
-
+        <DialogDescription className="sr-only">
+          Histórico do usuário
+        </DialogDescription>
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Phone className="h-4 w-4" />

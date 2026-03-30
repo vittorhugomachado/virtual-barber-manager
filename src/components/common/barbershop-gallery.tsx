@@ -232,6 +232,9 @@ export function BarbershopGallery() {
             <CardTitle className="font-semibold text-2xl">Galeria</CardTitle>
             <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
           </div>
+          <p className="text-sm text-muted-foreground">
+            As fotos da galeria aparecem na página de agendamento do seu site
+          </p>
         </CardHeader>
 
         <CardContent className="flex px-3 flex-col gap-4">

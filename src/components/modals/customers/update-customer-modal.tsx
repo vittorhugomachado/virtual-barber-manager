@@ -73,7 +73,9 @@ export function UpdateCustomerModal({
   );
   const [conflictOpen, setConflictOpen] = useState(false);
   const customerField =
-    customer?.source === "customers_auth" ? "customer_id" : "manual_customer_id";
+    customer?.source === "customers_auth"
+      ? "customer_id"
+      : "manual_customer_id";
   const { count: futureCount, loading: countLoading } =
     useFutureAppointmentsCount(
       customerField,
@@ -304,7 +306,9 @@ export function UpdateCustomerModal({
             setConflictOpen(false);
             setConflictCustomer(null);
             onDeleted(existing.id);
-            toast.success("Cliente excluido. Agora voce pode salvar novamente.");
+            toast.success(
+              "Cliente excluido. Agora voce pode salvar novamente.",
+            );
             return;
           }
 

@@ -40,7 +40,9 @@ export function CustomerConflictModal({
   onDelete,
 }: CustomerConflictModalProps) {
   const customerField =
-    customer?.source === "customers_auth" ? "customer_id" : "manual_customer_id";
+    customer?.source === "customers_auth"
+      ? "customer_id"
+      : "manual_customer_id";
   const { count: futureCount, loading: countLoading } =
     useFutureAppointmentsCount(
       customerField,

@@ -38,7 +38,7 @@ export function useFutureAppointmentsCount(
           .not(
             "status",
             "in",
-            '("cancelled_by_customer","cancelled_by_barbershop")',
+            '("cancelled_by_customer","cancelled_by_barbershop","completed")',
           );
 
         if (error) {

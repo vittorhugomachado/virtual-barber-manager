@@ -90,14 +90,7 @@ export function useReports(from: string, to: string): ReportsData {
         supabase
           .from("appointments")
           .select(
-            `starts_at, status, customer_id,
-             barber:barbers(id, name),
-             barber_name,
-             service_name,
-             service_price,
-             customer_name,
-             service_duration,
-             service:services(id, name, price, duration_min)`,
+            `starts_at, status, customer_id, barber_name, service_name, service_price, service_duration`,
           )
           .eq("barbershop_id", barbershopId)
           .gte("starts_at", rangeStart)
@@ -128,15 +121,10 @@ export function useReports(from: string, to: string): ReportsData {
         starts_at: string;
         status: string;
         customer_id: string;
+        barber_name: string | null;
+        service_name: string | null;
         service_price: number | string | null;
         service_duration: number | string | null;
-        barber: { id: string; name: string } | null;
-        service: {
-          id: string;
-          name: string;
-          price: number | null;
-          duration_min: number | null;
-        } | null;
       };
 
       const apts = (aptsRes.data ?? []) as unknown as Apt[];
@@ -153,15 +141,14 @@ export function useReports(from: string, to: string): ReportsData {
       const completionRate =
         total > 0 ? Math.round((completed / total) * 100) : 0;
       const revenue = completedApts.reduce(
-        (sum, a) => sum + Number(a.service_price ?? a.service?.price ?? 0),
+        (sum, a) => sum + Number(a.service_price ?? 0),
         0,
       );
       const avgTicket = completed > 0 ? revenue / completed : 0;
       const workedHours =
         Math.round(
           (completedApts.reduce(
-            (sum, a) =>
-              sum + Number(a.service_duration ?? a.service?.duration_min ?? 0),
+            (sum, a) => sum + Number(a.service_duration ?? 0),
             0,
           ) /
             60) *
@@ -196,14 +183,14 @@ export function useReports(from: string, to: string): ReportsData {
         { name: string; total: number; completed: number }
       >();
       for (const apt of apts) {
-        if (!apt.barber) continue;
-        const e = barberMap.get(apt.barber.id);
+        if (!apt.barber_name) continue;
+        const e = barberMap.get(apt.barber_name);
         if (e) {
           e.total++;
           if (apt.status === "completed") e.completed++;
         } else {
-          barberMap.set(apt.barber.id, {
-            name: apt.barber.name,
+          barberMap.set(apt.barber_name, {
+            name: apt.barber_name,
             total: 1,
             completed: apt.status === "completed" ? 1 : 0,
           });
@@ -216,11 +203,14 @@ export function useReports(from: string, to: string): ReportsData {
       // Services (completed only)
       const serviceMap = new Map<string, { name: string; total: number }>();
       for (const apt of completedApts) {
-        if (!apt.service) continue;
-        const e = serviceMap.get(apt.service.id);
+        if (!apt.service_name) continue;
+        const e = serviceMap.get(apt.service_name);
         if (e) e.total++;
         else
-          serviceMap.set(apt.service.id, { name: apt.service.name, total: 1 });
+          serviceMap.set(apt.service_name, {
+            name: apt.service_name,
+            total: 1,
+          });
       }
       const services = Array.from(serviceMap.values())
         .sort((a, b) => b.total - a.total)

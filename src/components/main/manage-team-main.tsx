@@ -2,7 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Pencil, Plus, Lock } from "lucide-react";
+import { AlertTriangle, Pencil, Plus, Lock } from "lucide-react";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { toggleActiveBarber } from "@/lib/supabase/barbers/toggle-active-barber";
 import { useBarbers } from "@/hooks/use-barbers";
@@ -101,6 +101,15 @@ export function ManageTeamMain() {
               {barbers.length - activeCount !== 1 ? "s" : ""}
             </span>
           </p>
+          {activeCount === 0 && (
+            <div className="mt-2 w-full flex justify-center items-center gap-2 rounded-full border-yellow-500/60 bg-yellow-500/10 text-yellow-500 px-6 py-2">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span className="whitespace-normal text-left">
+                Sem nenhum profissional ativo o agendamento na sua barbearia
+                fica indisponível
+              </span>
+            </div>
+          )}
         </div>
         {!canAddMore && limit !== Infinity && (
           <Button

@@ -110,7 +110,7 @@ export function BarbershopDashboardMain() {
       {/* Header */}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold">
-          {getGreeting()}, {barbershop?.owner_name ?? barbershop?.name}!
+          {getGreeting()} {barbershop?.owner_name ?? barbershop?.name}!
         </h1>
         <p className="text-sm text-muted-foreground capitalize">
           {formatTodayDate()}

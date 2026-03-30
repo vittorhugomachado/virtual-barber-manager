@@ -17,16 +17,47 @@ interface CustomerHistoryModalProps {
 }
 
 function formatDateTime(isoString: string): string {
-  const d = new Date(isoString);
+  const date = new Date(isoString);
+
   return (
-    d.toLocaleDateString("pt-BR", {
+    date.toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
     }) +
-    " às " +
-    d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    " as " +
+    date.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
   );
+}
+
+function getStatusBadge(status: AppointmentWithRelations["status"]) {
+  switch (status) {
+    case "scheduled":
+      return {
+        label: "Agendado",
+        className: "border border-blue-500/20 bg-blue-500/10 text-blue-600",
+      };
+    case "completed":
+      return {
+        label: "Concluido",
+        className:
+          "border border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
+      };
+    case "cancelled_by_customer":
+    case "cancelled_by_barbershop":
+      return {
+        label: "Cancelado",
+        className: "border border-rose-500/20 bg-rose-500/10 text-rose-600",
+      };
+    default:
+      return {
+        label: status,
+        className: "border border-border bg-muted text-muted-foreground",
+      };
+  }
 }
 
 export function CustomerHistoryModal({
@@ -42,22 +73,36 @@ export function CustomerHistoryModal({
   useEffect(() => {
     if (!open || !customer) return;
 
+    const currentCustomer = customer;
+    let active = true;
+
     async function fetchHistory() {
       setLoading(true);
-      supabase
+
+      const customerColumn =
+        currentCustomer.source === "customers_auth"
+          ? "customer_id"
+          : "manual_customer_id";
+
+      const { data } = await supabase
         .from("appointments")
         .select(
-          "*, customer:customers(id, name, phone), barber:barbers(id, name), service:services(id, name, duration_min, price)",
+          "*, barber:barbers(id, name), service:services(id, name, duration_min, price)",
         )
-        .eq("customer_id", customer?.id)
-        .order("starts_at", { ascending: false })
-        .then(({ data }) => {
-          setAppointments((data as AppointmentWithRelations[]) ?? []);
-          setLoading(false);
-        });
+        .eq(customerColumn, currentCustomer.id)
+        .order("starts_at", { ascending: false });
+
+      if (!active) return;
+
+      setAppointments((data as AppointmentWithRelations[]) ?? []);
+      setLoading(false);
     }
 
-    fetchHistory();
+    void fetchHistory();
+
+    return () => {
+      active = false;
+    };
   }, [open, customer]);
 
   if (!customer) return null;
@@ -65,10 +110,10 @@ export function CustomerHistoryModal({
   const lastAppointment = appointments[0];
 
   return (
-    <Dialog open={open} onOpenChange={o => !o && onClose()}>
-      <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={nextOpen => !nextOpen && onClose()}>
+      <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Histórico de {customer.name}</DialogTitle>
+          <DialogTitle>Historico de {customer.name}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
@@ -77,30 +122,28 @@ export function CustomerHistoryModal({
             {customer.phone || "Sem telefone"}
           </div>
 
-          {/* Resumo */}
-          <div className="flex items-center justify-center gap-6 py-4 border rounded-lg">
+          <div className="flex items-center justify-center gap-6 rounded-lg border py-4">
             <div className="flex flex-col items-center gap-1">
               <span className="text-2xl font-bold">{appointments.length}</span>
               <span className="text-xs text-muted-foreground">
                 agendamentos
               </span>
             </div>
-            <div className="w-px h-10 bg-border" />
+            <div className="h-10 w-px bg-border" />
             <div className="flex flex-col items-center gap-1">
               <span className="text-sm font-medium">
                 {lastAppointment
                   ? new Date(lastAppointment.starts_at).toLocaleDateString(
                       "pt-BR",
                     )
-                  : "—"}
+                  : "-"}
               </span>
               <span className="text-xs text-muted-foreground">
-                último agendamento
+                ultimo agendamento
               </span>
             </div>
           </div>
 
-          {/* Lista */}
           {loading ? (
             <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
               Carregando...
@@ -108,40 +151,46 @@ export function CustomerHistoryModal({
           ) : appointments.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-6 text-muted-foreground">
               <CalendarDays className="h-8 w-8 opacity-30" />
-              <span className="text-sm opacity-50 text-center">
+              <span className="text-center text-sm opacity-50">
                 Nenhum agendamento encontrado.
               </span>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {appointments.map(apt => (
-                <div
-                  key={apt.id}
-                  className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20 text-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Clock className="h-3.5 w-3.5 shrink-0" />
-                      <span>{formatDateTime(apt.starts_at)}</span>
-                    </div>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium">
-                      {apt.status === "scheduled" && "Agendado"}
-                      {apt.status === "completed" && "Concluído"}
-                      {apt.status === "cancelled_by_customer" && "Cancelado"}
-                      {apt.status === "cancelled_by_barbershop" && "Cancelado"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Scissors className="h-3.5 w-3.5 shrink-0" />
-                    <span>{apt.service?.name ?? "Serviço removido"}</span>
-                    {apt.barber?.name && (
-                      <span className="text-muted-foreground/60">
-                        · {apt.barber.name}
+              {appointments.map(appointment => {
+                const statusBadge = getStatusBadge(appointment.status);
+
+                return (
+                  <div
+                    key={appointment.id}
+                    className="flex flex-col gap-1 rounded-lg border bg-muted/20 p-3 text-sm"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5 shrink-0" />
+                        <span>{formatDateTime(appointment.starts_at)}</span>
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge.className}`}
+                      >
+                        {statusBadge.label}
                       </span>
-                    )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Scissors className="h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        {appointment.service?.name ?? "Servico removido"}
+                      </span>
+                      {appointment.barber?.name && (
+                        <span className="text-muted-foreground/60">
+                          - {appointment.barber.name}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

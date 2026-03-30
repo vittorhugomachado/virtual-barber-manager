@@ -110,7 +110,7 @@ export function ServicesMain() {
             <CardContent className="flex flex-col gap-3 p-0 pb-4 h-full">
               {/* Badge status */}
               <Badge
-                className={`${service.is_active ? "bg-green-400" : "bg-red-500"} absolute top-3 right-3 cursor-pointer select-none z-10`}
+                className={`${service.is_active ? "bg-green-400" : "bg-red-500 text-white"} absolute top-3 right-3 cursor-pointer select-none z-10`}
                 onClick={() => toggleActive(service.id)}
               >
                 {service.is_active ? "Ativo" : "Inativo"}

@@ -28,6 +28,8 @@ export interface DashboardData {
   completedToday: number;
   totalCustomers: number;
   newCustomersThisMonth: number;
+  activeServices: number;
+  activeProfessionals: number;
   topServices: TopService[];
   loading: boolean;
 }
@@ -42,6 +44,8 @@ export function useDashboard(): DashboardData {
   const [completedToday, setCompletedToday] = useState(0);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [newCustomersThisMonth, setNewCustomersThisMonth] = useState(0);
+  const [activeServices, setActiveServices] = useState(0);
+  const [activeProfessionals, setActiveProfessionals] = useState(0);
   const [topServices, setTopServices] = useState<TopService[]>([]);
 
   useEffect(() => {
@@ -60,35 +64,53 @@ export function useDashboard(): DashboardData {
 
     async function loadDashboard() {
       const supabase = await getSupabaseClient();
-      const [todayRes, monthCompletedRes, totalCustomersRes, newCustomersRes] =
-        await Promise.all([
-          supabase
-            .from("appointments")
-            .select("*")
-            .eq("barbershop_id", barbershopId)
-            .gte("starts_at", todayStart)
-            .lte("starts_at", todayEnd)
-            .order("starts_at"),
+      const [
+        todayRes,
+        monthCompletedRes,
+        totalCustomersRes,
+        newCustomersRes,
+        activeServicesRes,
+        activeProfessionalsRes,
+      ] = await Promise.all([
+        supabase
+          .from("appointments")
+          .select("*")
+          .eq("barbershop_id", barbershopId)
+          .gte("starts_at", todayStart)
+          .lte("starts_at", todayEnd)
+          .order("starts_at"),
 
-          supabase
-            .from("appointments")
-            .select("starts_at, status, service_name, service_price")
-            .eq("barbershop_id", barbershopId)
-            .gte("starts_at", monthStart)
-            .lt("starts_at", nextMonthStart),
+        supabase
+          .from("appointments")
+          .select("starts_at, status, service_name, service_price")
+          .eq("barbershop_id", barbershopId)
+          .gte("starts_at", monthStart)
+          .lt("starts_at", nextMonthStart),
 
-          supabase
-            .from("customers")
-            .select("id", { count: "exact", head: true })
-            .eq("barbershop_id", barbershopId),
+        supabase
+          .from("customers")
+          .select("id", { count: "exact", head: true })
+          .eq("barbershop_id", barbershopId),
 
-          supabase
-            .from("customers")
-            .select("id", { count: "exact", head: true })
-            .eq("barbershop_id", barbershopId)
-            .gte("created_at", monthStart)
-            .lt("created_at", nextMonthStart),
-        ]);
+        supabase
+          .from("customers")
+          .select("id", { count: "exact", head: true })
+          .eq("barbershop_id", barbershopId)
+          .gte("created_at", monthStart)
+          .lt("created_at", nextMonthStart),
+
+        supabase
+          .from("services")
+          .select("id", { count: "exact", head: true })
+          .eq("barbershop_id", barbershopId)
+          .eq("is_active", true),
+
+        supabase
+          .from("barbers")
+          .select("id", { count: "exact", head: true })
+          .eq("barbershop_id", barbershopId)
+          .eq("is_active", true),
+      ]);
 
       if (cancelled) return;
 
@@ -128,6 +150,8 @@ export function useDashboard(): DashboardData {
       setCompletedToday(todayApts.filter(a => a.status === "completed").length);
       setTotalCustomers(totalCustomersRes.count ?? 0);
       setNewCustomersThisMonth(newCustomersRes.count ?? 0);
+      setActiveServices(activeServicesRes.count ?? 0);
+      setActiveProfessionals(activeProfessionalsRes.count ?? 0);
       setTopServices(top);
       setLoading(false);
     }
@@ -145,6 +169,8 @@ export function useDashboard(): DashboardData {
     completedToday,
     totalCustomers,
     newCustomersThisMonth,
+    activeServices,
+    activeProfessionals,
     topServices,
     loading,
   };

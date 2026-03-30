@@ -6,6 +6,7 @@ import { AlertTriangle, Pencil, Plus, Lock } from "lucide-react";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { toggleActiveBarber } from "@/lib/supabase/barbers/toggle-active-barber";
 import { useBarbers } from "@/hooks/use-barbers";
+import { DASHBOARD_REFRESH_EVENT } from "@/hooks/use-dashboard";
 import { ManageTeamSkeleton } from "../skeleton/manage-team-skeleton";
 import { useState } from "react";
 import { CreateBarberModal } from "../modals/manage-team/create-barber-modal";
@@ -37,6 +38,10 @@ export function ManageTeamMain() {
   const activeCount = barbers.filter(b => b.is_active).length;
   const canAddMore = activeCount < limit;
 
+  function notifyDashboardRefresh() {
+    window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT));
+  }
+
   async function toggleActive(id: string) {
     const target = barbers.find(b => b.id === id);
     if (!target) return;
@@ -60,6 +65,7 @@ export function ManageTeamMain() {
             return b;
           }),
         );
+        notifyDashboardRefresh();
       }
       return;
     }
@@ -69,6 +75,7 @@ export function ManageTeamMain() {
       setBarbers(prev =>
         prev.map(b => (b.id === id ? { ...b, is_active: newStatus } : b)),
       );
+      notifyDashboardRefresh();
     }
   }
 
@@ -209,16 +216,25 @@ export function ManageTeamMain() {
       <CreateBarberModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={barber => setBarbers(prev => [...prev, barber])}
+        onCreated={barber => {
+          setBarbers(prev => [...prev, barber]);
+          notifyDashboardRefresh();
+        }}
       />
       <UpdateBarberModal
         open={!!editBarber}
         barber={editBarber}
         onClose={() => setEditBarber(null)}
-        onUpdated={updated =>
-          setBarbers(prev => prev.map(b => (b.id === updated.id ? updated : b)))
-        }
-        onDeleted={id => setBarbers(prev => prev.filter(b => b.id !== id))}
+        onUpdated={updated => {
+          setBarbers(prev =>
+            prev.map(b => (b.id === updated.id ? updated : b)),
+          );
+          notifyDashboardRefresh();
+        }}
+        onDeleted={id => {
+          setBarbers(prev => prev.filter(b => b.id !== id));
+          notifyDashboardRefresh();
+        }}
       />
     </main>
   );

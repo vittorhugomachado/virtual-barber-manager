@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { useServices } from "@/hooks/use-service";
+import { DASHBOARD_REFRESH_EVENT } from "@/hooks/use-dashboard";
 import { toggleActiveService } from "@/lib/supabase/services/toggle-active-service";
 import { planLabels, planServiceLimits } from "@/constants/plans";
 import { ServicesSkeleton } from "../skeleton/services-skeleton";
@@ -31,6 +32,10 @@ export function ServicesMain() {
   const limit = planServiceLimits[plan];
   const activeCount = services.filter(s => s.is_active).length;
   const canAddMore = activeCount < limit;
+
+  function notifyDashboardRefresh() {
+    window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT));
+  }
 
   async function toggleActive(id: string) {
     const target = services.find(s => s.id === id);
@@ -52,6 +57,7 @@ export function ServicesMain() {
             return s;
           }),
         );
+        notifyDashboardRefresh();
       }
       return;
     }
@@ -61,6 +67,7 @@ export function ServicesMain() {
       setServices(prev =>
         prev.map(s => (s.id === id ? { ...s, is_active: newStatus } : s)),
       );
+      notifyDashboardRefresh();
     }
   }
 
@@ -231,18 +238,25 @@ export function ServicesMain() {
       <CreateServiceModal
         open={createOpen}
         onClose={() => setCreateOpen(false)}
-        onCreated={service => setServices(prev => [...prev, service])}
+        onCreated={service => {
+          setServices(prev => [...prev, service]);
+          notifyDashboardRefresh();
+        }}
       />
       <UpdateServiceModal
         open={!!editService}
         service={editService}
         onClose={() => setEditService(null)}
-        onUpdated={updated =>
+        onUpdated={updated => {
           setServices(prev =>
             prev.map(s => (s.id === updated.id ? updated : s)),
-          )
-        }
-        onDeleted={id => setServices(prev => prev.filter(s => s.id !== id))}
+          );
+          notifyDashboardRefresh();
+        }}
+        onDeleted={id => {
+          setServices(prev => prev.filter(s => s.id !== id));
+          notifyDashboardRefresh();
+        }}
       />
     </main>
   );

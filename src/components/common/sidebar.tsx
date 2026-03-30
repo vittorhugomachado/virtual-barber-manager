@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router";
 import {
+  AlertTriangle,
   CalendarDays,
   ChartLine,
   Cog,
@@ -25,6 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/common/logo";
 import { useBarbershopStore } from "@/store/barbershop.store";
+import { useDashboard } from "@/hooks/use-dashboard";
 
 const menuItems = [
   { title: "Visão Geral", url: "/", icon: ChartLine },
@@ -48,7 +50,8 @@ export function SidebarComponent() {
   const navigate = useNavigate();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const { memberRole, memberUsername } = useBarbershopStore();
-
+  const { activeServices, activeProfessionals, loading } = useDashboard();
+  console.log("activeServices", activeServices);
   const visibleMenuItems =
     memberRole === "reader" ? readerMenuItems : menuItems;
   const visibleConfigItems = memberRole === "owner" ? configItems : [];
@@ -56,6 +59,13 @@ export function SidebarComponent() {
   function handleNavigate(url: string) {
     if (isMobile) setOpenMobile(false);
     navigate(url);
+  }
+
+  function showMenuAlert(url: string) {
+    if (loading) return false;
+    if (url === "/servicos") return activeServices === 0;
+    if (url === "/equipe") return activeProfessionals === 0;
+    return false;
   }
 
   return (
@@ -93,6 +103,9 @@ export function SidebarComponent() {
                   >
                     <item.icon />
                     <span>{item.title}</span>
+                    {showMenuAlert(item.url) && (
+                      <AlertTriangle className="ml-auto h-4 w-4 shrink-0 text-yellow-500" />
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

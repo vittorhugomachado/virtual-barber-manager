@@ -3,6 +3,8 @@ import { useBarbershopStore } from "@/store/barbershop.store";
 import type { AppointmentWithRelations } from "@/types/create-appointment";
 import { getSupabaseClient } from "@/lib/supabase/lazy-supabase";
 
+export const DASHBOARD_REFRESH_EVENT = "dashboard-refresh";
+
 function getNaiveToday() {
   const naive = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
   const y = naive.getUTCFullYear();
@@ -37,6 +39,7 @@ export interface DashboardData {
 export function useDashboard(): DashboardData {
   const { barbershop } = useBarbershopStore();
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [todayAppointments, setTodayAppointments] = useState<
     AppointmentWithRelations[]
   >([]);
@@ -161,7 +164,64 @@ export function useDashboard(): DashboardData {
     return () => {
       cancelled = true;
     };
+  }, [barbershop?.id, refreshKey]);
+
+  useEffect(() => {
+    if (!barbershop?.id) return;
+
+    let active = true;
+    const barbershopId = barbershop.id;
+    let currentChannel: { unsubscribe: () => unknown } | null = null;
+
+    async function setupRealtime() {
+      const supabase = await getSupabaseClient();
+      if (!active) return;
+
+      currentChannel = supabase
+        .channel(`dashboard:${barbershopId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "services",
+            filter: `barbershop_id=eq.${barbershopId}`,
+          },
+          () => setRefreshKey(current => current + 1),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "barbers",
+            filter: `barbershop_id=eq.${barbershopId}`,
+          },
+          () => setRefreshKey(current => current + 1),
+        )
+        .subscribe();
+    }
+    void setupRealtime();
+
+    return () => {
+      active = false;
+      if (currentChannel) {
+        void currentChannel.unsubscribe();
+      }
+    };
   }, [barbershop?.id]);
+
+  useEffect(() => {
+    function handleRefresh() {
+      setRefreshKey(current => current + 1);
+    }
+
+    window.addEventListener(DASHBOARD_REFRESH_EVENT, handleRefresh);
+
+    return () => {
+      window.removeEventListener(DASHBOARD_REFRESH_EVENT, handleRefresh);
+    };
+  }, []);
 
   return {
     todayAppointments,

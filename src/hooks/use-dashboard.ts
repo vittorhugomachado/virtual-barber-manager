@@ -64,9 +64,7 @@ export function useDashboard(): DashboardData {
         await Promise.all([
           supabase
             .from("appointments")
-            .select(
-              `*, customer:customers(id, name, phone), barber:barbers(id, name), service:services(id, name, duration_min, price)`,
-            )
+            .select("*")
             .eq("barbershop_id", barbershopId)
             .gte("starts_at", todayStart)
             .lte("starts_at", todayEnd)
@@ -74,9 +72,7 @@ export function useDashboard(): DashboardData {
 
           supabase
             .from("appointments")
-            .select(
-              "starts_at, status, service_id, service:services(id, name, price)",
-            )
+            .select("starts_at, status, service_name, service_price")
             .eq("barbershop_id", barbershopId)
             .gte("starts_at", monthStart)
             .lt("starts_at", nextMonthStart),
@@ -101,27 +97,23 @@ export function useDashboard(): DashboardData {
       type MonthApt = {
         starts_at: string;
         status: string;
-        service_id: string | null;
-        service: { id: string; name: string; price: number | null } | null;
+        service_name: string | null;
+        service_price: string | number | null;
       };
       const monthApts = (monthCompletedRes.data ?? []) as unknown as MonthApt[];
       const monthCompleted = monthApts.filter(a => a.status === "completed");
 
       const revenue = monthCompleted.reduce(
-        (sum, apt) => sum + (apt.service?.price ?? 0),
+        (sum, apt) => sum + Number(apt.service_price ?? 0),
         0,
       );
 
       const serviceMap = new Map<string, { name: string; count: number }>();
       for (const apt of monthCompleted) {
-        if (!apt.service) continue;
-        const existing = serviceMap.get(apt.service.id);
+        if (!apt.service_name) continue;
+        const existing = serviceMap.get(apt.service_name);
         if (existing) existing.count++;
-        else
-          serviceMap.set(apt.service.id, {
-            name: apt.service.name,
-            count: 1,
-          });
+        else serviceMap.set(apt.service_name, { name: apt.service_name, count: 1 });
       }
       const top = Array.from(serviceMap.values())
         .sort((a, b) => b.count - a.count)

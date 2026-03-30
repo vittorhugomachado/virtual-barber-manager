@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -103,7 +104,9 @@ export function ImageCropper({
         <DialogHeader>
           <DialogTitle>Ajustar imagem</DialogTitle>
         </DialogHeader>
-
+        <DialogDescription className="sr-only">
+          Criar novo usuário
+        </DialogDescription>
         <div className="relative h-80 w-full overflow-hidden rounded-lg bg-black">
           <Cropper
             image={imageUrl}

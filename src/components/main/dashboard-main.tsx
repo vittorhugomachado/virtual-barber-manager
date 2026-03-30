@@ -1,5 +1,6 @@
 import { lazy, Suspense, useMemo } from "react";
 import { useDashboard } from "@/hooks/use-dashboard";
+import { useAllCustomers } from "@/hooks/use-all-customers";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
 import {
@@ -7,8 +8,8 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock,
+  DollarSign,
   Scissors,
-  TrendingUp,
   Users,
   UserPlus,
 } from "lucide-react";
@@ -82,11 +83,25 @@ export function BarbershopDashboardMain() {
     todayAppointments,
     monthRevenue,
     completedToday,
-    totalCustomers,
-    newCustomersThisMonth,
     topServices,
     loading,
   } = useDashboard();
+  const { customers: allCustomers } = useAllCustomers();
+
+  const newCustomersThisMonth = useMemo(() => {
+    const naive = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
+    const monthStart = new Date(
+      Date.UTC(naive.getUTCFullYear(), naive.getUTCMonth(), 1),
+    ).getTime();
+    const monthEnd = new Date(
+      Date.UTC(naive.getUTCFullYear(), naive.getUTCMonth() + 1, 1),
+    ).getTime();
+    return allCustomers.filter(c => {
+      if (!c.created_at) return false;
+      const ms = new Date(c.created_at).getTime() - 3 * 60 * 60 * 1000;
+      return ms >= monthStart && ms < monthEnd;
+    }).length;
+  }, [allCustomers]);
 
   const todayStats = useMemo(() => {
     let agendados = 0,
@@ -137,12 +152,12 @@ export function BarbershopDashboardMain() {
         <KpiCard
           label="Faturamento do mês"
           value={formatCurrency(monthRevenue)}
-          icon={<TrendingUp className="h-4 w-4" />}
+          icon={<DollarSign className="h-4 w-4" />}
           sub="Serviços concluídos"
         />
         <KpiCard
           label="Total de clientes"
-          value={totalCustomers}
+          value={allCustomers.length}
           icon={<Users className="h-4 w-4" />}
           sub={
             newCustomersThisMonth > 0
@@ -218,15 +233,15 @@ export function BarbershopDashboardMain() {
                       className={`flex flex-col min-w-0 flex-1 ${cancelled ? "opacity-40" : ""}`}
                     >
                       <span className="text-sm font-medium truncate">
-                        {apt.customer?.name ?? "Cliente removido"}
+                        {apt.customer_name ?? "Cliente removido"}
                       </span>
                       <span className="text-xs text-muted-foreground inline-flex flex-wrap items-center gap-1 truncate">
                         <Scissors className="h-3 w-3 shrink-0" />
-                        {apt.barber?.name ?? "Barbeiro removido"}
-                        {apt.service && (
+                        {apt.barber_name ?? "Barbeiro removido"}
+                        {apt.service_name && (
                           <>
                             <span>·</span>
-                            <span className="truncate">{apt.service.name}</span>
+                            <span className="truncate">{apt.service_name}</span>
                           </>
                         )}
                       </span>

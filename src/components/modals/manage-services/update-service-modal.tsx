@@ -138,7 +138,8 @@ export function UpdateServiceModal({
     const { data: files } = await supabase.storage
       .from("barbershop-assets")
       .list(folder);
-    const matches = files?.filter(file => file.name.startsWith(serviceId)) ?? [];
+    const matches =
+      files?.filter(file => file.name.startsWith(serviceId)) ?? [];
     if (matches.length > 0) {
       await supabase.storage
         .from("barbershop-assets")
@@ -194,7 +195,10 @@ export function UpdateServiceModal({
       return;
     }
 
-    await supabase.from("barber_services").delete().eq("service_id", service.id);
+    await supabase
+      .from("barber_services")
+      .delete()
+      .eq("service_id", service.id);
 
     if (data.barberIds.length > 0) {
       await supabase.from("barber_services").insert(
@@ -339,7 +343,7 @@ export function UpdateServiceModal({
                   <Field data-invalid={fieldState.invalid}>
                     <div className="flex items-center justify-between">
                       <FieldLabel htmlFor="update-service-description">
-                        Descricao
+                        Descrição
                       </FieldLabel>
                       <span
                         className={`text-xs ${(field.value?.length ?? 0) > 100 ? "text-destructive" : "text-muted-foreground"}`}
@@ -368,7 +372,7 @@ export function UpdateServiceModal({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="update-service-price">
-                        Preco
+                        Preço
                       </FieldLabel>
                       <div className="relative">
                         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -403,7 +407,7 @@ export function UpdateServiceModal({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="update-service-duration">
-                        Duracao
+                        Duração
                       </FieldLabel>
                       <div className="relative">
                         <Input

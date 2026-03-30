@@ -300,7 +300,7 @@ function StatusOverview({
 // ─── ReportsMain ──────────────────────────────────────────────────────────────
 
 export function ReportsMain() {
-  const [period, setPeriod] = useState<Period>("week");
+  const [period, setPeriod] = useState<Period>("month");
   const [custom, setCustom] = useState({ from: "", to: "" });
 
   const { from, to, label } = useMemo(
@@ -420,11 +420,6 @@ export function ReportsMain() {
               value={`${kpis.workedHours}h`}
               icon={<Clock className="h-4 w-4" />}
               sub="Baseado na duração dos serviços"
-            />
-            <KpiCard
-              label="Novos clientes"
-              value={kpis.newCustomers}
-              icon={<UserCheck className="h-4 w-4" />}
             />
           </div>
           {/* Visão geral: cards de status + pie chart */}

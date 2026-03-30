@@ -252,7 +252,7 @@ export function CreateServiceModal({
                   <Field data-invalid={fieldState.invalid}>
                     <div className="flex items-center justify-between">
                       <FieldLabel htmlFor="create-service-description">
-                        Descricao
+                        Descrição
                       </FieldLabel>
                       <span
                         className={`text-xs ${(field.value?.length ?? 0) > 100 ? "text-destructive" : "text-muted-foreground"}`}
@@ -281,7 +281,7 @@ export function CreateServiceModal({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="create-service-price">
-                        Preco
+                        Preço
                       </FieldLabel>
                       <div className="relative">
                         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
@@ -316,7 +316,7 @@ export function CreateServiceModal({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="create-service-duration">
-                        Duracao
+                        Duração
                       </FieldLabel>
                       <div className="relative">
                         <Input

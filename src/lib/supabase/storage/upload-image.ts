@@ -16,7 +16,7 @@ export async function uploadImage({
 }: UploadImageParams): Promise<{ url: string | null; error: Error | null }> {
   try {
     const fileExt = file.name.split(".").pop();
-    const newFileName = `${ownerId}/${type}.${fileExt}`;
+    const newFileName = `${ownerId}/${type}-${Date.now()}.${fileExt}`;
 
     // PASSO 1: LISTAR OS ARQUIVOS DO BUCKET QUE TEM "logo" OU "banner"
     const { data: existingFiles, error: listError } = await supabase.storage
@@ -61,10 +61,7 @@ export async function uploadImage({
       data: { publicUrl },
     } = supabase.storage.from(bucket).getPublicUrl(data.path);
 
-    // ATRIBUIR A URL A UMA VARIAVEL COM A DATA ATUAL, FORCANDO O CACHE A LIMPAR
-    const urlWithCacheBuster = `${publicUrl}?t=${Date.now()}`;
-
-    return { url: urlWithCacheBuster, error: null };
+    return { url: publicUrl, error: null };
   } catch (error) {
     console.error("Erro no upload:", error);
     return { url: null, error: error as Error };

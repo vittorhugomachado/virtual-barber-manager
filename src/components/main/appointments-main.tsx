@@ -35,10 +35,10 @@ const STATUS_OPTIONS: { value: AppointmentStatus; label: string }[] = [
 
 function StatusPicker({
   apt,
-  onRefetch,
+  onStatusChange,
 }: {
   apt: AppointmentWithRelations;
-  onRefetch: () => void;
+  onStatusChange: (id: string, status: AppointmentStatus) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -79,11 +79,11 @@ function StatusPicker({
   async function changeStatus(newStatus: AppointmentStatus) {
     setUpdating(true);
     setOpen(false);
-    await supabase
+    const { error } = await supabase
       .from("appointments")
       .update({ status: newStatus })
       .eq("id", apt.id);
-    onRefetch();
+    if (!error) onStatusChange(apt.id, newStatus);
     setUpdating(false);
   }
 
@@ -268,12 +268,12 @@ function isSameDay(date: Date, isoString: string): boolean {
 const DaySection = memo(function DaySection({
   date,
   appointments,
-  onRefetch,
+  onStatusChange,
 }: {
   date: Date;
   appointments: AppointmentWithRelations[];
   onCancel: (apt: AppointmentWithRelations) => void;
-  onRefetch: () => void;
+  onStatusChange: (id: string, status: AppointmentStatus) => void;
 }) {
   const [open, setOpen] = useState(false);
   const label = formatDayLabel(date);
@@ -377,7 +377,7 @@ const DaySection = memo(function DaySection({
                       </div>
                     </div>
                     <div className="xl:mr-4">
-                      <StatusPicker apt={apt} onRefetch={onRefetch} />
+                      <StatusPicker apt={apt} onStatusChange={onStatusChange} />
                     </div>
                   </div>
                 );
@@ -401,7 +401,19 @@ export function AppointmentsMain() {
     () => getRangeForFilter(filter, customRange),
     [filter, customRange],
   );
-  const { appointments, loading, refetch } = useAppointments(start, end);
+  const { appointments, setAppointments, loading, refetch } = useAppointments(
+    start,
+    end,
+  );
+
+  const handleStatusChange = useCallback(
+    (id: string, status: AppointmentStatus) => {
+      setAppointments(prev =>
+        prev.map(apt => (apt.id === id ? { ...apt, status } : apt)),
+      );
+    },
+    [setAppointments],
+  );
 
   const days = useMemo(
     () =>
@@ -558,7 +570,7 @@ export function AppointmentsMain() {
               date={day}
               appointments={appointmentsByDay.get(day.toISOString()) ?? []}
               onCancel={handleCancel}
-              onRefetch={refetch}
+              onStatusChange={handleStatusChange}
             />
           ))}
         </div>

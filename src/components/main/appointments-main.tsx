@@ -3,6 +3,7 @@ import { useAppointments } from "@/hooks/use-appointments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  BadgeCheck,
   CalendarDays,
   ChevronDown,
   ChevronRight,
@@ -248,6 +249,18 @@ function formatTime(isoString: string): string {
   });
 }
 
+function getPhoneDigits(phone?: string | null) {
+  return (phone ?? "").replace(/\D/g, "").slice(0, 11);
+}
+
+function WhatsappIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+      <path d="M19.05 4.94A9.77 9.77 0 0 0 12.09 2C6.68 2 2.27 6.4 2.27 11.82c0 1.73.45 3.41 1.3 4.9L2 22l5.42-1.5a9.8 9.8 0 0 0 4.67 1.19h.01c5.41 0 9.82-4.4 9.82-9.82a9.75 9.75 0 0 0-2.87-6.93m-6.96 15.09h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-3.22.89.86-3.14-.2-.32a8.13 8.13 0 0 1-1.25-4.32c0-4.48 3.65-8.13 8.14-8.13a8.1 8.1 0 0 1 5.78 2.39 8.08 8.08 0 0 1 2.37 5.75c0 4.49-3.65 8.14-8.14 8.14m4.46-6.09c-.24-.12-1.4-.69-1.62-.77s-.37-.12-.53.12-.61.77-.74.93-.27.18-.5.06a6.63 6.63 0 0 1-1.95-1.2 7.22 7.22 0 0 1-1.34-1.67c-.14-.24-.02-.36.1-.48.1-.1.24-.27.35-.4.12-.14.16-.24.24-.4s.04-.3-.02-.42-.53-1.28-.72-1.75c-.19-.46-.39-.4-.53-.41h-.45c-.16 0-.42.06-.64.3s-.83.8-.83 1.94.85 2.24.97 2.39c.12.16 1.67 2.56 4.05 3.59.57.24 1.01.39 1.36.49.57.18 1.08.15 1.49.09.45-.07 1.4-.57 1.6-1.12.2-.55.2-1.03.14-1.12-.06-.1-.22-.16-.45-.28" />
+    </svg>
+  );
+}
+
 function isSameDay(date: Date, isoString: string): boolean {
   const d = new Date(isoString);
   return (
@@ -320,10 +333,12 @@ const DaySection = memo(function DaySection({
                   apt.status === "cancelled_by_customer" ||
                   apt.status === "cancelled_by_barbershop";
                 const dim = cancelled ? "opacity-30" : "";
+                const customerPhone = getPhoneDigits(apt.customer?.phone);
+                const hasWhatsapp = customerPhone.length >= 10;
                 return (
                   <div
                     key={apt.id}
-                    className="flex flex-col lg:flex-row items-center gap-2 xl:gap-4 px-4 py-3"
+                    className="flex flex-col lg:flex-row items-center gap-2 xl:gap-4 px-4 py-2.5"
                   >
                     {/* Informações */}
                     <div
@@ -341,11 +356,27 @@ const DaySection = memo(function DaySection({
                             {formatTime(apt.ends_at)}
                           </span>
                         </div>
-                        <div className="lg:w-32.5 lg:ml-3 truncate flex items-center gap-1.5 text-sm min-w-0 overflow-hidden">
+                        <div className="lg:w-40 lg:ml-3 flex items-center gap-1.5 text-sm min-w-0 overflow-hidden">
                           <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span className="truncate font-medium">
                             {apt.customer_name}
                           </span>
+                          {apt.customer?.source === "customers_auth" && (
+                            <span title="Cliente com celular verificado">
+                              <BadgeCheck className="h-4 w-4 shrink-0 text-blue-500" />
+                            </span>
+                          )}
+                          {hasWhatsapp && (
+                            <a
+                              href={`https://wa.me/55${customerPhone}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Abrir conversa no WhatsApp"
+                              className="inline-flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-full text-emerald-600 transition-colors hover:bg-emerald-500/20"
+                            >
+                              <WhatsappIcon className="h-7 w-7" />
+                            </a>
+                          )}
                         </div>
                       </div>
                       {/* linha 2: barbeiro · serviço · preço */}

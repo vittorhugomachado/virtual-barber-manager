@@ -55,26 +55,14 @@ function StatusPicker({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  const now = new Date();
+  const nowBRT = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
   const startsAt = new Date(apt.starts_at);
-  const isFuture = startsAt > now;
-  const isPast40 = now.getTime() - startsAt.getTime() >= 40 * 60 * 1000;
-
-  const options =
-    apt.status === "no_show"
-      ? STATUS_OPTIONS.filter(
-          o => o.value === "completed" || o.value === "cancelled_by_barbershop",
-        )
-      : isPast40
-        ? STATUS_OPTIONS.filter(
-            o => o.value === "no_show" || o.value === "cancelled_by_barbershop",
-          )
-        : STATUS_OPTIONS.filter(o => {
-            if (o.value === apt.status) return false;
-            if (o.value === "scheduled" && !isFuture) return false;
-            if (o.value === "no_show") return false;
-            return true;
-          });
+  const isPast = nowBRT.getTime() - startsAt.getTime() > 40 * 60 * 1000;
+  const options = STATUS_OPTIONS.filter(o => {
+    if (o.value === apt.status) return false;
+    if (isPast && o.value === "scheduled") return false;
+    return true;
+  });
 
   async function changeStatus(newStatus: AppointmentStatus) {
     setUpdating(true);

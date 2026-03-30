@@ -14,7 +14,7 @@ export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
   confirmed: "Confirmado",
   in_progress: "Em atendimento",
   completed: "Concluído",
-  cancelled_by_customer: "Cancelado",
+  cancelled_by_customer: "Cancelado pelo cliente",
   cancelled_by_barbershop: "Cancelado",
   no_show: "Não compareceu",
 };

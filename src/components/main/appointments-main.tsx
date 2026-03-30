@@ -58,11 +58,14 @@ function StatusPicker({
   const nowBRT = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
   const startsAt = new Date(apt.starts_at);
   const isPast = nowBRT.getTime() - startsAt.getTime() > 40 * 60 * 1000;
-  const options = STATUS_OPTIONS.filter(o => {
-    if (o.value === apt.status) return false;
-    if (isPast && o.value === "scheduled") return false;
-    return true;
-  });
+  const options =
+    apt.status === "cancelled_by_customer"
+      ? []
+      : STATUS_OPTIONS.filter(o => {
+          if (o.value === apt.status) return false;
+          if (isPast && o.value === "scheduled") return false;
+          return true;
+        });
 
   async function changeStatus(newStatus: AppointmentStatus) {
     setUpdating(true);

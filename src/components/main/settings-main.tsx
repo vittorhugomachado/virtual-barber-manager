@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { BarbershopSettingsForm } from "../forms/barbershop-settings-form";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AlertTriangle } from "lucide-react";
+import { useSettingsAlerts } from "@/hooks/use-settings-alerts";
 // import { PlansSection } from "../sections/settings-page/plans-section";
 
 const SECTIONS = [
@@ -12,7 +14,13 @@ const SECTIONS = [
   { id: "users", label: "Usuários" },
 ] as const;
 
-function SettingsNav() {
+function SettingsNav({
+  missingAddress,
+  missingHours,
+}: {
+  missingAddress: boolean;
+  missingHours: boolean;
+}) {
   const [active, setActive] = useState<string>("barbershop");
 
   useEffect(() => {
@@ -42,19 +50,27 @@ function SettingsNav() {
 
   return (
     <div className="sticky top-2 z-10 bg-background/90 backdrop-blur border-b px-4 md:px-12 py-2.5 flex flex-wrap gap-2">
-      {SECTIONS.map(({ id, label }) => (
-        <button
-          key={id}
-          onClick={() => scrollTo(id)}
-          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border ${
-            active === id
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-          }`}
-        >
-          {label}
-        </button>
-      ))}
+      {SECTIONS.map(({ id, label }) => {
+        const hasAlert =
+          (id === "hours" && missingHours) ||
+          (id === "address" && missingAddress);
+        return (
+          <button
+            key={id}
+            onClick={() => scrollTo(id)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border ${
+              active === id
+                ? "bg-primary text-primary-foreground border-primary"
+                : hasAlert
+                  ? "bg-transparent text-yellow-500 border-yellow-500/60 hover:border-yellow-500"
+                  : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+            }`}
+          >
+            {hasAlert && <AlertTriangle className="h-3.5 w-3.5 shrink-0" />}
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -81,22 +97,27 @@ const UsersSection = lazy(() =>
 );
 
 export function SettingsMain() {
+  const { missingAddress, missingHours, refetch } = useSettingsAlerts();
+
   return (
     <div className="w-full flex flex-col items-center overflow-x-hidden">
-      <SettingsNav />
+      <SettingsNav
+        missingAddress={missingAddress}
+        missingHours={missingHours}
+      />
       <div id="settings-section-barbershop" className="w-full scroll-mt-14">
         <BarbershopSettingsForm />
       </div>
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
       <div id="settings-section-address" className="w-full scroll-mt-14">
         <DeferredSection fallback={<FormSectionSkeleton />}>
-          <AddressForm />
+          <AddressForm onSaved={refetch} />
         </DeferredSection>
       </div>
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
       <div id="settings-section-hours" className="w-full scroll-mt-14">
         <DeferredSection fallback={<HoursSectionSkeleton />}>
-          <OpeningHoursSection />
+          <OpeningHoursSection onSaved={refetch} />
         </DeferredSection>
       </div>
       <Separator className="my-4 max-w-180 px-6 md:px-16" />

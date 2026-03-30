@@ -27,6 +27,7 @@ import {
 import { Logo } from "@/components/common/logo";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { useDashboard } from "@/hooks/use-dashboard";
+import { useSettingsAlerts } from "@/hooks/use-settings-alerts";
 
 const menuItems = [
   { title: "Visão Geral", url: "/", icon: ChartLine },
@@ -51,7 +52,7 @@ export function SidebarComponent() {
   const { state, isMobile, setOpenMobile } = useSidebar();
   const { memberRole, memberUsername } = useBarbershopStore();
   const { activeServices, activeProfessionals, loading } = useDashboard();
-  console.log("activeServices", activeServices);
+  const { missingAddress, missingHours } = useSettingsAlerts();
   const visibleMenuItems =
     memberRole === "reader" ? readerMenuItems : menuItems;
   const visibleConfigItems = memberRole === "owner" ? configItems : [];
@@ -126,6 +127,9 @@ export function SidebarComponent() {
               >
                 <item.icon />
                 <span>{item.title}</span>
+                {(missingAddress || missingHours) && (
+                  <AlertTriangle className="ml-auto h-4 w-4 shrink-0 text-yellow-500" />
+                )}
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

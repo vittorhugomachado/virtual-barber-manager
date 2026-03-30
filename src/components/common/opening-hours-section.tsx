@@ -14,7 +14,7 @@ import { upsertOpeningHours } from "@/lib/supabase/opening-hours/upsert-opening-
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { DAY_LABELS } from "@/types/opening-hours";
 import type { OpeningHours } from "@/types/opening-hours";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, Loader2, Plus, Trash2 } from "lucide-react";
 
 type PeriodEntry = Omit<OpeningHours, "id">;
 
@@ -79,7 +79,7 @@ function toPeriodEntries(
   );
 }
 
-export function OpeningHoursSection() {
+export function OpeningHoursSection({ onSaved }: { onSaved?: () => void }) {
   const { barbershop } = useBarbershopStore();
   const { openingHours, loading } = useOpeningHours();
   const [initialDays, setInitialDays] = useState<DayConfig[]>(DEFAULT_DAYS);
@@ -205,6 +205,7 @@ export function OpeningHoursSection() {
 
     toast.success("Horários salvos!");
     setInitialDays(days);
+    onSaved?.();
   }
 
   if (loading) {
@@ -216,6 +217,7 @@ export function OpeningHoursSection() {
   }
 
   const isDirty = JSON.stringify(days) !== JSON.stringify(initialDays);
+  const hasNoOpenDays = !loading && days.every(d => !d.is_open);
 
   return (
     <section className="w-full max-w-180 px-3 md:px-16 mx-auto flex flex-col gap-6 mb-18">
@@ -229,6 +231,16 @@ export function OpeningHoursSection() {
           adicionar múltiplos períodos por dia.
         </p>
       </div>
+
+      {hasNoOpenDays && (
+        <div className="mt-2 text-sm w-full flex justify-center items-center gap-2 rounded-full bg-yellow-500/10 text-yellow-500 px-6 py-2">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span className="whitespace-normal text-left text-sm">
+            Atualize seus horários de funcionamento para disponibilizar
+            agendamentos
+          </span>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         {days.map(day => (

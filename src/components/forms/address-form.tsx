@@ -3,7 +3,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Loader2, MapPin } from "lucide-react";
+import { AlertTriangle, Loader2, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function AddressForm() {
+export function AddressForm({ onSaved }: { onSaved?: () => void }) {
   const { barbershop } = useBarbershopStore();
   const [loading, setLoading] = useState(true);
   const [addressId, setAddressId] = useState<string | null>(null);
@@ -229,6 +229,7 @@ export function AddressForm() {
 
     toast.success("Endereço salvo!");
     form.reset(data);
+    onSaved?.();
   }
 
   return (
@@ -250,7 +251,15 @@ export function AddressForm() {
             Carregando...
           </CardContent>
         ) : (
-          <CardContent className=" px-3 flex flex-col gap-6">
+          <CardContent className="px-3 flex flex-col gap-6">
+            {!addressId && (
+              <div className="mt-2 w-full flex justify-center items-center gap-2 rounded-full bg-yellow-500/10 text-yellow-500 px-6 py-2">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span className="whitespace-normal text-left text-sm">
+                  Cadastre seu endereço para melhorar sua página de agendamentos
+                </span>
+              </div>
+            )}
             <FieldGroup>
               {/* CEP + Estado */}
               <div className="flex gap-3">

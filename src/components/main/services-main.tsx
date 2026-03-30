@@ -102,7 +102,7 @@ export function ServicesMain() {
             </span>
           </p>
           {activeCount === 0 && (
-            <div className="mt-2 w-full flex justify-center items-center gap-2 rounded-full border-yellow-500/60 bg-yellow-500/10 text-yellow-500 px-6 py-2">
+            <div className="mt-2 text-sm w-full flex justify-center items-center gap-2 rounded-full border-yellow-500/60 bg-yellow-500/10 text-yellow-500 px-6 py-2">
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span className="whitespace-normal text-left">
                 Sem nenhum serviço ativo o agendamento na sua barbearia fica

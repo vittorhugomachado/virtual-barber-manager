@@ -74,34 +74,62 @@ export function useReports(from: string, to: string): ReportsData {
   useEffect(() => {
     if (!barbershop?.id || !from || !to) return;
 
-    setLoading(true);
+    const barbershopId = barbershop.id;
+    let cancelled = false;
 
     const rangeStart = `${from}T00:00:00Z`;
     const rangeEnd = `${to}T23:59:59Z`;
 
-    Promise.all([
-      supabase
-        .from("appointments")
-        .select(
-          `starts_at, status, customer_id,
-           barber:barbers(id, name),
-           service:services(id, name, price, duration_min)`,
-        )
-        .eq("barbershop_id", barbershop.id)
-        .gte("starts_at", rangeStart)
-        .lte("starts_at", rangeEnd),
+    async function loadReports() {
+      await Promise.resolve();
 
-      supabase
-        .from("customers")
-        .select("id", { count: "exact", head: true })
-        .eq("barbershop_id", barbershop.id)
-        .gte("created_at", rangeStart)
-        .lte("created_at", rangeEnd),
-    ]).then(([aptsRes, customersRes]) => {
+      if (cancelled) return;
+      setLoading(true);
+
+      const [aptsRes, customersRes] = await Promise.all([
+        supabase
+          .from("appointments")
+          .select(
+            `starts_at, status, customer_id,
+             barber:barbers(id, name),
+             barber_name,
+             service_name,
+             service_price,
+             customer_name,
+             service_duration,
+             service:services(id, name, price, duration_min)`,
+          )
+          .eq("barbershop_id", barbershopId)
+          .gte("starts_at", rangeStart)
+          .lte("starts_at", rangeEnd),
+
+        supabase
+          .from("customers")
+          .select("id", { count: "exact", head: true })
+          .eq("barbershop_id", barbershopId)
+          .gte("created_at", rangeStart)
+          .lte("created_at", rangeEnd),
+      ]);
+
+      if (cancelled) return;
+
+      if (aptsRes.error || customersRes.error) {
+        console.error("useReports error:", aptsRes.error ?? customersRes.error);
+        setKpis(EMPTY_KPIS);
+        setHourlyData([]);
+        setBarbersData([]);
+        setServicesData([]);
+        setWeekdayData([]);
+        setLoading(false);
+        return;
+      }
+
       type Apt = {
         starts_at: string;
         status: string;
         customer_id: string;
+        service_price: number | string | null;
+        service_duration: number | string | null;
         barber: { id: string; name: string } | null;
         service: {
           id: string;
@@ -116,7 +144,7 @@ export function useReports(from: string, to: string): ReportsData {
 
       const total = apts.length;
       const completed = completedApts.length;
-      const cancelled = apts.filter(
+      const cancelledCount = apts.filter(
         a =>
           a.status === "cancelled_by_customer" ||
           a.status === "cancelled_by_barbershop",
@@ -125,14 +153,15 @@ export function useReports(from: string, to: string): ReportsData {
       const completionRate =
         total > 0 ? Math.round((completed / total) * 100) : 0;
       const revenue = completedApts.reduce(
-        (sum, a) => sum + (a.service?.price ?? 0),
+        (sum, a) => sum + Number(a.service_price ?? a.service?.price ?? 0),
         0,
       );
       const avgTicket = completed > 0 ? revenue / completed : 0;
       const workedHours =
         Math.round(
           (completedApts.reduce(
-            (sum, a) => sum + (a.service?.duration_min ?? 0),
+            (sum, a) =>
+              sum + Number(a.service_duration ?? a.service?.duration_min ?? 0),
             0,
           ) /
             60) *
@@ -215,7 +244,7 @@ export function useReports(from: string, to: string): ReportsData {
       setKpis({
         total,
         completed,
-        cancelled,
+        cancelled: cancelledCount,
         noShow,
         completionRate,
         revenue,
@@ -229,7 +258,13 @@ export function useReports(from: string, to: string): ReportsData {
       setServicesData(services);
       setWeekdayData(weekday);
       setLoading(false);
-    });
+    }
+
+    void loadReports();
+
+    return () => {
+      cancelled = true;
+    };
   }, [barbershop?.id, from, to]);
 
   return {

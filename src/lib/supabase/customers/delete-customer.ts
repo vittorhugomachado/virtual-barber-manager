@@ -5,7 +5,9 @@ type DeleteCustomerResult =
   | { status: "conflict" }
   | { status: "error" };
 
-export async function deleteCustomer(id: string): Promise<DeleteCustomerResult> {
+export async function deleteCustomer(
+  id: string,
+): Promise<DeleteCustomerResult> {
   const { error } = await supabase.from("customers").delete().eq("id", id);
 
   if (!error) {

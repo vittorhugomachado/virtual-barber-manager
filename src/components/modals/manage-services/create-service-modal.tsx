@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,16 +29,30 @@ import { useBarbers } from "@/hooks/use-barbers";
 import { supabase } from "@/lib/supabase/supabase";
 import type { Service } from "@/types/services";
 
+function formatPriceInput(value?: number) {
+  if (value == null || Number.isNaN(value)) return "";
+  return value.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function parsePriceInput(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return undefined;
+  return Number(digits) / 100;
+}
+
 const formSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
+  name: z.string().min(1, "Nome e obrigatorio"),
   description: z
     .string()
-    .max(100, "Descrição deve ter no máximo 100 caracteres")
+    .max(100, "Descricao deve ter no maximo 100 caracteres")
     .optional(),
-  price: z.number({ error: "Preço é obrigatório" }).min(0, "Preço inválido"),
+  price: z.number({ error: "Preco e obrigatorio" }).min(0, "Preco invalido"),
   duration_min: z
-    .number({ error: "Duração é obrigatória" })
-    .min(1, "Duração inválida"),
+    .number({ error: "Duracao e obrigatoria" })
+    .min(1, "Duracao invalida"),
   barberIds: z.array(z.string()),
 });
 
@@ -74,15 +88,16 @@ export function CreateServiceModal({
   });
 
   useEffect(() => {
-    if (barbers.length > 0) {
-      const allBarberIds = barbers.map(barber => barber.id);
-      form.setValue("barberIds", allBarberIds);
-    }
+    if (barbers.length === 0) return;
+    form.setValue(
+      "barberIds",
+      barbers.map(barber => barber.id),
+    );
   }, [barbers, form]);
 
   async function onSubmit(data: FormValues) {
     if (!barbershop?.id) {
-      toast.error("Barbearia não encontrada");
+      toast.error("Barbearia nao encontrada");
       return;
     }
 
@@ -95,11 +110,10 @@ export function CreateServiceModal({
     });
 
     if (!result) {
-      toast.error("Erro ao criar serviço");
+      toast.error("Erro ao criar servico");
       return;
     }
 
-    // Vincula barbeiros ao serviço
     if (data.barberIds.length > 0) {
       await supabase.from("barber_services").insert(
         data.barberIds.map(barberId => ({
@@ -133,7 +147,7 @@ export function CreateServiceModal({
       }
     }
 
-    toast.success("Serviço criado!");
+    toast.success("Servico criado!");
     onCreated({
       id: result.id,
       barbershop_id: barbershop.id,
@@ -144,6 +158,7 @@ export function CreateServiceModal({
       duration_min: data.duration_min ?? null,
       is_active: true,
     });
+
     form.reset();
     setImageFile(null);
     setImagePreview(null);
@@ -152,13 +167,13 @@ export function CreateServiceModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={o => !o && onClose()}>
-        <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
+      <Dialog open={open} onOpenChange={nextOpen => !nextOpen && onClose()}>
+        <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="mb-4">Novo serviço</DialogTitle>
+            <DialogTitle className="mb-4">Novo servico</DialogTitle>
           </DialogHeader>
           <DialogDescription className="sr-only">
-            Criar serviço
+            Criar servico
           </DialogDescription>
 
           <form
@@ -167,11 +182,10 @@ export function CreateServiceModal({
               const first = Object.values(errors)[0];
               if (first?.message) toast.error(first.message as string);
             })}
-            className="flex flex-col gap-6 mb-4"
+            className="mb-4 flex flex-col gap-6"
           >
-            {/* Imagem */}
             <div className="flex items-center gap-4">
-              <div className="h-20 w-20 rounded-lg bg-muted overflow-hidden shrink-0">
+              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
                 {imagePreview ? (
                   <img
                     src={imagePreview}
@@ -179,7 +193,7 @@ export function CreateServiceModal({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs text-center px-1">
+                  <div className="flex h-full w-full items-center justify-center px-1 text-center text-xs text-muted-foreground">
                     Sem imagem
                   </div>
                 )}
@@ -200,19 +214,18 @@ export function CreateServiceModal({
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={e => {
-                    const file = e.target.files?.[0];
+                  onChange={event => {
+                    const file = event.target.files?.[0];
                     if (!file) return;
                     setCropperImageUrl(URL.createObjectURL(file));
                     setCropperOpen(true);
-                    e.target.value = "";
+                    event.target.value = "";
                   }}
                 />
               </div>
             </div>
 
             <FieldGroup>
-              {/* Nome */}
               <Controller
                 name="name"
                 control={form.control}
@@ -222,7 +235,7 @@ export function CreateServiceModal({
                     <Input
                       {...field}
                       id="create-service-name"
-                      placeholder="Ex: Corte degradê"
+                      placeholder="Ex: Corte degrade"
                       aria-invalid={fieldState.invalid}
                     />
                     {fieldState.invalid && (
@@ -232,7 +245,6 @@ export function CreateServiceModal({
                 )}
               />
 
-              {/* Descrição */}
               <Controller
                 name="description"
                 control={form.control}
@@ -240,7 +252,7 @@ export function CreateServiceModal({
                   <Field data-invalid={fieldState.invalid}>
                     <div className="flex items-center justify-between">
                       <FieldLabel htmlFor="create-service-description">
-                        Descrição
+                        Descricao
                       </FieldLabel>
                       <span
                         className={`text-xs ${(field.value?.length ?? 0) > 100 ? "text-destructive" : "text-muted-foreground"}`}
@@ -251,7 +263,7 @@ export function CreateServiceModal({
                     <Textarea
                       {...field}
                       id="create-service-description"
-                      placeholder="Descreva o serviço..."
+                      placeholder="Descreva o servico..."
                       aria-invalid={fieldState.invalid}
                       maxLength={100}
                     />
@@ -262,7 +274,6 @@ export function CreateServiceModal({
                 )}
               />
 
-              {/* Preço e Duração lado a lado */}
               <div className="grid grid-cols-2 gap-3">
                 <Controller
                   name="price"
@@ -270,25 +281,28 @@ export function CreateServiceModal({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="create-service-price">
-                        Preço (R$)
+                        Preco
                       </FieldLabel>
-                      <Input
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={e =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value),
-                          )
-                        }
-                        id="create-service-price"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0,00"
-                        aria-invalid={fieldState.invalid}
-                      />
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          R$
+                        </span>
+                        <Input
+                          name={field.name}
+                          ref={field.ref}
+                          value={formatPriceInput(field.value)}
+                          onBlur={field.onBlur}
+                          onChange={event =>
+                            field.onChange(parsePriceInput(event.target.value))
+                          }
+                          id="create-service-price"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0,00"
+                          className="pl-10"
+                          aria-invalid={fieldState.invalid}
+                        />
+                      </div>
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
                       )}
@@ -302,24 +316,30 @@ export function CreateServiceModal({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="create-service-duration">
-                        Duração (min)
+                        Duracao
                       </FieldLabel>
-                      <Input
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={e =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value),
-                          )
-                        }
-                        id="create-service-duration"
-                        type="number"
-                        min="1"
-                        placeholder="30"
-                        aria-invalid={fieldState.invalid}
-                      />
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={event =>
+                            field.onChange(
+                              event.target.value === ""
+                                ? undefined
+                                : Number(event.target.value),
+                            )
+                          }
+                          id="create-service-duration"
+                          type="number"
+                          min="1"
+                          placeholder="30"
+                          className="pr-20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          aria-invalid={fieldState.invalid}
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          minutos
+                        </span>
+                      </div>
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
                       )}
@@ -329,11 +349,10 @@ export function CreateServiceModal({
               </div>
             </FieldGroup>
 
-            {/* Barbeiros */}
             {barbers.length > 0 && (
               <div className="flex flex-col gap-2">
                 <Label>Barbeiros</Label>
-                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
+                <div className="flex max-h-40 flex-col gap-2 overflow-y-auto">
                   {barbers.map(barber => (
                     <Controller
                       key={barber.id}
@@ -354,7 +373,7 @@ export function CreateServiceModal({
                           />
                           <label
                             htmlFor={`create-barber-${barber.id}`}
-                            className="text-sm cursor-pointer"
+                            className="cursor-pointer text-sm"
                           >
                             {barber.name}
                           </label>
@@ -364,12 +383,13 @@ export function CreateServiceModal({
                   ))}
                 </div>
                 {form.formState.errors.barberIds && (
-                  <p className="text-sm text-destructive mt-1">
+                  <p className="mt-1 text-sm text-destructive">
                     {form.formState.errors.barberIds.message}
                   </p>
                 )}
               </div>
             )}
+
             <DialogFooter>
               <Button
                 type="button"
@@ -385,7 +405,7 @@ export function CreateServiceModal({
                 disabled={form.formState.isSubmitting}
                 className="rounded-full"
               >
-                {form.formState.isSubmitting ? "Criando..." : "Criar serviço"}
+                {form.formState.isSubmitting ? "Criando..." : "Criar servico"}
               </Button>
             </DialogFooter>
           </form>

@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,16 +43,30 @@ import {
 import { Trash2 } from "lucide-react";
 import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
 
+function formatPriceInput(value?: number) {
+  if (value == null || Number.isNaN(value)) return "";
+  return value.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function parsePriceInput(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (!digits) return undefined;
+  return Number(digits) / 100;
+}
+
 const formSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
+  name: z.string().min(1, "Nome e obrigatorio"),
   description: z
     .string()
-    .max(100, "Descrição deve ter no máximo 100 caracteres")
+    .max(100, "Descricao deve ter no maximo 100 caracteres")
     .optional(),
-  price: z.number({ error: "Preço é obrigatório" }).min(0, "Preço inválido"),
+  price: z.number({ error: "Preco e obrigatorio" }).min(0, "Preco invalido"),
   duration_min: z
-    .number({ error: "Duração é obrigatória" })
-    .min(1, "Duração inválida"),
+    .number({ error: "Duracao e obrigatoria" })
+    .min(1, "Duracao invalida"),
   barberIds: z.array(z.string()),
 });
 
@@ -111,7 +125,7 @@ export function UpdateServiceModal({
           description: service.description ?? "",
           price: service.price ?? undefined,
           duration_min: service.duration_min ?? undefined,
-          barberIds: data?.map(d => d.barber_id) ?? [],
+          barberIds: data?.map(item => item.barber_id) ?? [],
         });
         setImagePreview(service.image_url);
         setImageFile(null);
@@ -124,11 +138,11 @@ export function UpdateServiceModal({
     const { data: files } = await supabase.storage
       .from("barbershop-assets")
       .list(folder);
-    const matches = files?.filter(f => f.name.startsWith(serviceId)) ?? [];
+    const matches = files?.filter(file => file.name.startsWith(serviceId)) ?? [];
     if (matches.length > 0) {
       await supabase.storage
         .from("barbershop-assets")
-        .remove(matches.map(f => `${folder}${f.name}`));
+        .remove(matches.map(file => `${folder}${file.name}`));
     }
   }
 
@@ -176,15 +190,11 @@ export function UpdateServiceModal({
     });
 
     if (!success) {
-      toast.error("Erro ao atualizar serviço");
+      toast.error("Erro ao atualizar servico");
       return;
     }
 
-    // Atualiza vínculos de barbeiros: delete todos e reinsere
-    await supabase
-      .from("barber_services")
-      .delete()
-      .eq("service_id", service.id);
+    await supabase.from("barber_services").delete().eq("service_id", service.id);
 
     if (data.barberIds.length > 0) {
       await supabase.from("barber_services").insert(
@@ -195,7 +205,7 @@ export function UpdateServiceModal({
       );
     }
 
-    toast.success("Serviço atualizado!");
+    toast.success("Servico atualizado!");
     onUpdated({
       ...service,
       name: data.name,
@@ -214,7 +224,7 @@ export function UpdateServiceModal({
 
     if (!success) {
       setDeleting(false);
-      toast.error("Erro ao excluir serviço");
+      toast.error("Erro ao excluir servico");
       return;
     }
 
@@ -223,20 +233,20 @@ export function UpdateServiceModal({
     }
 
     setDeleting(false);
-    toast.success("Serviço excluído!");
+    toast.success("Servico excluido!");
     onDeleted(service.id);
     onClose();
   }
 
   return (
     <>
-      <Dialog open={open} onOpenChange={o => !o && onClose()}>
-        <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
+      <Dialog open={open} onOpenChange={nextOpen => !nextOpen && onClose()}>
+        <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="mb-4">Editar serviço</DialogTitle>
+            <DialogTitle className="mb-4">Editar servico</DialogTitle>
           </DialogHeader>
           <DialogDescription className="sr-only">
-            Editar serviço
+            Editar servico
           </DialogDescription>
           <form
             id="update-service-form"
@@ -244,11 +254,10 @@ export function UpdateServiceModal({
               const first = Object.values(errors)[0];
               if (first?.message) toast.error(first.message as string);
             })}
-            className="flex flex-col gap-6 mb-4 px-1"
+            className="mb-4 flex flex-col gap-6 px-1"
           >
-            {/* Imagem */}
             <div className="flex items-center gap-4">
-              <div className="h-20 w-20 rounded-lg bg-muted overflow-hidden shrink-0">
+              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
                 {imagePreview ? (
                   <img
                     src={imagePreview}
@@ -256,7 +265,7 @@ export function UpdateServiceModal({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="h-full w-full flex items-center justify-center text-muted-foreground text-xs text-center px-1">
+                  <div className="flex h-full w-full items-center justify-center px-1 text-center text-xs text-muted-foreground">
                     Sem imagem
                   </div>
                 )}
@@ -292,19 +301,18 @@ export function UpdateServiceModal({
                   type="file"
                   accept="image/*"
                   className="hidden"
-                  onChange={e => {
-                    const file = e.target.files?.[0];
+                  onChange={event => {
+                    const file = event.target.files?.[0];
                     if (!file) return;
                     setCropperImageUrl(URL.createObjectURL(file));
                     setCropperOpen(true);
-                    e.target.value = "";
+                    event.target.value = "";
                   }}
                 />
               </div>
             </div>
 
             <FieldGroup>
-              {/* Nome */}
               <Controller
                 name="name"
                 control={form.control}
@@ -314,7 +322,7 @@ export function UpdateServiceModal({
                     <Input
                       {...field}
                       id="update-service-name"
-                      placeholder="Ex: Corte degradê"
+                      placeholder="Ex: Corte degrade"
                       aria-invalid={fieldState.invalid}
                     />
                     {fieldState.invalid && (
@@ -324,7 +332,6 @@ export function UpdateServiceModal({
                 )}
               />
 
-              {/* Descrição */}
               <Controller
                 name="description"
                 control={form.control}
@@ -332,7 +339,7 @@ export function UpdateServiceModal({
                   <Field data-invalid={fieldState.invalid}>
                     <div className="flex items-center justify-between">
                       <FieldLabel htmlFor="update-service-description">
-                        Descrição
+                        Descricao
                       </FieldLabel>
                       <span
                         className={`text-xs ${(field.value?.length ?? 0) > 100 ? "text-destructive" : "text-muted-foreground"}`}
@@ -343,7 +350,7 @@ export function UpdateServiceModal({
                     <Textarea
                       {...field}
                       id="update-service-description"
-                      placeholder="Descreva o serviço..."
+                      placeholder="Descreva o servico..."
                       aria-invalid={fieldState.invalid}
                       maxLength={100}
                     />
@@ -354,7 +361,6 @@ export function UpdateServiceModal({
                 )}
               />
 
-              {/* Preço e Duração lado a lado */}
               <div className="grid grid-cols-2 gap-3">
                 <Controller
                   name="price"
@@ -362,25 +368,28 @@ export function UpdateServiceModal({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="update-service-price">
-                        Preço (R$)
+                        Preco
                       </FieldLabel>
-                      <Input
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={e =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value),
-                          )
-                        }
-                        id="update-service-price"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0,00"
-                        aria-invalid={fieldState.invalid}
-                      />
+                      <div className="relative">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                          R$
+                        </span>
+                        <Input
+                          name={field.name}
+                          ref={field.ref}
+                          value={formatPriceInput(field.value)}
+                          onBlur={field.onBlur}
+                          onChange={event =>
+                            field.onChange(parsePriceInput(event.target.value))
+                          }
+                          id="update-service-price"
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="0,00"
+                          className="pl-10"
+                          aria-invalid={fieldState.invalid}
+                        />
+                      </div>
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
                       )}
@@ -394,24 +403,30 @@ export function UpdateServiceModal({
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor="update-service-duration">
-                        Duração (min)
+                        Duracao
                       </FieldLabel>
-                      <Input
-                        {...field}
-                        value={field.value ?? ""}
-                        onChange={e =>
-                          field.onChange(
-                            e.target.value === ""
-                              ? undefined
-                              : Number(e.target.value),
-                          )
-                        }
-                        id="update-service-duration"
-                        type="number"
-                        min="1"
-                        placeholder="30"
-                        aria-invalid={fieldState.invalid}
-                      />
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={event =>
+                            field.onChange(
+                              event.target.value === ""
+                                ? undefined
+                                : Number(event.target.value),
+                            )
+                          }
+                          id="update-service-duration"
+                          type="number"
+                          min="1"
+                          placeholder="30"
+                          className="pr-20 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          aria-invalid={fieldState.invalid}
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          minutos
+                        </span>
+                      </div>
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
                       )}
@@ -421,11 +436,10 @@ export function UpdateServiceModal({
               </div>
             </FieldGroup>
 
-            {/* Barbeiros */}
             {barbers.length > 0 && (
               <div className="flex flex-col gap-2">
                 <Label>Barbeiros</Label>
-                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
+                <div className="flex max-h-40 flex-col gap-2 overflow-y-auto">
                   {barbers.map(barber => (
                     <Controller
                       key={barber.id}
@@ -446,7 +460,7 @@ export function UpdateServiceModal({
                           />
                           <label
                             htmlFor={`update-barber-${barber.id}`}
-                            className="text-sm cursor-pointer"
+                            className="cursor-pointer text-sm"
                           >
                             {barber.name}
                           </label>
@@ -456,7 +470,7 @@ export function UpdateServiceModal({
                   ))}
                 </div>
                 {form.formState.errors.barberIds && (
-                  <p className="text-sm text-destructive mt-1">
+                  <p className="mt-1 text-sm text-destructive">
                     {form.formState.errors.barberIds.message}
                   </p>
                 )}
@@ -471,9 +485,9 @@ export function UpdateServiceModal({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="text-destructive hover:text-destructive cursor-pointer"
+                  className="cursor-pointer text-destructive hover:text-destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
+                  <Trash2 className="mr-1 h-4 w-4" />
                   Excluir
                 </Button>
               </AlertDialogTrigger>
@@ -482,21 +496,21 @@ export function UpdateServiceModal({
                   <AlertDialogTitle>
                     {!countLoading && futureCount > 0
                       ? "Conflito com agenda"
-                      : "Excluir serviço?"}
+                      : "Excluir servico?"}
                   </AlertDialogTitle>
                   <AlertDialogDescription asChild>
-                    <div className="flex flex-col gap-2 mt-2">
+                    <div className="mt-2 flex flex-col gap-2">
                       {!countLoading && futureCount > 0 ? (
-                        <span className="text-orange-500 font-medium">
-                          ⚠️ Existem {futureCount} agendamento
+                        <span className="font-medium text-orange-500">
+                          Existem {futureCount} agendamento
                           {futureCount !== 1 ? "s" : ""} futuro
                           {futureCount !== 1 ? "s" : ""} vinculado
-                          {futureCount !== 1 ? "s" : ""} a este serviço.
+                          {futureCount !== 1 ? "s" : ""} a este servico.
                           Cancele-os antes de excluir.
                         </span>
                       ) : (
                         <span>
-                          Essa ação não pode ser desfeita. O serviço será
+                          Essa acao nao pode ser desfeita. O servico sera
                           removido permanentemente.
                         </span>
                       )}
@@ -518,7 +532,7 @@ export function UpdateServiceModal({
               </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex gap-2 justify-center">
+            <div className="flex justify-center gap-2">
               <Button
                 type="button"
                 variant="outline"

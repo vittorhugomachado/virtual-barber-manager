@@ -407,7 +407,7 @@ export function ReportsMain() {
                   : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
               }`}
             >
-              Todos
+              Todos profissionais
             </button>
             {barbers.map(b => (
               <button

@@ -62,7 +62,11 @@ const EMPTY_KPIS: ReportsKpis = {
   uniqueCustomers: 0,
 };
 
-export function useReports(from: string, to: string): ReportsData {
+export function useReports(
+  from: string,
+  to: string,
+  barberId?: string | null,
+): ReportsData {
   const { barbershop } = useBarbershopStore();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState<ReportsKpis>(EMPTY_KPIS);
@@ -86,15 +90,21 @@ export function useReports(from: string, to: string): ReportsData {
       if (cancelled) return;
       setLoading(true);
 
+      let aptsQuery = supabase
+        .from("appointments")
+        .select(
+          `starts_at, status, customer_id, barber_name, service_name, service_price, service_duration`,
+        )
+        .eq("barbershop_id", barbershopId)
+        .gte("starts_at", rangeStart)
+        .lte("starts_at", rangeEnd);
+
+      if (barberId) {
+        aptsQuery = aptsQuery.eq("barber_id", barberId);
+      }
+
       const [aptsRes, customersRes] = await Promise.all([
-        supabase
-          .from("appointments")
-          .select(
-            `starts_at, status, customer_id, barber_name, service_name, service_price, service_duration`,
-          )
-          .eq("barbershop_id", barbershopId)
-          .gte("starts_at", rangeStart)
-          .lte("starts_at", rangeEnd),
+        aptsQuery,
 
         supabase
           .from("customers")
@@ -250,7 +260,7 @@ export function useReports(from: string, to: string): ReportsData {
     return () => {
       cancelled = true;
     };
-  }, [barbershop?.id, from, to]);
+  }, [barbershop?.id, from, to, barberId]);
 
   return {
     kpis,

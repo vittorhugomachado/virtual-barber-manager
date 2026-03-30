@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useReports } from "@/hooks/use-reports";
 import { useAllCustomers } from "@/hooks/use-all-customers";
+import { useBarbers } from "@/hooks/use-barbers";
 import { AppointmentsHourChart } from "@/components/common/appointments-hour-chart";
 import { BarbersChart } from "@/components/common/barbers-chart";
 import { ServicesChart } from "@/components/common/services-chart";
@@ -307,14 +308,17 @@ function StatusOverview({
 export function ReportsMain() {
   const [period, setPeriod] = useState<Period>("month");
   const [custom, setCustom] = useState({ from: "", to: "" });
+  const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null);
 
   const { from, to, label } = useMemo(
     () => getRange(period, custom),
     [period, custom],
   );
 
+  const { barbers } = useBarbers();
+
   const { kpis, hourlyData, barbersData, servicesData, weekdayData, loading } =
-    useReports(from, to);
+    useReports(from, to, selectedBarberId);
   const canFetch = !!from && !!to;
 
   const { customers: allCustomers } = useAllCustomers();
@@ -391,6 +395,34 @@ export function ReportsMain() {
 
         {label && label !== "—" && (
           <p className="text-sm text-muted-foreground">{label}</p>
+        )}
+
+        {barbers.length > 1 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setSelectedBarberId(null)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border ${
+                selectedBarberId === null
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+              }`}
+            >
+              Todos
+            </button>
+            {barbers.map(b => (
+              <button
+                key={b.id}
+                onClick={() => setSelectedBarberId(b.id)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border ${
+                  selectedBarberId === b.id
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                }`}
+              >
+                {b.name}
+              </button>
+            ))}
+          </div>
         )}
       </div>
 

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/lib/supabase/supabase";
 import { handleUploadBanner } from "@/lib/supabase/storage/handle-upload-banner";
 import { handleUploadLogo } from "@/lib/supabase/storage/handle-upload-logo";
@@ -240,7 +239,7 @@ export function BarbershopSettingsForm() {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="w-full max-w-180 md:px-16 mt-2 mb-18 flex flex-col gap-8"
+      className="w-full max-w-180 mx-auto md:px-16 mt-2 mb-18 flex flex-col gap-8"
     >
       {/* ── SEÇÃO: Dados da Barbearia ── */}
       <Card className="bg-transparent border-none">
@@ -382,20 +381,6 @@ export function BarbershopSettingsForm() {
             />
           </FieldGroup>
         </CardContent>
-      </Card>
-
-      <Separator />
-
-      {/* ── SEÇÃO: Dados do Proprietário ── */}
-      <Card className="bg-transparent border-none">
-        <CardHeader className="mt-3">
-          <div className="flex flex-col w-fit">
-            <CardTitle className="font-semibold text-2xl">
-              Dados do Proprietário
-            </CardTitle>
-            <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
-          </div>
-        </CardHeader>
         <CardContent>
           <FieldGroup>
             <Controller

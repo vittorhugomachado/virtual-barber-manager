@@ -4,6 +4,61 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 // import { PlansSection } from "../sections/settings-page/plans-section";
 
+const SECTIONS = [
+  { id: "barbershop", label: "Barbearia" },
+  { id: "address", label: "Endereço" },
+  { id: "hours", label: "Horários" },
+  { id: "gallery", label: "Galeria" },
+  { id: "users", label: "Usuários" },
+] as const;
+
+function SettingsNav() {
+  const [active, setActive] = useState<string>("barbershop");
+
+  useEffect(() => {
+    const observers: IntersectionObserver[] = [];
+
+    SECTIONS.forEach(({ id }) => {
+      const el = document.getElementById(`settings-section-${id}`);
+      if (!el) return;
+      const obs = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) setActive(id);
+        },
+        { rootMargin: "-40% 0px -55% 0px" },
+      );
+      obs.observe(el);
+      observers.push(obs);
+    });
+
+    return () => observers.forEach(o => o.disconnect());
+  }, []);
+
+  function scrollTo(id: string) {
+    document
+      .getElementById(`settings-section-${id}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  return (
+    <div className="sticky top-2 z-10 bg-background/90 backdrop-blur border-b px-4 md:px-12 py-2.5 flex flex-wrap gap-2">
+      {SECTIONS.map(({ id, label }) => (
+        <button
+          key={id}
+          onClick={() => scrollTo(id)}
+          className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border ${
+            active === id
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-transparent text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const AddressForm = lazy(() =>
   import("../forms/address-form").then(module => ({
     default: module.AddressForm,
@@ -27,24 +82,35 @@ const UsersSection = lazy(() =>
 
 export function SettingsMain() {
   return (
-    <div className="w-full flex flex-col items-center overflow-y-auto overflow-x-hidden">
-      <BarbershopSettingsForm />
+    <div className="w-full flex flex-col items-center overflow-x-hidden">
+      <SettingsNav />
+      <div id="settings-section-barbershop" className="w-full scroll-mt-14">
+        <BarbershopSettingsForm />
+      </div>
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
-      <DeferredSection fallback={<FormSectionSkeleton />}>
-        <AddressForm />
-      </DeferredSection>
+      <div id="settings-section-address" className="w-full scroll-mt-14">
+        <DeferredSection fallback={<FormSectionSkeleton />}>
+          <AddressForm />
+        </DeferredSection>
+      </div>
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
-      <DeferredSection fallback={<HoursSectionSkeleton />}>
-        <OpeningHoursSection />
-      </DeferredSection>
+      <div id="settings-section-hours" className="w-full scroll-mt-14">
+        <DeferredSection fallback={<HoursSectionSkeleton />}>
+          <OpeningHoursSection />
+        </DeferredSection>
+      </div>
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
-      <DeferredSection fallback={<GallerySectionSkeleton />}>
-        <BarbershopGallery />
-      </DeferredSection>
+      <div id="settings-section-gallery" className="w-full scroll-mt-14">
+        <DeferredSection fallback={<GallerySectionSkeleton />}>
+          <BarbershopGallery />
+        </DeferredSection>
+      </div>
       <Separator className="my-4 max-w-180 px-6 sm:mx-auto md:px-16" />
-      <DeferredSection fallback={<UsersSectionSkeleton />}>
-        <UsersSection />
-      </DeferredSection>
+      <div id="settings-section-users" className="w-full scroll-mt-14">
+        <DeferredSection fallback={<UsersSectionSkeleton />}>
+          <UsersSection />
+        </DeferredSection>
+      </div>
       {/* <Separator className="my-4 max-w-180 mx-16" />
       <PlansSection /> */}
     </div>

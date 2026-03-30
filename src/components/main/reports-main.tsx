@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   Clock,
   DollarSign,
-  UserCheck,
   Users,
   XCircle,
   Percent,
@@ -94,6 +93,12 @@ function fmtBR(iso: string): string {
 
 function formatCurrency(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatMinutes(totalMinutes: number) {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h}h ${String(m).padStart(2, "0")}min`;
 }
 
 // ─── KpiCard ──────────────────────────────────────────────────────────────────
@@ -417,7 +422,7 @@ export function ReportsMain() {
             />
             <KpiCard
               label="Horas trabalhadas"
-              value={`${kpis.workedHours}h`}
+              value={formatMinutes(kpis.workedHours)}
               icon={<Clock className="h-4 w-4" />}
               sub="Baseado na duração dos serviços"
             />

@@ -145,15 +145,10 @@ export function useReports(from: string, to: string): ReportsData {
         0,
       );
       const avgTicket = completed > 0 ? revenue / completed : 0;
-      const workedHours =
-        Math.round(
-          (completedApts.reduce(
-            (sum, a) => sum + Number(a.service_duration ?? 0),
-            0,
-          ) /
-            60) *
-            10,
-        ) / 10;
+      const workedHours = completedApts.reduce(
+        (sum, a) => sum + Number(a.service_duration ?? 0),
+        0,
+      );
       const uniqueCustomers = new Set(apts.map(a => a.customer_id)).size;
 
       // Hourly aggregate (hour of day across the period)

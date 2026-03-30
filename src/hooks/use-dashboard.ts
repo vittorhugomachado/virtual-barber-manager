@@ -113,7 +113,11 @@ export function useDashboard(): DashboardData {
         if (!apt.service_name) continue;
         const existing = serviceMap.get(apt.service_name);
         if (existing) existing.count++;
-        else serviceMap.set(apt.service_name, { name: apt.service_name, count: 1 });
+        else
+          serviceMap.set(apt.service_name, {
+            name: apt.service_name,
+            count: 1,
+          });
       }
       const top = Array.from(serviceMap.values())
         .sort((a, b) => b.count - a.count)

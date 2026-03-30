@@ -122,14 +122,14 @@ export function CustomersMain() {
                   <TableRow key={customer.id}>
                     <TableCell className="md:pl-6 max-w-0">
                       <div className="flex flex-col md:flex-row md:items-center md:gap-3 min-w-0">
-                        <span className="font-medium truncate block">
+                        <p className="font-medium flex items-center gap-1.5 truncate">
                           {customer.name}
-                        </span>
-                        {customer.source === "customers_auth" && (
-                          <span title="Cliente criado com verificacao de celular">
-                            <BadgeCheck className="h-4 w-4 shrink-0 text-blue-500" />
-                          </span>
-                        )}
+                          {customer.source === "customers_auth" && (
+                            <span title="Cliente criado com verificacao de celular">
+                              <BadgeCheck className="h-4 w-4 text-blue-500" />
+                            </span>
+                          )}
+                        </p>
                         <span className="text-sm text-muted-foreground inline-flex items-center gap-1 md:hidden min-w-0">
                           <Phone className="h-3.5 w-3.5 shrink-0" />
                           {hasPhone ? (

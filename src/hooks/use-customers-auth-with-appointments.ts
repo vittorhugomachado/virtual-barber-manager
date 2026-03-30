@@ -19,13 +19,13 @@ export function useCustomersAuthWithAppointments() {
 
       const { data: appointmentRows } = await supabase
         .from("appointments")
-        .select("customer_id, starts_at")
+        .select("customer_id, starts_at, created_at")
         .eq("barbershop_id", barbershopId)
         .not("customer_id", "is", null);
 
       const statsMap = new Map<
         string,
-        { total: number; last: string | null }
+        { total: number; last: string | null; first_seen_at: string }
       >();
 
       for (const appointment of appointmentRows ?? []) {
@@ -35,6 +35,7 @@ export function useCustomersAuthWithAppointments() {
           statsMap.set(appointment.customer_id, {
             total: 1,
             last: appointment.starts_at,
+            first_seen_at: appointment.created_at,
           });
           continue;
         }
@@ -42,6 +43,9 @@ export function useCustomersAuthWithAppointments() {
         current.total += 1;
         if (appointment.starts_at > (current.last ?? "")) {
           current.last = appointment.starts_at;
+        }
+        if (appointment.created_at < current.first_seen_at) {
+          current.first_seen_at = appointment.created_at;
         }
       }
 
@@ -67,7 +71,7 @@ export function useCustomersAuthWithAppointments() {
           barbershop_id: barbershopId,
           name: row.name?.trim() || "Cliente sem nome",
           phone: row.phone ?? null,
-          created_at: row.created_at,
+          created_at: statsMap.get(row.id)?.first_seen_at ?? row.created_at,
           updated_at: row.updated_at ?? null,
           total_appointments: statsMap.get(row.id)?.total ?? 0,
           last_appointment: statsMap.get(row.id)?.last ?? null,

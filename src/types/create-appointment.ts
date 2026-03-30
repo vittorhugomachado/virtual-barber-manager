@@ -31,6 +31,11 @@ export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
 
 export interface AppointmentWithRelations {
   id: string;
+  service_name: string | null;
+  service_price: number | null;
+  service_duration_min: number | null;
+  barber_name: string | null;
+  customer_name: string | null;
   barbershop_id: string;
   customer_id: string | null;
   barber_id: string | null;

@@ -19,7 +19,7 @@ export function useAllCustomers() {
       return rightDate.localeCompare(leftDate);
     });
   }, [customers, customersAuth]);
-
+  console.log(allCustomers);
   return {
     customers: allCustomers,
     loading: loadingCustomers || loadingCustomersAuth,

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useReports } from "@/hooks/use-reports";
+import { useAllCustomers } from "@/hooks/use-all-customers";
 import { AppointmentsHourChart } from "@/components/common/appointments-hour-chart";
 import { BarbersChart } from "@/components/common/barbers-chart";
 import { ServicesChart } from "@/components/common/services-chart";
@@ -311,6 +312,20 @@ export function ReportsMain() {
     useReports(from, to);
   const canFetch = !!from && !!to;
 
+  const { customers: allCustomers } = useAllCustomers();
+
+  const newCustomersInPeriod = useMemo(() => {
+    if (!from || !to) return 0;
+    const fromMs = new Date(`${from}T00:00:00`).getTime();
+    const toMs = new Date(`${to}T23:59:59`).getTime();
+    return allCustomers.filter(c => {
+      if (!c.created_at) return false;
+      // ajusta -3h (BRT naive)
+      const createdMs = new Date(c.created_at).getTime() - 3 * 60 * 60 * 1000;
+      return createdMs >= fromMs && createdMs <= toMs;
+    }).length;
+  }, [allCustomers, from, to]);
+
   return (
     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
       {/* Header + seletor de período */}
@@ -396,14 +411,9 @@ export function ReportsMain() {
               icon={<Ticket className="h-4 w-4" />}
             />
             <KpiCard
-              label="Clientes atendidos"
-              value={kpis.uniqueCustomers}
+              label="Clientes cadastrados"
+              value={newCustomersInPeriod}
               icon={<Users className="h-4 w-4" />}
-              sub={
-                kpis.newCustomers > 0
-                  ? `${kpis.newCustomers} novos no período`
-                  : undefined
-              }
             />
             <KpiCard
               label="Horas trabalhadas"

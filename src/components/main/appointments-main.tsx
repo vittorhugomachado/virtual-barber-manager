@@ -3,12 +3,6 @@ import { useAppointments } from "@/hooks/use-appointments";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
   CalendarDays,
   ChevronDown,
   ChevronRight,
@@ -28,23 +22,6 @@ import { CreateAppointmentModal } from "../modals/appointments/create-appointmen
 import { DeleteAppointmentModal } from "../modals/appointments/delete-appointment-appointment";
 
 type FilterType = "today" | "week" | "month" | "year" | "custom";
-
-function RemovedBadge({ label, tooltip }: { label: string; tooltip: string }) {
-  return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="inline-flex items-center gap-1 text-orange-500 cursor-help">
-            {label}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-55 text-xs">
-          {tooltip}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
 
 // ─── StatusPicker ─────────────────────────────────────────────────────────────
 type AppointmentStatus = AppointmentWithRelations["status"];
@@ -83,21 +60,15 @@ function StatusPicker({
   const isFuture = startsAt > now;
   const isPast40 = now.getTime() - startsAt.getTime() >= 40 * 60 * 1000;
 
-  const hasDeleted = !apt.customer || !apt.barber || !apt.service;
-
-  const options = hasDeleted
-    ? STATUS_OPTIONS.filter(
-        o =>
-          o.value !== apt.status &&
-          (o.value === "cancelled_by_barbershop" ||
-            o.value === "cancelled_by_customer"),
-      )
-    : apt.status === "no_show"
+  const options =
+    apt.status === "no_show"
       ? STATUS_OPTIONS.filter(
           o => o.value === "completed" || o.value === "cancelled_by_barbershop",
         )
       : isPast40
-        ? STATUS_OPTIONS.filter(o => o.value === "no_show")
+        ? STATUS_OPTIONS.filter(
+            o => o.value === "no_show" || o.value === "cancelled_by_barbershop",
+          )
         : STATUS_OPTIONS.filter(o => {
             if (o.value === apt.status) return false;
             if (o.value === "scheduled" && !isFuture) return false;
@@ -380,36 +351,28 @@ const DaySection = memo(function DaySection({
                         <div className="lg:w-32.5 lg:ml-3 truncate flex items-center gap-1.5 text-sm min-w-0 overflow-hidden">
                           <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span className="truncate font-medium">
-                            {apt.customer?.name ?? (
-                              <RemovedBadge
-                                label="Cliente removido"
-                                tooltip="Este cliente foi excluído do sistema. O agendamento ainda existe no histórico."
-                              />
-                            )}
+                            {apt.customer_name}
                           </span>
                         </div>
                       </div>
-                      {/* linha 2: barbeiro · serviço */}
+                      {/* linha 2: barbeiro · serviço · preço */}
                       <div className="flex justify-center xl:justify-start items-center gap-1.5 text-sm min-w-0 overflow-hidden pl-0.5">
                         <Scissors className="h-3.5 w-3.5 hidden md:block text-muted-foreground shrink-0" />
                         <span className="flex flex-wrap justify-center items-center gap-1 text-muted-foreground min-w-0 overflow-hidden">
-                          <span className="truncate">
-                            {apt.barber?.name ?? (
-                              <RemovedBadge
-                                label="Barbeiro removido"
-                                tooltip="Este barbeiro foi excluído do sistema. O agendamento ainda existe no histórico."
-                              />
-                            )}
-                          </span>
+                          <span className="truncate">{apt.barber_name}</span>
                           <span className="shrink-0">·</span>
-                          <span className="truncate">
-                            {apt.service?.name ?? (
-                              <RemovedBadge
-                                label="Serviço removido"
-                                tooltip="Este serviço foi excluído do sistema. O agendamento ainda existe no histórico."
-                              />
-                            )}
-                          </span>
+                          <span className="truncate">{apt.service_name}</span>
+                          {apt.service_price != null && (
+                            <>
+                              <span className="shrink-0">·</span>
+                              <span className="shrink-0 font-medium text-foreground">
+                                {apt.service_price.toLocaleString("pt-BR", {
+                                  style: "currency",
+                                  currency: "BRL",
+                                })}
+                              </span>
+                            </>
+                          )}
                         </span>
                       </div>
                     </div>
@@ -429,7 +392,7 @@ const DaySection = memo(function DaySection({
 
 // ─── AppointmentsMain ─────────────────────────────────────────────────────────
 export function AppointmentsMain() {
-  const [filter, setFilter] = useState<FilterType>("week");
+  const [filter, setFilter] = useState<FilterType>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>(
     {},
   );

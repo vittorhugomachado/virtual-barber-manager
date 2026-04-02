@@ -22,7 +22,7 @@ export async function uploadImage({
     const { data: existingFiles, error: listError } = await supabase.storage
       .from(bucket)
       .list(ownerId, {
-        search: `${type}.`,
+        search: `${type}-`,
       });
 
     if (listError) {

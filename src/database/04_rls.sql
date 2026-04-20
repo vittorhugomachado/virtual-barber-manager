@@ -85,6 +85,21 @@ CREATE POLICY "owner can view customers of own barbershop"
     auth.uid() = (SELECT owner_id FROM "barbershops" WHERE id = barbershop_id)
   );
 
+CREATE POLICY "owner can insert customers"
+  ON "customers" FOR INSERT WITH CHECK (
+    auth.uid() = (SELECT owner_id FROM "barbershops" WHERE id = barbershop_id)
+  );
+
+CREATE POLICY "owner can update customers"
+  ON "customers" FOR UPDATE USING (
+    auth.uid() = (SELECT owner_id FROM "barbershops" WHERE id = barbershop_id)
+  );
+
+CREATE POLICY "owner can delete customers"
+  ON "customers" FOR DELETE USING (
+    auth.uid() = (SELECT owner_id FROM "barbershops" WHERE id = barbershop_id)
+  );
+
 -- APPOINTMENTS
 CREATE POLICY "customer can view own appointments"
   ON "appointments" FOR SELECT USING (auth.uid() = customer_id);
@@ -92,8 +107,11 @@ CREATE POLICY "customer can view own appointments"
 CREATE POLICY "customer can create appointment"
   ON "appointments" FOR INSERT WITH CHECK (auth.uid() = customer_id);
 
+-- Permite apenas cancelamento pelo cliente (status restrito a valores de cancelamento)
 CREATE POLICY "customer can cancel own appointment"
-  ON "appointments" FOR UPDATE USING (auth.uid() = customer_id);
+  ON "appointments" FOR UPDATE
+  USING (auth.uid() = customer_id)
+  WITH CHECK (status IN ('cancelled_by_customer'));
 
 CREATE POLICY "barber can view own appointments"
   ON "appointments" FOR SELECT USING (auth.uid() = barber_id);

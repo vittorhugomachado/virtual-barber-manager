@@ -2,15 +2,15 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CheckCircle, Mail, PencilLine } from "lucide-react";
+import { Mail, PencilLine } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase/supabase";
 import { useLocation } from "react-router";
 
 interface PendingSignupData {
   email: string;
-  userId: string;
-  changeToken: string;
+  userId?: string;
+  changeToken?: string;
 }
 
 function isPendingSignupData(value: unknown): value is PendingSignupData {
@@ -20,8 +20,9 @@ function isPendingSignupData(value: unknown): value is PendingSignupData {
 
   return (
     typeof candidate.email === "string" &&
-    typeof candidate.userId === "string" &&
-    typeof candidate.changeToken === "string"
+    (candidate.userId === undefined || typeof candidate.userId === "string") &&
+    (candidate.changeToken === undefined ||
+      typeof candidate.changeToken === "string")
   );
 }
 
@@ -38,7 +39,7 @@ function readPendingSignupFromStorage() {
   }
 }
 
-export function SuccessSignupPage() {
+export function ConfirmationEmailPage() {
   const location = useLocation();
   const [pendingSignup, setPendingSignup] = useState<PendingSignupData | null>(
     null,
@@ -52,7 +53,13 @@ export function SuccessSignupPage() {
       ? location.state
       : null;
     const storedValue = readPendingSignupFromStorage();
-    const signupData = stateValue ?? storedValue;
+    const signupData =
+      stateValue && storedValue && stateValue.email === storedValue.email
+        ? {
+            ...storedValue,
+            ...stateValue,
+          }
+        : (stateValue ?? storedValue);
 
     if (!signupData) return;
 
@@ -61,10 +68,40 @@ export function SuccessSignupPage() {
     sessionStorage.setItem("pending-signup", JSON.stringify(signupData));
   }, [location.state]);
 
+  async function handleResendConfirmation() {
+    if (!pendingSignup || isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: pendingSignup.email,
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      toast.success("Enviamos um novo e-mail de confirmacao.");
+    } catch (error) {
+      toast.error("Erro ao reenviar confirmacao", {
+        description:
+          error instanceof Error ? error.message : "Tente novamente.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleEmailUpdate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!pendingSignup || isSubmitting) return;
+    if (!pendingSignup.userId || !pendingSignup.changeToken) {
+      toast.error("Nao foi possivel alterar o e-mail deste cadastro.");
+      return;
+    }
 
     const normalizedEmail = newEmail.trim().toLowerCase();
 
@@ -140,23 +177,7 @@ export function SuccessSignupPage() {
 
       <div className="flex flex-col items-center justify-center max-w-md w-full mx-4 lg:mx-0">
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-8 text-center w-full">
-          <CheckCircle className="w-8 h-8 text-blue-600 mx-auto mb-4 dark:text-blue-400" />
-
-          <h1 className="text-2xl font-bold mb-2">Verifique seu e-mail</h1>
-
-          <p className="text-muted-foreground mb-6">
-            Enviamos um link de confirmacao para <br />
-            <strong className="text-foreground">
-              {pendingSignup?.email ?? "seu e-mail"}
-            </strong>
-          </p>
-
-          <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 mb-6">
-            <p className="text-sm flex items-center justify-center gap-2 text-blue-700 dark:text-blue-300">
-              <Mail className="h-4 w-4" /> Clique no link enviado para ativar
-              sua conta
-            </p>
-          </div>
+          <Mail className="w-8 h-8 text-blue-600 mx-auto mb-4 dark:text-blue-400" />
 
           {pendingSignup ? (
             isEditingEmail ? (
@@ -178,7 +199,7 @@ export function SuccessSignupPage() {
                   placeholder="novoemail@exemplo.com"
                   disabled={isSubmitting}
                 />
-                <div className="flex gap-3">
+                <div className="flex gap-3 mt-3">
                   <Button
                     type="submit"
                     className="flex-1"
@@ -201,26 +222,45 @@ export function SuccessSignupPage() {
                 </div>
               </form>
             ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Digitou o e-mail errado? Voce pode alterar o endereco e
-                  receber uma nova confirmacao.
+              <>
+                <h1 className="text-2xl font-bold mb-2">
+                  Verifique seu e-mail
+                </h1>
+
+                <p className="text-muted-foreground mb-6">
+                  Enviamos um link de confirmacao para <br />
+                  <strong className="text-foreground">
+                    {pendingSignup?.email ?? "seu e-mail"}
+                  </strong>
                 </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setIsEditingEmail(true)}
-                >
-                  <PencilLine className="h-4 w-4" />
-                  Alterar e-mail
-                </Button>
-              </div>
+                <div className="space-y-3">
+                  <Button
+                    type="button"
+                    className="w-full"
+                    disabled={isSubmitting}
+                    onClick={handleResendConfirmation}
+                  >
+                    {isSubmitting ? "Enviando..." : "Reenviar confirmação"}
+                  </Button>
+                  {pendingSignup.userId && pendingSignup.changeToken ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      disabled={isSubmitting}
+                      onClick={() => setIsEditingEmail(true)}
+                    >
+                      <PencilLine className="h-4 w-4" />
+                      Alterar e-mail
+                    </Button>
+                  ) : null}
+                </div>
+              </>
             )
           ) : (
             <p className="text-sm text-muted-foreground">
               Nao encontramos os dados deste cadastro. Se precisar trocar o
-              e-mail, refaca o processo de cadastro.
+              e-mail, refaça o processo de cadastro.
             </p>
           )}
         </div>

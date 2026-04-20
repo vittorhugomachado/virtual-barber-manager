@@ -68,6 +68,51 @@ export function LoginForm() {
         password: data.password,
       });
       if (error) {
+        if (error.message === "Email not confirmed") {
+          const normalizedEmail = data.email.trim().toLowerCase();
+          const response = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/prepare-pending-signup`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                email: normalizedEmail,
+                password: data.password,
+              }),
+            },
+          );
+
+          const payload = (await response.json()) as {
+            error?: string;
+            email?: string;
+            userId?: string;
+            changeToken?: string;
+          };
+
+          if (!response.ok || !payload.email || !payload.userId || !payload.changeToken) {
+            toast.error("Erro ao preparar confirmacao de e-mail", {
+              description:
+                payload.error ?? "Nao foi possivel continuar este login.",
+            });
+            return;
+          }
+
+          const pendingSignup = {
+            email: payload.email,
+            userId: payload.userId,
+            changeToken: payload.changeToken,
+          };
+
+          sessionStorage.setItem("pending-signup", JSON.stringify(pendingSignup));
+          navigate("/confirmacao-email", {
+            state: pendingSignup,
+          });
+          return;
+        }
         toast.error(errorMessages[error.message] ?? "Erro ao fazer login");
         return;
       }

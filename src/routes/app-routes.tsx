@@ -20,9 +20,14 @@ const SignupPage = lazy(() =>
     default: module.SignupPage,
   })),
 );
-const SuccessSignupPage = lazy(() =>
-  import("@/pages/success-signup-page").then(module => ({
-    default: module.SuccessSignupPage,
+const ConfirmationEmailPage = lazy(() =>
+  import("@/pages/confirmation-email-page").then(module => ({
+    default: module.ConfirmationEmailPage,
+  })),
+);
+const EmailConfirmedPage = lazy(() =>
+  import("@/pages/email-confirmed-page").then(module => ({
+    default: module.EmailConfirmedPage,
   })),
 );
 const LoginPage = lazy(() =>
@@ -137,13 +142,21 @@ export function AppRoutes() {
 
       {/* Rota de sucesso de cadastro (pública, sem sidebar) */}
       <Route
-        path="/cadastro-sucesso"
+        path="/confirmacao-email"
         element={
           <PublicRoute>
             <PublicPageLoader>
-              <SuccessSignupPage />
+              <ConfirmationEmailPage />
             </PublicPageLoader>
           </PublicRoute>
+        }
+      />
+      <Route
+        path="/email-confirmado"
+        element={
+          <PublicPageLoader>
+            <EmailConfirmedPage />
+          </PublicPageLoader>
         }
       />
 

@@ -20,6 +20,11 @@ const SignupPage = lazy(() =>
     default: module.SignupPage,
   })),
 );
+const SuccessSignupPage = lazy(() =>
+  import("@/pages/success-signup-page").then(module => ({
+    default: module.SuccessSignupPage,
+  })),
+);
 const LoginPage = lazy(() =>
   import("@/pages/login-page").then(module => ({
     default: module.LoginPage,
@@ -125,6 +130,18 @@ export function AppRoutes() {
           <PublicRoute>
             <PublicPageLoader>
               <SignupPage />
+            </PublicPageLoader>
+          </PublicRoute>
+        }
+      />
+
+      {/* Rota de sucesso de cadastro (pública, sem sidebar) */}
+      <Route
+        path="/cadastro-sucesso"
+        element={
+          <PublicRoute>
+            <PublicPageLoader>
+              <SuccessSignupPage />
             </PublicPageLoader>
           </PublicRoute>
         }

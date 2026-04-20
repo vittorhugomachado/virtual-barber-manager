@@ -129,7 +129,7 @@ export function SignupForm() {
       }
 
       toast.success("Conta criada com sucesso!");
-      navigate("/");
+      navigate("/cadastro-sucesso");
     } finally {
       setIsLoading(false);
     }

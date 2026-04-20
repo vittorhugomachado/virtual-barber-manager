@@ -65,6 +65,7 @@ export function SignupForm() {
     setIsLoading(true);
 
     const rawPhone = data.phone.replace(/\D/g, "");
+    const signupChangeToken = crypto.randomUUID();
 
     try {
       const { data: existingPhone } = await supabase.rpc("check_phone_exists", {
@@ -79,6 +80,12 @@ export function SignupForm() {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
+        options: {
+          data: {
+            role: "barbershop",
+            signup_change_token: signupChangeToken,
+          },
+        },
       });
 
       if (authError) {
@@ -129,7 +136,14 @@ export function SignupForm() {
       }
 
       toast.success("Conta criada com sucesso!");
-      navigate("/cadastro-sucesso");
+      const pendingSignup = {
+        email: data.email,
+        userId: userId,
+        changeToken: signupChangeToken,
+      };
+
+      sessionStorage.setItem("pending-signup", JSON.stringify(pendingSignup));
+      navigate("/cadastro-sucesso", { state: pendingSignup });
     } finally {
       setIsLoading(false);
     }

@@ -39,7 +39,6 @@ const formSchema = z.object({
   slug: z.string().optional(),
   description: z.string().optional(),
   ownerName: z.string().min(1, "Nome do proprietário é obrigatório"),
-  email: z.email("Email inválido"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -70,7 +69,6 @@ export function BarbershopSettingsForm() {
       slug: barbershop?.slug ?? "",
       description: barbershop?.description ?? "",
       ownerName: barbershop?.owner_name ?? "",
-      email: barbershop?.email ?? "",
     },
   });
 
@@ -82,7 +80,6 @@ export function BarbershopSettingsForm() {
         slug: barbershop.slug ?? "",
         description: barbershop.description ?? "",
         ownerName: barbershop.owner_name ?? "",
-        email: barbershop.email ?? "",
       });
     }
   }, [barbershop, form]);
@@ -157,7 +154,6 @@ export function BarbershopSettingsForm() {
           name: data.name,
           slug: data.slug,
           phone: rawPhone,
-          email: data.email,
           description: data.description,
           updated_at: new Date().toISOString(),
         })
@@ -190,11 +186,6 @@ export function BarbershopSettingsForm() {
         msg.includes("phone")
       ) {
         form.setError("phone", { message: "Este celular já está cadastrado" });
-      } else if (
-        msg.includes("barbershops_email_key") ||
-        msg.includes("email")
-      ) {
-        form.setError("email", { message: "Este email já está cadastrado" });
       } else {
         toast.error("Erro ao salvar dados da barbearia");
       }
@@ -395,25 +386,6 @@ export function BarbershopSettingsForm() {
                     {...field}
                     id="settings-owner-name"
                     placeholder="Seu nome"
-                    aria-invalid={fieldState.invalid}
-                  />
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-
-            <Controller
-              name="email"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="settings-email">Email</FieldLabel>
-                  <Input
-                    {...field}
-                    id="settings-email"
-                    placeholder="barbearia@email.com"
                     aria-invalid={fieldState.invalid}
                   />
                   {fieldState.invalid && (

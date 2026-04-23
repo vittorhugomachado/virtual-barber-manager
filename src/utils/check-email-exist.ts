@@ -1,21 +1,29 @@
+// utils/check-email-exist.ts
 import { supabase } from "@/lib/supabase/supabase";
 
 export async function checkEmailExists(email: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase
-      .from("barbershops")
-      .select("email")
-      .eq("email", email.toLowerCase())
-      .maybeSingle();
+    const emailToCheck = email.toLowerCase().trim();
 
-    if (error && error.code !== "PGRST116") {
-      console.error("Erro ao verificar email:", error);
-      throw new Error("Erro ao verificar disponibilidade do email");
+    console.log("Verificando email:", emailToCheck);
+
+    // Usar a função RPC
+    const { data, error } = await supabase.rpc("check_email_exists", {
+      email_to_check: emailToCheck,
+    });
+
+    console.log("Resposta RPC:", { data, error });
+
+    if (error) {
+      console.error("Erro detalhado do RPC:", error);
+      throw new Error(`Erro ao verificar email: ${error.message}`);
     }
 
-    return !!data;
+    return data === true;
   } catch (error) {
     console.error("Erro na verificação:", error);
-    throw error;
+    // Em caso de erro, retornamos false para não bloquear o usuário
+    // Mas você pode querer tratar diferente
+    return false;
   }
 }

@@ -1,4 +1,4 @@
-// components/modals/password-confirm-modal.tsx
+// components/modals/password/password-confirm-modal.tsx
 import { useState } from "react";
 import {
   Dialog,
@@ -17,20 +17,22 @@ interface PasswordConfirmModalProps {
   open: boolean;
   onClose: () => void;
   onConfirm: (password: string) => Promise<void>;
+  onClearError?: () => void;
   title?: string;
   description?: string;
   isLoading?: boolean;
-  errorMessage?: string | undefined | null; // Adicionado para receber erro externo
+  errorMessage?: string | undefined | null;
 }
 
 export function PasswordConfirmModal({
   open,
   onClose,
   onConfirm,
+  onClearError,
   title = "Confirmar senha",
   description = "Por segurança, digite sua senha para continuar",
   isLoading = false,
-  errorMessage, // Erro vindo do componente pai
+  errorMessage,
 }: PasswordConfirmModalProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -48,26 +50,36 @@ export function PasswordConfirmModal({
     setLocalError(null);
     try {
       await onConfirm(password);
+      // Só limpa se for bem sucedido
       setPassword("");
       setShowPassword(false);
     } catch (err) {
-      // O erro será tratado no componente pai
       console.error("Erro na confirmação:", err);
     }
   };
 
   const handleClose = () => {
+    // Limpa tudo ao fechar
     setPassword("");
     setShowPassword(false);
     setLocalError(null);
+    if (onClearError) {
+      onClearError();
+    }
     onClose();
   };
 
-  // Limpa erro quando o usuário digita
+  // Limpa TODOS os erros quando o usuário digita
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
     setLocalError(null);
+    if (onClearError) {
+      onClearError();
+    }
   };
+
+  // Reseta o estado quando o modal abre usando key prop no pai
+  // Em vez de useEffect, usamos um padrão de reset via key
 
   return (
     <Dialog open={open} onOpenChange={o => !o && handleClose()}>
@@ -77,7 +89,7 @@ export function PasswordConfirmModal({
             <Lock className="h-6 w-6 text-[#0458EE]" />
           </div>
           <DialogTitle className="text-xl font-semibold">{title}</DialogTitle>
-          <DialogDescription className="text-center mt-2">
+          <DialogDescription className="text-center mt-2 whitespace-pre-line">
             {description}
           </DialogDescription>
         </DialogHeader>

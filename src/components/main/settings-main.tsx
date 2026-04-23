@@ -12,6 +12,7 @@ const SECTIONS = [
   { id: "hours", label: "Horários" },
   { id: "gallery", label: "Galeria" },
   { id: "users", label: "Usuários" },
+  { id: "security", label: "Segurança" },
 ] as const;
 
 function SettingsNav({
@@ -95,6 +96,11 @@ const UsersSection = lazy(() =>
     default: module.UsersSection,
   })),
 );
+const SecuritySettingsForm = lazy(() =>
+  import("../forms/security-settings-form").then(module => ({
+    default: module.SecuritySettingsForm,
+  })),
+);
 
 export function SettingsMain() {
   const { missingAddress, missingHours, refetch } = useSettingsAlerts();
@@ -107,6 +113,11 @@ export function SettingsMain() {
       />
       <div id="settings-section-barbershop" className="w-full scroll-mt-14">
         <BarbershopSettingsForm />
+      </div>
+      <div id="settings-section-security" className="w-full scroll-mt-14">
+        <DeferredSection fallback={<SecuritySectionSkeleton />}>
+          <SecuritySettingsForm />
+        </DeferredSection>
       </div>
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
       <div id="settings-section-address" className="w-full scroll-mt-14">
@@ -132,6 +143,7 @@ export function SettingsMain() {
           <UsersSection />
         </DeferredSection>
       </div>
+      <Separator className="my-4 max-w-180 px-6 sm:mx-auto md:px-16" />
       {/* <Separator className="my-4 max-w-180 mx-16" />
       <PlansSection /> */}
     </div>
@@ -266,6 +278,20 @@ function UsersSectionSkeleton() {
         ))}
       </div>
       <Skeleton className="h-10 w-36 rounded-full" />
+    </div>
+  );
+}
+
+function SecuritySectionSkeleton() {
+  return (
+    <div className="w-full max-w-180 sm:mx-auto md:px-16 flex flex-col gap-6 mb-18">
+      <div className="px-3 mt-3 space-y-2">
+        <Skeleton className="h-8 w-36" />
+        <Skeleton className="h-4 w-full max-w-72" />
+      </div>
+      <div className="px-3">
+        <Skeleton className="h-10 w-full" />
+      </div>
     </div>
   );
 }

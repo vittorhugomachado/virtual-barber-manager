@@ -172,8 +172,7 @@ export function ConfirmationEmailPage() {
       }
 
       const confirmedEmail = payload.email ?? normalizedEmail;
-      const nextChangeToken =
-        payload.changeToken ?? pendingSignup.changeToken;
+      const nextChangeToken = payload.changeToken ?? pendingSignup.changeToken;
 
       const { error: resendError } = await supabase.auth.resend({
         type: "signup",

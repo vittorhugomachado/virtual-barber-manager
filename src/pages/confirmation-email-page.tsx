@@ -39,6 +39,29 @@ function readPendingSignupFromStorage() {
   }
 }
 
+function getFriendlyAuthErrorMessage(message: string) {
+  if (
+    message.includes("For security purposes, you can only request this after")
+  ) {
+    const secondsMatch = message.match(/after\s+(\d+)\s+seconds?/i);
+    const seconds = secondsMatch?.[1];
+
+    return seconds
+      ? `Aguarde ${seconds} segundos antes de solicitar outro e-mail.`
+      : "Aguarde alguns segundos antes de solicitar outro e-mail.";
+  }
+
+  if (
+    message.includes("Este e-mail ja esta em uso.") ||
+    message.includes("already registered") ||
+    message.includes("already in use")
+  ) {
+    return "Este e-mail ja esta cadastrado.";
+  }
+
+  return message;
+}
+
 export function ConfirmationEmailPage() {
   const location = useLocation();
   const [pendingSignup, setPendingSignup] = useState<PendingSignupData | null>(
@@ -87,7 +110,9 @@ export function ConfirmationEmailPage() {
     } catch (error) {
       toast.error("Erro ao reenviar confirmacao", {
         description:
-          error instanceof Error ? error.message : "Tente novamente.",
+          error instanceof Error
+            ? getFriendlyAuthErrorMessage(error.message)
+            : "Tente novamente.",
       });
     } finally {
       setIsSubmitting(false);
@@ -136,15 +161,23 @@ export function ConfirmationEmailPage() {
         },
       );
 
-      const payload = (await response.json()) as { error?: string };
+      const payload = (await response.json()) as {
+        error?: string;
+        email?: string;
+        changeToken?: string;
+      };
 
       if (!response.ok) {
         throw new Error(payload.error ?? "Nao foi possivel alterar o e-mail.");
       }
 
+      const confirmedEmail = payload.email ?? normalizedEmail;
+      const nextChangeToken =
+        payload.changeToken ?? pendingSignup.changeToken;
+
       const { error: resendError } = await supabase.auth.resend({
         type: "signup",
-        email: normalizedEmail,
+        email: confirmedEmail,
       });
 
       if (resendError) {
@@ -153,18 +186,21 @@ export function ConfirmationEmailPage() {
 
       const updatedSignup = {
         ...pendingSignup,
-        email: normalizedEmail,
+        email: confirmedEmail,
+        changeToken: nextChangeToken,
       };
 
       setPendingSignup(updatedSignup);
-      setNewEmail(normalizedEmail);
+      setNewEmail(confirmedEmail);
       setIsEditingEmail(false);
       sessionStorage.setItem("pending-signup", JSON.stringify(updatedSignup));
       toast.success("E-mail atualizado. Enviamos uma nova confirmacao.");
     } catch (error) {
       toast.error("Erro ao alterar e-mail", {
         description:
-          error instanceof Error ? error.message : "Tente novamente.",
+          error instanceof Error
+            ? getFriendlyAuthErrorMessage(error.message)
+            : "Tente novamente.",
       });
     } finally {
       setIsSubmitting(false);
@@ -223,13 +259,13 @@ export function ConfirmationEmailPage() {
               </form>
             ) : (
               <>
-                <h1 className="text-2xl font-bold mb-2">
+                <h1 className="text-2xl font-semibold mb-2">
                   Verifique seu e-mail
                 </h1>
 
-                <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground font-light mb-6">
                   Enviamos um link de confirmacao para <br />
-                  <strong className="text-foreground">
+                  <strong className="text-foreground truncate block max-w-full">
                     {pendingSignup?.email ?? "seu e-mail"}
                   </strong>
                 </p>

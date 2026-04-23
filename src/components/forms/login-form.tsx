@@ -93,7 +93,12 @@ export function LoginForm() {
             changeToken?: string;
           };
 
-          if (!response.ok || !payload.email || !payload.userId || !payload.changeToken) {
+          if (
+            !response.ok ||
+            !payload.email ||
+            !payload.userId ||
+            !payload.changeToken
+          ) {
             toast.error("Erro ao preparar confirmacao de e-mail", {
               description:
                 payload.error ?? "Nao foi possivel continuar este login.",
@@ -107,7 +112,10 @@ export function LoginForm() {
             changeToken: payload.changeToken,
           };
 
-          sessionStorage.setItem("pending-signup", JSON.stringify(pendingSignup));
+          sessionStorage.setItem(
+            "pending-signup",
+            JSON.stringify(pendingSignup),
+          );
           navigate("/confirmacao-email", {
             state: pendingSignup,
           });

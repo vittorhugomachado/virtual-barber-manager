@@ -191,9 +191,18 @@ export function ResetPasswordPage() {
       });
 
       if (error) {
-        toast.error("Erro ao criar nova senha", {
-          description: error.message,
-        });
+        const isSamePasswordError = error.message.includes(
+          "New password should be different from the old password",
+        );
+
+        toast.error(
+          isSamePasswordError
+            ? "A nova senha precisa ser diferente da senha atual"
+            : "Erro ao criar nova senha",
+          {
+            description: isSamePasswordError ? undefined : error.message,
+          },
+        );
         return;
       }
 

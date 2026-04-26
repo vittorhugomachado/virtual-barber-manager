@@ -189,7 +189,15 @@ export function SecuritySettingsForm() {
 
     if (error) {
       console.error("Erro ao alterar senha:", error.message);
-      toast.error(`Erro: ${error.message}`);
+      if (
+        error.message.includes(
+          "New password should be different from the old password",
+        )
+      ) {
+        toast.error("A nova senha precisa ser diferente da senha atual");
+      } else {
+        toast.error(`Erro: ${error.message}`);
+      }
       setShowPasswordModal(false);
       setPendingAction(null);
       return;

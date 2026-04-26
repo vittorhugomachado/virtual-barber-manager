@@ -8,11 +8,11 @@ import { useSettingsAlerts } from "@/hooks/use-settings-alerts";
 
 const SECTIONS = [
   { id: "barbershop", label: "Barbearia" },
+  { id: "security", label: "Segurança" },
   { id: "address", label: "Endereço" },
   { id: "hours", label: "Horários" },
   { id: "gallery", label: "Galeria" },
   { id: "users", label: "Usuários" },
-  { id: "security", label: "Segurança" },
 ] as const;
 
 function SettingsNav({

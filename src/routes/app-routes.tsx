@@ -20,16 +20,12 @@ const SignupPage = lazy(() =>
     default: module.SignupPage,
   })),
 );
-const ConfirmationEmailPage = lazy(() =>
+const EmailChangeConfirmedPage = lazy(() =>
   import("@/pages/confirmation-email-page").then(module => ({
-    default: module.ConfirmationEmailPage,
+    default: module.EmailChangeConfirmedPage,
   })),
 );
-const EmailConfirmedPage = lazy(() =>
-  import("@/pages/email-confirmed-page").then(module => ({
-    default: module.EmailConfirmedPage,
-  })),
-);
+
 const LoginPage = lazy(() =>
   import("@/pages/login-page").then(module => ({
     default: module.LoginPage,
@@ -146,16 +142,16 @@ export function AppRoutes() {
         element={
           <PublicRoute>
             <PublicPageLoader>
-              <ConfirmationEmailPage />
+              <EmailChangeConfirmedPage />
             </PublicPageLoader>
           </PublicRoute>
         }
       />
       <Route
-        path="/email-confirmado"
+        path="/auth/email-change-confirmed"
         element={
           <PublicPageLoader>
-            <EmailConfirmedPage />
+            <EmailChangeConfirmedPage />
           </PublicPageLoader>
         }
       />

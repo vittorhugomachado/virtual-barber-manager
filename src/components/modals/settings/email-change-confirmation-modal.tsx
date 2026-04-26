@@ -38,10 +38,6 @@ export function EmailChangeConfirmationModal({
           <Mail className="h-12 w-12 text-[#0458EE]" />
         </div>
 
-        <p className="text-gray-600">
-          Um link de confirmação foi enviado para:
-        </p>
-
         <div className="bg-transparent p-0.5 rounded-lg">
           <p className="font-medium text-gray-200 break-all">{newEmail}</p>
         </div>

@@ -104,9 +104,12 @@ export function SecuritySettingsForm() {
         return;
       }
 
-      const { error } = await supabase.auth.updateUser({
-        email: newEmail,
-      });
+      const { error } = await supabase.auth.updateUser(
+        { email: newEmail },
+        {
+          emailRedirectTo: `${window.location.origin}/auth/email-change-confirmed`,
+        },
+      );
 
       if (error) {
         console.error("Erro ao solicitar alteração de email:", error.message);

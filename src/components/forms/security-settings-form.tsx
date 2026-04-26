@@ -164,7 +164,7 @@ export function SecuritySettingsForm() {
     <>
       <form
         onSubmit={handleEmailChange}
-        className="w-full max-w-180 mx-auto md:px-16 mt-2 mb-18 flex flex-col gap-8"
+        className="w-full max-w-180 mx-auto md:px-16 mt-2 mb-18 flex flex-col"
       >
         <Card className="bg-transparent border-none">
           <CardHeader className="mt-3">
@@ -177,7 +177,7 @@ export function SecuritySettingsForm() {
           </CardHeader>
 
           <CardContent>
-            <FieldGroup>
+            <FieldGroup className="gap-3">
               <Field>
                 <FieldLabel htmlFor="settings-security-email">
                   Email atual
@@ -189,12 +189,12 @@ export function SecuritySettingsForm() {
                   disabled
                   className="bg-gray-50"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500">
                   Seu email atual cadastrado
                 </p>
               </Field>
 
-              <Field className="mt-4">
+              <Field>
                 <FieldLabel htmlFor="settings-security-new-email">
                   Novo email
                 </FieldLabel>
@@ -206,7 +206,7 @@ export function SecuritySettingsForm() {
                   placeholder="novo@email.com"
                   disabled={isLoading}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500">
                   Você receberá um link de confirmação no novo email
                 </p>
               </Field>

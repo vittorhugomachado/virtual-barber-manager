@@ -31,6 +31,16 @@ const LoginPage = lazy(() =>
     default: module.LoginPage,
   })),
 );
+const ForgotPasswordPage = lazy(() =>
+  import("@/pages/forgot-password-page").then(module => ({
+    default: module.ForgotPasswordPage,
+  })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("@/pages/reset-password-page").then(module => ({
+    default: module.ResetPasswordPage,
+  })),
+);
 const SettingPage = lazy(() =>
   import("@/pages/settings-page").then(module => ({
     default: module.SettingPage,
@@ -135,6 +145,16 @@ export function AppRoutes() {
           </PublicRoute>
         }
       />
+      <Route
+        path="/esqueci-minha-senha"
+        element={
+          <PublicRoute>
+            <PublicPageLoader>
+              <ForgotPasswordPage />
+            </PublicPageLoader>
+          </PublicRoute>
+        }
+      />
 
       {/* Rota de sucesso de cadastro (pública, sem sidebar) */}
       <Route
@@ -152,6 +172,14 @@ export function AppRoutes() {
         element={
           <PublicPageLoader>
             <EmailChangeConfirmedPage />
+          </PublicPageLoader>
+        }
+      />
+      <Route
+        path="/criar-nova-senha"
+        element={
+          <PublicPageLoader>
+            <ResetPasswordPage />
           </PublicPageLoader>
         }
       />

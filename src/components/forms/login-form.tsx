@@ -287,6 +287,14 @@ export function LoginForm() {
                 >
                   Criar conta
                 </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => navigate("/esqueci-minha-senha")}
+                  className="rounded-full"
+                >
+                  Esqueci minha senha
+                </Button>
               </CardFooter>
             </div>
           ) : (

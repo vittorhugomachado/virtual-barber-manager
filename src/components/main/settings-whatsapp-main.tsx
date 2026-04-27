@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { BellRing, Bot, CheckCircle2, Phone, WifiOff } from "lucide-react";
 import { PlansModal } from "../modals/plans/plans-modal";
 import { useState } from "react";
+import { useBarbershopStore } from "@/store/barbershop.store";
 
 type WhatsappPlan = "iniciante" | "profissional" | "master";
 
@@ -24,8 +25,9 @@ const whatsappSettingsMock: WhatsappSettingsMock = {
 };
 
 export function SettingsWhatsappMain() {
+  const { barbershop } = useBarbershopStore();
   const [plansOpen, setPlansOpen] = useState(false);
-  const isStarterPlan = whatsappSettingsMock.plan === "iniciante";
+  const isStarterPlan = barbershop?.plan === "iniciante";
   const settings = {
     ...whatsappSettingsMock,
     status: isStarterPlan ? "desconectado" : whatsappSettingsMock.status,
@@ -38,6 +40,7 @@ export function SettingsWhatsappMain() {
   };
   const disabledCardClass = isStarterPlan ? "opacity-50 grayscale" : "";
 
+  console.log(barbershop);
   return (
     <main className="w-full max-w-325 flex flex-col items-center gap-6 px-6 md:px-12 pb-12 mx-auto mt-8">
       {isStarterPlan && (
@@ -63,11 +66,13 @@ export function SettingsWhatsappMain() {
               <Phone className="h-5 w-5 text-[#0458EE]" />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-sm text-muted-foreground">
-                Número conectado
-              </span>
+              {barbershop?.whatsapp_number && (
+                <span className="text-sm text-muted-foreground">
+                  Número conectado
+                </span>
+              )}
               <strong className="text-lg font-semibold">
-                {settings.connectedNumber}
+                {barbershop?.whatsapp_number || "Nenhum número conectado"}
               </strong>
             </div>
           </CardContent>
@@ -80,7 +85,7 @@ export function SettingsWhatsappMain() {
                 settings.status === "conectado" ? "bg-green-500/10" : "bg-muted"
               }`}
             >
-              {settings.status === "conectado" ? (
+              {barbershop?.whatsapp_connected == true ? (
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
               ) : (
                 <WifiOff className="h-5 w-5 text-muted-foreground" />
@@ -90,12 +95,12 @@ export function SettingsWhatsappMain() {
               <span className="text-sm text-muted-foreground">Status</span>
               <strong
                 className={`text-lg font-semibold ${
-                  settings.status === "conectado"
+                  barbershop?.whatsapp_connected == true
                     ? "text-green-500"
                     : "text-muted-foreground"
                 }`}
               >
-                {settings.status === "conectado"
+                {barbershop?.whatsapp_connected == true
                   ? "Conectado à API"
                   : "Desconectado"}
               </strong>
@@ -120,11 +125,11 @@ export function SettingsWhatsappMain() {
               <div className="flex items-center gap-3">
                 <Switch
                   id="settings-whatsapp-automatic-service"
-                  checked={settings.automaticService}
+                  checked={barbershop?.auto_reply_enabled || false}
                   disabled={isStarterPlan}
                 />
                 <strong className="text-sm font-semibold">
-                  {settings.automaticService ? "Ativado" : "Desativado"}
+                  {barbershop?.auto_reply_enabled ? "Ativado" : "Desativado"}
                 </strong>
               </div>
               {isStarterPlan && (

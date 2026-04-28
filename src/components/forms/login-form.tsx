@@ -116,7 +116,7 @@ export function LoginForm() {
             "pending-signup",
             JSON.stringify(pendingSignup),
           );
-          navigate("/confirmacao-email", {
+          navigate(`/cadastro-pendente/${pendingSignup.email}`, {
             state: pendingSignup,
           });
           return;

@@ -25,10 +25,19 @@ const EmailChangeConfirmedPage = lazy(() =>
     default: module.EmailChangeConfirmedPage,
   })),
 );
-
 const LoginPage = lazy(() =>
   import("@/pages/login-page").then(module => ({
     default: module.LoginPage,
+  })),
+);
+const SignupPendingPage = lazy(() =>
+  import("@/pages/signup-pending-page").then(module => ({
+    default: module.SignupPendingPage,
+  })),
+);
+const SignupConfirmedPage = lazy(() =>
+  import("@/pages/signup-confirmed-page").then(module => ({
+    default: module.SignupConfirmedPage,
   })),
 );
 const ForgotPasswordPage = lazy(() =>
@@ -131,6 +140,26 @@ export function AppRoutes() {
           <PublicRoute>
             <PublicPageLoader>
               <LoginPage />
+            </PublicPageLoader>
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/cadastro-pendente/:email"
+        element={
+          <PublicRoute>
+            <PublicPageLoader>
+              <SignupPendingPage />
+            </PublicPageLoader>
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/confirmar-cadastro/:email"
+        element={
+          <PublicRoute>
+            <PublicPageLoader>
+              <SignupConfirmedPage />
             </PublicPageLoader>
           </PublicRoute>
         }

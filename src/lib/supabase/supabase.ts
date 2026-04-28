@@ -19,7 +19,10 @@ if (typeof window !== "undefined") {
       hashParams.has("access_token"));
 
   if (hasRecoveryUrl) {
-    sessionStorage.setItem(PASSWORD_RECOVERY_STORAGE_KEY, Date.now().toString());
+    sessionStorage.setItem(
+      PASSWORD_RECOVERY_STORAGE_KEY,
+      Date.now().toString(),
+    );
   }
 
   supabase.auth.onAuthStateChange(event => {

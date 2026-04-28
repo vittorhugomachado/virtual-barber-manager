@@ -81,7 +81,7 @@ export function SignupForm() {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/email-confirmado`,
+          emailRedirectTo: `${window.location.origin}`,
           data: {
             role: "barbershop",
             signup_change_token: signupChangeToken,
@@ -144,7 +144,7 @@ export function SignupForm() {
       };
 
       sessionStorage.setItem("pending-signup", JSON.stringify(pendingSignup));
-      navigate("/confirmacao-email", { state: pendingSignup });
+      navigate("/entrar", { state: pendingSignup });
     } finally {
       setIsLoading(false);
     }

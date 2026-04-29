@@ -11,10 +11,4 @@ export type Barbershop = {
   logo_url: string | null;
   banner_url: string | null;
   slot_interval: number;
-  whatsapp_connected: boolean;
-  whatsapp_number: string | number | null | undefined;
-  whatsapp_phone_number_id: string | number | null | undefined;
-  whatsapp_waba_id: string | number | null | undefined;
-  auto_reply_enabled: boolean;
-  reminders_enabled: boolean;
 };

@@ -35,11 +35,6 @@ const SignupPendingPage = lazy(() =>
     default: module.SignupPendingPage,
   })),
 );
-const SignupConfirmedPage = lazy(() =>
-  import("@/pages/signup-confirmed-page").then(module => ({
-    default: module.SignupConfirmedPage,
-  })),
-);
 const ForgotPasswordPage = lazy(() =>
   import("@/pages/forgot-password-page").then(module => ({
     default: module.ForgotPasswordPage,
@@ -145,26 +140,6 @@ export function AppRoutes() {
         }
       />
       <Route
-        path="/cadastro-pendente/:email"
-        element={
-          <PublicRoute>
-            <PublicPageLoader>
-              <SignupPendingPage />
-            </PublicPageLoader>
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/confirmar-cadastro/:email"
-        element={
-          <PublicRoute>
-            <PublicPageLoader>
-              <SignupConfirmedPage />
-            </PublicPageLoader>
-          </PublicRoute>
-        }
-      />
-      <Route
         path="/cadastro"
         element={
           <PublicRoute>
@@ -174,6 +149,18 @@ export function AppRoutes() {
           </PublicRoute>
         }
       />
+      {/* Rota usada no login em email ainda não confirmado */}
+      <Route
+        path="/cadastro-pendente/:email"
+        element={
+          <PublicRoute>
+            <PublicPageLoader>
+              <SignupPendingPage />
+            </PublicPageLoader>
+          </PublicRoute>
+        }
+      />
+      {/* Rotas de recuperação e atualização de senha */}
       <Route
         path="/esqueci-minha-senha"
         element={
@@ -184,26 +171,6 @@ export function AppRoutes() {
           </PublicRoute>
         }
       />
-
-      {/* Rota de sucesso de cadastro (pública, sem sidebar) */}
-      <Route
-        path="/confirmacao-email"
-        element={
-          <PublicRoute>
-            <PublicPageLoader>
-              <EmailChangeConfirmedPage />
-            </PublicPageLoader>
-          </PublicRoute>
-        }
-      />
-      <Route
-        path="/auth/email-change-confirmed"
-        element={
-          <PublicPageLoader>
-            <EmailChangeConfirmedPage />
-          </PublicPageLoader>
-        }
-      />
       <Route
         path="/criar-nova-senha"
         element={
@@ -212,7 +179,15 @@ export function AppRoutes() {
           </PublicPageLoader>
         }
       />
-
+      {/* Rota de sucesso de cadastro (pública, sem sidebar) */}
+      <Route
+        path="/auth/email-change-confirmed"
+        element={
+          <PublicPageLoader>
+            <EmailChangeConfirmedPage />
+          </PublicPageLoader>
+        }
+      />
       {/* Rotas protegidas com sidebar */}
       <Route element={<ProtectedRouteWithSkeleton />}>
         <Route

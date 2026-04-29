@@ -55,6 +55,11 @@ const ManageServicePage = lazy(() =>
     default: module.ManageServicePage,
   })),
 );
+const ManageStoreStylePage = lazy(() =>
+  import("@/pages/manage-store-style-page").then(module => ({
+    default: module.ManageStoreStylePage,
+  })),
+);
 const ManageTeamPage = lazy(() =>
   import("@/pages/manage-team-page").then(module => ({
     default: module.ManageTeamPage,
@@ -82,6 +87,7 @@ const skeletons: Record<string, React.ReactNode> = {
   "/clientes": <CustomersSkeleton />,
   "/equipe": <ManageTeamSkeleton />,
   "/servicos": <ServicesSkeleton />,
+  "/editar-pagina": <SettingsSkeleton />,
   "/relatorios": <DashboardSkeleton />,
   "/configuracoes": <SettingsSkeleton />,
 };
@@ -227,6 +233,15 @@ export function AppRoutes() {
           element={
             <ProtectedPageLoader fallback={<ServicesSkeleton />}>
               <ManageServicePage />
+            </ProtectedPageLoader>
+          }
+        />
+        <Route
+          path="/editar-pagina"
+          element={
+            <ProtectedPageLoader fallback={<SettingsSkeleton />}>
+              {/* <ManageStoreStylePage /> */}
+              <ManageStoreStylePage />
             </ProtectedPageLoader>
           }
         />

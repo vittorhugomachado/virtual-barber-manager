@@ -5,6 +5,7 @@ export function Toaster() {
     <Sonner
       theme="system"
       position="bottom-right"
+      style={{ zIndex: 9999 }}
       toastOptions={{
         classNames: {
           error: "!bg-red-500 !text-white !border-red-600",

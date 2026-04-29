@@ -10,6 +10,7 @@ import {
   ChartBar,
   Shield,
   User,
+  Palette,
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,6 +37,7 @@ const menuItems = [
   { title: "Equipe", url: "/equipe", icon: UserSquare },
   { title: "Serviços", url: "/servicos", icon: Scissors },
   { title: "Relatórios", url: "/relatorios", icon: ChartBar },
+  { title: "Página", url: "/editar-pagina", icon: Palette },
 ];
 
 const readerMenuItems = [
@@ -86,7 +88,7 @@ export function SidebarComponent() {
           />
         )}
         <div className="flex items-center absolute top-0 -right-12 gap-2 p-4">
-          <SidebarTrigger />
+          <SidebarTrigger className="bg-[#18181B]" />
         </div>
       </SidebarHeader>
 

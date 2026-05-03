@@ -150,6 +150,10 @@ export function ManagePageStyleMain() {
     );
   }
 
+  function reloadPreview() {
+    setPreviewKey(current => current + 1);
+  }
+
   return (
     <div
       className="relative h-full overflow-y-auto border"
@@ -171,6 +175,7 @@ export function ManagePageStyleMain() {
         hasChanges={hasChanges}
         onChange={updateStyle}
         onSave={handleSave}
+        onGallerySaved={reloadPreview}
       />
     </div>
   );

@@ -434,7 +434,7 @@ export function BarbershopGallery({
               />
 
               <div
-                className={`${inModal && "fixed bottom-2 left-1/2 -translate-x-1/2"} flex flex-col sm:flex-row gap-2`}
+                className={`${inModal && "fixed bottom-2 left-1/2 -translate-x-1/2"} flex gap-2`}
               >
                 <Button
                   type="button"
@@ -451,7 +451,7 @@ export function BarbershopGallery({
                   ) : (
                     <>
                       <ImagePlus className="h-4 w-4 mr-2" />
-                      Adicionar imagens
+                      nova imagem{" "}
                     </>
                   )}
                 </Button>
@@ -468,7 +468,7 @@ export function BarbershopGallery({
                       Salvando...
                     </>
                   ) : (
-                    "Salvar imagens"
+                    "Salvar"
                   )}
                 </Button>
               </div>
@@ -490,7 +490,7 @@ export function BarbershopGallery({
               Como vai aparecer no seu site
             </p>
           </CardHeader>
-          <CardContent className="px-3">
+          <CardContent className="px-3 scale-75">
             <div className="rounded-2xl overflow-hidden">
               {displayedImages.length === 1 && (
                 <div
@@ -571,21 +571,33 @@ export function BarbershopGallery({
                     <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
                   </div>
                   <div className="flex flex-col gap-2">
-                    {[1, 2, 3].map((i, idx) => (
-                      <div
-                        key={displayedImages[i].id}
-                        className={`group relative cursor-pointer overflow-hidden ${idx === 0 ? "rounded-tr-2xl" : idx === 2 ? "rounded-br-2xl" : ""}`}
-                        style={{ height: "33.33%" }}
-                        onClick={() => openLightbox(i)}
-                      >
-                        <img
-                          src={displayedImages[i].url}
-                          alt={`preview ${i + 1}`}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                    <div
+                      className="group relative h-1/2 cursor-pointer overflow-hidden rounded-tr-2xl"
+                      onClick={() => openLightbox(1)}
+                    >
+                      <img
+                        src={displayedImages[1].url}
+                        alt="preview 2"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                    </div>
+                    <div
+                      className="group relative h-1/2 cursor-pointer overflow-hidden rounded-br-2xl"
+                      onClick={() => openLightbox(2)}
+                    >
+                      <img
+                        src={displayedImages[2].url}
+                        alt="preview 3"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                      <div className="absolute inset-0 flex items-end justify-end p-3">
+                        <span className="rounded-md border border-neutral-300 bg-white/90 px-3 py-1.5 text-sm font-medium text-neutral-900 shadow-sm">
+                          Ver todas as fotos
+                        </span>
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -642,9 +654,9 @@ export function BarbershopGallery({
                       />
                       <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
                       {displayedImages.length > 5 && (
-                        <div className="absolute inset-0 flex items-end justify-end bg-black/30 p-3">
+                        <div className="absolute inset-0 flex items-end justify-end bg-black/30 p-3 transition-colors group-hover:bg-black/40">
                           <span className="rounded-md border border-neutral-300 bg-white/90 px-3 py-1.5 text-sm font-medium text-neutral-900 shadow-sm">
-                            Ver todas as imagens
+                            Ver todas as fotos
                           </span>
                         </div>
                       )}

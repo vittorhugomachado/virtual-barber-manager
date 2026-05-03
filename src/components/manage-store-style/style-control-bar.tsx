@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Images } from "lucide-react";
 import { ColorField } from "./color-field";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
@@ -30,6 +29,7 @@ export function StyleControlBar({
   hasChanges,
   onChange,
   onSave,
+  onGallerySaved,
 }: {
   style: Omit<StoreStyle, "id">;
   isLoading: boolean;
@@ -40,6 +40,7 @@ export function StyleControlBar({
     value: Omit<StoreStyle, "id">[K],
   ) => void;
   onSave: () => void;
+  onGallerySaved?: () => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -71,10 +72,9 @@ export function StyleControlBar({
           variant="secondary"
           size="sm"
           onClick={() => setGalleryOpen(true)}
-          className="rounded-full shadow-lg"
+          className="w-20 py-2 rounded-full shadow-lg whitespace-normal wrap-break-word text-center h-auto"
         >
-          <Images className="h-4 w-4" />
-          Editar galeria
+          <span className="leading-tight">Editar galeria</span>
         </Button>
         <div
           className={`${isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 hidden md:block"}  transition-all duration-300 md:translate-x-0 md:opacity-100`}
@@ -122,7 +122,7 @@ export function StyleControlBar({
 
       <Dialog open={galleryOpen} onOpenChange={handleGalleryOpenChange}>
         <DialogContent
-          className="max-h-[92vh] mb-12 overflow-y-auto sm:max-w-5xl"
+          className="max-h-[92vh] mb-12 mt-2 overflow-y-auto sm:max-w-5xl"
           onEscapeKeyDown={event => {
             event.preventDefault();
             handleGalleryOpenChange(false);
@@ -142,7 +142,10 @@ export function StyleControlBar({
             key={galleryKey}
             className="mb-0 max-w-none"
             onDirtyChange={setGalleryHasChanges}
-            onSaved={() => setGalleryHasChanges(false)}
+            onSaved={() => {
+              setGalleryHasChanges(false);
+              onGallerySaved?.();
+            }}
             inModal={true}
           />
         </DialogContent>

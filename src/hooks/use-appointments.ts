@@ -88,9 +88,10 @@ export function useAppointments(startDate?: Date, endDate?: Date) {
       await Promise.all([
         authIds.length > 0
           ? supabase
-              .from("customers_auth")
+              .from("customers")
               .select("id, name, phone")
               .in("id", authIds)
+              .eq("auth", true)
               .then(({ data: authCustomers }) => {
                 for (const customer of authCustomers ?? []) {
                   customerMap.set(customer.id, {

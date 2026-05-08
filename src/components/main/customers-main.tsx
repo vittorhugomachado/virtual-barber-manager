@@ -55,7 +55,7 @@ export function CustomersMain() {
       ),
     [customers, search],
   );
-
+  console.log(customers);
   if (loading) return <CustomersSkeleton />;
 
   return (

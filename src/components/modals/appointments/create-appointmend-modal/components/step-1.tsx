@@ -81,9 +81,10 @@ export function Step1Customer({
       }
 
       const { data: authRows } = await supabase
-        .from("customers_auth")
+        .from("customers")
         .select("id, name, phone")
-        .in("id", authIds);
+        .in("id", authIds)
+        .eq("auth", true);
 
       if (!active) return;
 

@@ -12,8 +12,8 @@ const DEFAULT_STYLE: Omit<StoreStyle, "id"> = {
   background_color: "#09090B",
 };
 
-const PREVIEW_URL = "http://localhost:5174/barber?preview=true";
-const PREVIEW_ORIGIN = "http://localhost:5174";
+const PREVIEW_URL = "http://localhost:5173/barber?preview=true";
+const PREVIEW_ORIGIN = "http://localhost:5173";
 
 export function ManagePageStyleMain() {
   const { barbershop } = useBarbershopStore();

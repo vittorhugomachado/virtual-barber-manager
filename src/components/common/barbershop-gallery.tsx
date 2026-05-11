@@ -28,20 +28,62 @@ type GalleryImage = {
   id: string;
   url: string;
   order: number;
+  file?: File;
+  isNew?: boolean;
 };
 
-export function BarbershopGallery() {
+type BarbershopGalleryProps = {
+  className?: string;
+  onDirtyChange?: (dirty: boolean) => void;
+  onSaved?: () => void;
+  inModal?: boolean;
+};
+
+function getStoragePath(url: string) {
+  const storagePath = url.split("/object/public/gallery/")[1];
+  return storagePath ? decodeURIComponent(storagePath) : null;
+}
+
+function normalizeOrder(images: GalleryImage[]) {
+  return images.map((image, index) => ({ ...image, order: index }));
+}
+
+export function BarbershopGallery({
+  className,
+  onDirtyChange,
+  onSaved,
+  inModal = false,
+}: BarbershopGalleryProps) {
   const { barbershop } = useBarbershopStore();
   const [images, setImages] = useState<GalleryImage[]>([]);
+  const [removedImages, setRemovedImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [addingFiles, setAddingFiles] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<GalleryImage | null>(null);
+  const [savedSignature, setSavedSignature] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagesRef = useRef<GalleryImage[]>([]);
+
+  const hasUnsavedChanges = useMemo(
+    () =>
+      images.map(image => image.id).join("|") !== savedSignature ||
+      removedImages.length > 0,
+    [images, removedImages.length, savedSignature],
+  );
 
   useEffect(() => {
-    if (!barbershop?.id) return;
+    onDirtyChange?.(hasUnsavedChanges);
+  }, [hasUnsavedChanges, onDirtyChange]);
+
+  useEffect(() => {
+    if (!barbershop?.id) {
+      setLoading(false);
+      return;
+    }
+
     let mounted = true;
+    setLoading(true);
 
     supabase
       .from("barbershop_gallery")
@@ -50,7 +92,14 @@ export function BarbershopGallery() {
       .order("order", { ascending: true })
       .then(({ data, error }) => {
         if (!mounted) return;
-        if (!error && data) setImages(data);
+        if (error) {
+          toast.error("Nao foi possivel carregar a galeria");
+        } else {
+          const loadedImages = data ?? [];
+          setImages(loadedImages);
+          setRemovedImages([]);
+          setSavedSignature(loadedImages.map(image => image.id).join("|"));
+        }
         setLoading(false);
       });
 
@@ -59,97 +108,67 @@ export function BarbershopGallery() {
     };
   }, [barbershop?.id]);
 
-  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+
+  useEffect(
+    () => () => {
+      imagesRef.current.forEach(image => {
+        if (image.isNew) URL.revokeObjectURL(image.url);
+      });
+    },
+    [],
+  );
+
+  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    if (!files.length || !barbershop?.id) return;
+    if (!files.length) return;
 
-    setUploading(true);
-    let successCount = 0;
+    setAddingFiles(true);
 
-    for (const file of files) {
-      const ext = file.name.split(".").pop();
-      const fileName = `${barbershop.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-      const { error: storageError } = await supabase.storage
-        .from("gallery")
-        .upload(fileName, file, { upsert: false });
-
-      if (storageError) {
-        toast.error(`Erro ao enviar ${file.name}`);
-        continue;
+    const validImages = files.filter(file => {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} nao e uma imagem valida`);
+        return false;
       }
+      return true;
+    });
 
-      const { data: urlData } = supabase.storage
-        .from("gallery")
-        .getPublicUrl(fileName);
-
-      const nextOrder = images.length + successCount;
-
-      const { data: inserted, error: dbError } = await supabase
-        .from("barbershop_gallery")
-        .insert({
-          barbershop_id: barbershop.id,
-          url: urlData.publicUrl,
-          order: nextOrder,
-        })
-        .select("id, url, order")
-        .single();
-
-      if (dbError) {
-        toast.error(`Erro ao salvar ${file.name}`);
-        await supabase.storage.from("gallery").remove([fileName]);
-        continue;
-      }
-
-      setImages(prev => [...prev, inserted]);
-      successCount++;
-    }
-
-    if (successCount > 0) {
-      toast.success(
-        successCount === 1
-          ? "Imagem adicionada!"
-          : `${successCount} imagens adicionadas!`,
+    if (validImages.length) {
+      setImages(prev =>
+        normalizeOrder([
+          ...prev,
+          ...validImages.map((file, index) => ({
+            id: `local-${Date.now()}-${index}-${Math.random()
+              .toString(36)
+              .slice(2)}`,
+            url: URL.createObjectURL(file),
+            order: prev.length + index,
+            file,
+            isNew: true,
+          })),
+        ]),
       );
     }
 
-    setUploading(false);
+    setAddingFiles(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  async function handleDelete(image: GalleryImage) {
-    if (!barbershop?.id) return;
+  function handleDelete(image: GalleryImage) {
+    setImages(prev => normalizeOrder(prev.filter(img => img.id !== image.id)));
 
-    setDeletingId(image.id);
-
-    // Extract storage path from public URL
-    const storagePath = image.url.split("/object/public/gallery/")[1];
-
-    if (storagePath) {
-      await supabase.storage
-        .from("gallery")
-        .remove([decodeURIComponent(storagePath)]);
-    }
-
-    const { error } = await supabase
-      .from("barbershop_gallery")
-      .delete()
-      .eq("id", image.id);
-
-    if (error) {
-      toast.error("Erro ao excluir imagem");
-      setDeletingId(null);
+    if (image.isNew) {
+      URL.revokeObjectURL(image.url);
       return;
     }
 
-    setImages(prev => prev.filter(img => img.id !== image.id));
-    toast.success("Imagem excluída");
-    setDeletingId(null);
+    setRemovedImages(prev => [...prev, image]);
   }
 
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [savingOrder, setSavingOrder] = useState(false);
 
   const displayedImages = useMemo(() => {
     if (!draggedId || !dragOverId || draggedId === dragOverId) return images;
@@ -159,27 +178,11 @@ export function BarbershopGallery() {
     const reordered = [...images];
     const [moved] = reordered.splice(from, 1);
     reordered.splice(to, 0, moved);
-    return reordered;
+    return normalizeOrder(reordered);
   }, [images, draggedId, dragOverId]);
-
-  async function saveOrder(ordered: GalleryImage[]) {
-    setSavingOrder(true);
-    await Promise.all(
-      ordered.map((img, idx) =>
-        supabase
-          .from("barbershop_gallery")
-          .update({ order: idx })
-          .eq("id", img.id),
-      ),
-    );
-    setImages(ordered.map((img, idx) => ({ ...img, order: idx })));
-    setSavingOrder(false);
-    toast.success("Ordem salva!");
-  }
 
   function handleDragStart(e: React.DragEvent, id: string) {
     setDraggedId(id);
-    // congela o ghost image para evitar flicker durante re-renders
     const el = e.currentTarget as HTMLElement;
     const clone = el.cloneNode(true) as HTMLElement;
     clone.style.cssText = `position:fixed;top:-9999px;width:${el.offsetWidth}px;height:${el.offsetHeight}px;border-radius:8px;overflow:hidden;`;
@@ -194,10 +197,99 @@ export function BarbershopGallery() {
 
   function handleDrop() {
     if (draggedId && dragOverId && draggedId !== dragOverId) {
-      saveOrder(displayedImages);
+      setImages(displayedImages);
     }
     setDraggedId(null);
     setDragOverId(null);
+  }
+
+  async function saveImages() {
+    if (!barbershop?.id) {
+      toast.error("Barbearia nao encontrada.");
+      return;
+    }
+
+    setSaving(true);
+
+    const uploadedStoragePaths: string[] = [];
+
+    try {
+      for (const image of removedImages) {
+        const storagePath = getStoragePath(image.url);
+        if (storagePath) {
+          await supabase.storage.from("gallery").remove([storagePath]);
+        }
+
+        const { error } = await supabase
+          .from("barbershop_gallery")
+          .delete()
+          .eq("id", image.id);
+
+        if (error) throw error;
+      }
+
+      const savedImages: GalleryImage[] = [];
+
+      for (const [index, image] of images.entries()) {
+        if (!image.isNew) {
+          const { error } = await supabase
+            .from("barbershop_gallery")
+            .update({ order: index })
+            .eq("id", image.id);
+
+          if (error) throw error;
+          savedImages.push({ ...image, order: index });
+          continue;
+        }
+
+        if (!image.file) continue;
+
+        const ext = image.file.name.split(".").pop() || "jpg";
+        const fileName = `${barbershop.id}/${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}.${ext}`;
+
+        const { error: storageError } = await supabase.storage
+          .from("gallery")
+          .upload(fileName, image.file, { upsert: false });
+
+        if (storageError) throw storageError;
+        uploadedStoragePaths.push(fileName);
+
+        const { data: urlData } = supabase.storage
+          .from("gallery")
+          .getPublicUrl(fileName);
+
+        const { data: inserted, error: dbError } = await supabase
+          .from("barbershop_gallery")
+          .insert({
+            barbershop_id: barbershop.id,
+            url: urlData.publicUrl,
+            order: index,
+          })
+          .select("id, url, order")
+          .single();
+
+        if (dbError) throw dbError;
+
+        URL.revokeObjectURL(image.url);
+        savedImages.push(inserted);
+      }
+
+      setImages(normalizeOrder(savedImages));
+      setSavedSignature(savedImages.map(image => image.id).join("|"));
+      setRemovedImages([]);
+      toast.success("Imagens salvas!");
+      onSaved?.();
+    } catch (error) {
+      console.error("Erro ao salvar galeria:", error);
+      if (uploadedStoragePaths.length) {
+        await supabase.storage.from("gallery").remove(uploadedStoragePaths);
+      }
+      toast.error("Nao foi possivel salvar as imagens.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -225,7 +317,12 @@ export function BarbershopGallery() {
   }, [lightboxIndex]);
 
   return (
-    <div className="w-full max-w-180 lg:mx-auto flex flex-col gap-6 mb-6">
+    <div
+      className={[
+        "w-full max-w-180 lg:mx-auto flex flex-col gap-6 mb-6",
+        className ?? "",
+      ].join(" ")}
+    >
       <Card className="bg-transparent border-none">
         <CardHeader className="mt-3">
           <div className="flex flex-col w-fit">
@@ -233,7 +330,7 @@ export function BarbershopGallery() {
             <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
           </div>
           <p className="text-sm text-muted-foreground">
-            As fotos da galeria aparecem na página de agendamento do seu site
+            As imagens da galeria aparecem na pagina de agendamento do seu site
           </p>
         </CardHeader>
 
@@ -288,43 +385,43 @@ export function BarbershopGallery() {
                           className="w-full h-full object-cover pointer-events-none cursor-pointer"
                         />
 
-                        {/* badge de posição */}
                         <span className="absolute top-1.5 left-1.5 bg-black/50 text-white text-xs font-medium rounded-md px-1.5 py-0.5">
                           {idx + 1}
                         </span>
 
-                        {/* handle de drag */}
+                        {image.isNew && (
+                          <span className="absolute bottom-1.5 left-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md px-1.5 py-0.5">
+                            Nova
+                          </span>
+                        )}
+
                         <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-md p-0.5 cursor-pointer">
                           <GripVertical className="h-4 w-4 text-white" />
                         </div>
 
-                        {/* overlay de delete */}
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3 cursor-pointer">
                           <Button
                             type="button"
                             variant="destructive"
                             size="icon"
-                            disabled={deletingId === image.id}
+                            disabled={saving}
                             onClick={() => setConfirmDelete(image)}
                             className="h-8 w-8"
                           >
-                            {deletingId === image.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
                     ))}
                   </div>
-                  {savingOrder && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Salvando ordem...
-                    </p>
-                  )}
                 </>
+              )}
+
+              {hasUnsavedChanges && (
+                <p className="text-xs text-amber-600">
+                  Existem imagens nao salvas. Clique em Salvar imagens para
+                  enviar as mudancas ao banco de dados.
+                </p>
               )}
 
               <input
@@ -336,31 +433,50 @@ export function BarbershopGallery() {
                 onChange={handleUpload}
               />
 
-              <Button
-                type="button"
-                variant="outline"
-                disabled={uploading}
-                onClick={() => fileInputRef.current?.click()}
-                className="w-fit rounded-full"
+              <div
+                className={`${inModal && "fixed bottom-2 left-1/2 -translate-x-1/2"} flex gap-2`}
               >
-                {uploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Enviando...
-                  </>
-                ) : (
-                  <>
-                    <ImagePlus className="h-4 w-4 mr-2" />
-                    Adicionar fotos
-                  </>
-                )}
-              </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={addingFiles || saving}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-fit rounded-full"
+                >
+                  {addingFiles ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Adicionando...
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlus className="h-4 w-4 mr-2" />
+                      nova imagem{" "}
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  disabled={loading || saving || !hasUnsavedChanges}
+                  onClick={saveImages}
+                  className="w-fit rounded-full"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Salvando...
+                    </>
+                  ) : (
+                    "Salvar"
+                  )}
+                </Button>
+              </div>
             </>
           )}
         </CardContent>
       </Card>
 
-      {/* ── Pré-visualização ── */}
       {displayedImages.length > 0 && (
         <Card className="bg-transparent border-none">
           <CardHeader className="mt-3">
@@ -374,8 +490,8 @@ export function BarbershopGallery() {
               Como vai aparecer no seu site
             </p>
           </CardHeader>
-          <CardContent className="px-3">
-            <div className="h-72 sm:h-96 rounded-2xl overflow-hidden">
+          <CardContent className="px-3 scale-75">
+            <div className="rounded-2xl overflow-hidden">
               {displayedImages.length === 1 && (
                 <div
                   className="group relative h-full cursor-pointer overflow-hidden rounded-2xl"
@@ -455,21 +571,33 @@ export function BarbershopGallery() {
                     <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
                   </div>
                   <div className="flex flex-col gap-2">
-                    {[1, 2, 3].map((i, idx) => (
-                      <div
-                        key={displayedImages[i].id}
-                        className={`group relative cursor-pointer overflow-hidden ${idx === 0 ? "rounded-tr-2xl" : idx === 2 ? "rounded-br-2xl" : ""}`}
-                        style={{ height: "33.33%" }}
-                        onClick={() => openLightbox(i)}
-                      >
-                        <img
-                          src={displayedImages[i].url}
-                          alt={`preview ${i + 1}`}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                    <div
+                      className="group relative h-1/2 cursor-pointer overflow-hidden rounded-tr-2xl"
+                      onClick={() => openLightbox(1)}
+                    >
+                      <img
+                        src={displayedImages[1].url}
+                        alt="preview 2"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                    </div>
+                    <div
+                      className="group relative h-1/2 cursor-pointer overflow-hidden rounded-br-2xl"
+                      onClick={() => openLightbox(2)}
+                    >
+                      <img
+                        src={displayedImages[2].url}
+                        alt="preview 3"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                      <div className="absolute inset-0 flex items-end justify-end p-3">
+                        <span className="rounded-md border border-neutral-300 bg-white/90 px-3 py-1.5 text-sm font-medium text-neutral-900 shadow-sm">
+                          Ver todas as fotos
+                        </span>
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -526,7 +654,7 @@ export function BarbershopGallery() {
                       />
                       <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
                       {displayedImages.length > 5 && (
-                        <div className="absolute inset-0 flex items-end justify-end bg-black/30 p-3">
+                        <div className="absolute inset-0 flex items-end justify-end bg-black/30 p-3 transition-colors group-hover:bg-black/40">
                           <span className="rounded-md border border-neutral-300 bg-white/90 px-3 py-1.5 text-sm font-medium text-neutral-900 shadow-sm">
                             Ver todas as fotos
                           </span>
@@ -541,7 +669,6 @@ export function BarbershopGallery() {
         </Card>
       )}
 
-      {/* ── Lightbox ── */}
       {lightboxIndex !== null && (
         <div
           className="fixed inset-0 z-50 flex flex-col bg-black/95"
@@ -555,6 +682,7 @@ export function BarbershopGallery() {
               {lightboxIndex + 1} / {displayedImages.length}
             </span>
             <button
+              type="button"
               onClick={() => setLightboxIndex(null)}
               className="rounded-full p-2 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
             >
@@ -573,6 +701,7 @@ export function BarbershopGallery() {
             {displayedImages.length > 1 && (
               <>
                 <button
+                  type="button"
                   onClick={() =>
                     setLightboxIndex(i =>
                       i! > 0 ? i! - 1 : displayedImages.length - 1,
@@ -583,6 +712,7 @@ export function BarbershopGallery() {
                   <ChevronLeft size={20} />
                 </button>
                 <button
+                  type="button"
                   onClick={() =>
                     setLightboxIndex(i =>
                       i! < displayedImages.length - 1 ? i! + 1 : 0,
@@ -597,6 +727,7 @@ export function BarbershopGallery() {
           </div>
         </div>
       )}
+
       <AlertDialog
         open={!!confirmDelete}
         onOpenChange={open => {
@@ -605,16 +736,16 @@ export function BarbershopGallery() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir imagem</AlertDialogTitle>
+            <AlertDialogTitle>Remover imagem</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir esta imagem? Essa ação não pode ser
-              desfeita.
+              A imagem será removida localmente agora e só será excluida da
+              página ao clicar em salvar imagens.
             </AlertDialogDescription>
           </AlertDialogHeader>
           {confirmDelete && (
             <img
               src={confirmDelete.url}
-              alt="Imagem a excluir"
+              alt="Imagem a remover"
               className="w-full h-40 object-cover rounded-lg"
             />
           )}
@@ -629,7 +760,7 @@ export function BarbershopGallery() {
                 }
               }}
             >
-              Excluir
+              Remover
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

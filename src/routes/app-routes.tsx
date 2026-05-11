@@ -20,9 +20,29 @@ const SignupPage = lazy(() =>
     default: module.SignupPage,
   })),
 );
+const EmailChangeConfirmedPage = lazy(() =>
+  import("@/pages/confirmation-email-page").then(module => ({
+    default: module.EmailChangeConfirmedPage,
+  })),
+);
 const LoginPage = lazy(() =>
   import("@/pages/login-page").then(module => ({
     default: module.LoginPage,
+  })),
+);
+const SignupPendingPage = lazy(() =>
+  import("@/pages/signup-pending-page").then(module => ({
+    default: module.SignupPendingPage,
+  })),
+);
+const ForgotPasswordPage = lazy(() =>
+  import("@/pages/forgot-password-page").then(module => ({
+    default: module.ForgotPasswordPage,
+  })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("@/pages/reset-password-page").then(module => ({
+    default: module.ResetPasswordPage,
   })),
 );
 const SettingPage = lazy(() =>
@@ -33,6 +53,11 @@ const SettingPage = lazy(() =>
 const ManageServicePage = lazy(() =>
   import("@/pages/manage-service-page").then(module => ({
     default: module.ManageServicePage,
+  })),
+);
+const ManageStoreStylePage = lazy(() =>
+  import("@/pages/manage-store-style-page").then(module => ({
+    default: module.ManageStoreStylePage,
   })),
 );
 const ManageTeamPage = lazy(() =>
@@ -62,6 +87,7 @@ const skeletons: Record<string, React.ReactNode> = {
   "/clientes": <CustomersSkeleton />,
   "/equipe": <ManageTeamSkeleton />,
   "/servicos": <ServicesSkeleton />,
+  "/editar-pagina": <SettingsSkeleton />,
   "/relatorios": <DashboardSkeleton />,
   "/configuracoes": <SettingsSkeleton />,
 };
@@ -129,7 +155,45 @@ export function AppRoutes() {
           </PublicRoute>
         }
       />
-
+      {/* Rota usada no login em email ainda não confirmado */}
+      <Route
+        path="/cadastro-pendente/:email"
+        element={
+          <PublicRoute>
+            <PublicPageLoader>
+              <SignupPendingPage />
+            </PublicPageLoader>
+          </PublicRoute>
+        }
+      />
+      {/* Rotas de recuperação e atualização de senha */}
+      <Route
+        path="/esqueci-minha-senha"
+        element={
+          <PublicRoute>
+            <PublicPageLoader>
+              <ForgotPasswordPage />
+            </PublicPageLoader>
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/criar-nova-senha"
+        element={
+          <PublicPageLoader>
+            <ResetPasswordPage />
+          </PublicPageLoader>
+        }
+      />
+      {/* Rota de sucesso de cadastro (pública, sem sidebar) */}
+      <Route
+        path="/auth/email-change-confirmed"
+        element={
+          <PublicPageLoader>
+            <EmailChangeConfirmedPage />
+          </PublicPageLoader>
+        }
+      />
       {/* Rotas protegidas com sidebar */}
       <Route element={<ProtectedRouteWithSkeleton />}>
         <Route
@@ -169,6 +233,15 @@ export function AppRoutes() {
           element={
             <ProtectedPageLoader fallback={<ServicesSkeleton />}>
               <ManageServicePage />
+            </ProtectedPageLoader>
+          }
+        />
+        <Route
+          path="/editar-pagina"
+          element={
+            <ProtectedPageLoader fallback={<SettingsSkeleton />}>
+              {/* <ManageStoreStylePage /> */}
+              <ManageStoreStylePage />
             </ProtectedPageLoader>
           }
         />

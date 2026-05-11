@@ -59,8 +59,9 @@ export function useCustomersAuthWithAppointments() {
       }
 
       const { data: authRows } = await supabase
-        .from("customers_auth")
+        .from("customers")
         .select("id, name, phone, created_at, updated_at")
+        .eq("auth", true)
         .in("id", authIds);
 
       if (!active) return;

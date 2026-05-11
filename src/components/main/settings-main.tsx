@@ -4,14 +4,15 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
 import { useSettingsAlerts } from "@/hooks/use-settings-alerts";
-// import { PlansSection } from "../sections/settings-page/plans-section";
+import { useLocation } from "react-router";
 
 const SECTIONS = [
-  { id: "barbershop", label: "Barbearia" },
-  { id: "address", label: "Endereço" },
-  { id: "hours", label: "Horários" },
-  { id: "gallery", label: "Galeria" },
-  { id: "users", label: "Usuários" },
+  { id: "dados-barbearia", label: "Barbearia" },
+  { id: "seguranca", label: "Segurança" },
+  { id: "endereco", label: "Endereço" },
+  { id: "horarios", label: "Horários" },
+  { id: "galeria", label: "Galeria" },
+  { id: "usuarios", label: "Usuários" },
 ] as const;
 
 function SettingsNav({
@@ -27,7 +28,7 @@ function SettingsNav({
     const observers: IntersectionObserver[] = [];
 
     SECTIONS.forEach(({ id }) => {
-      const el = document.getElementById(`settings-section-${id}`);
+      const el = document.getElementById(`${id}`);
       if (!el) return;
       const obs = new IntersectionObserver(
         ([entry]) => {
@@ -44,7 +45,7 @@ function SettingsNav({
 
   function scrollTo(id: string) {
     document
-      .getElementById(`settings-section-${id}`)
+      .getElementById(`${id}`)
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
@@ -52,8 +53,8 @@ function SettingsNav({
     <div className="sticky top-2 z-10 bg-background/90 backdrop-blur border-b px-4 md:px-12 py-2.5 flex flex-wrap gap-2">
       {SECTIONS.map(({ id, label }) => {
         const hasAlert =
-          (id === "hours" && missingHours) ||
-          (id === "address" && missingAddress);
+          (id === "horarios" && missingHours) ||
+          (id === "endereco" && missingAddress);
         return (
           <button
             key={id}
@@ -95,9 +96,24 @@ const UsersSection = lazy(() =>
     default: module.UsersSection,
   })),
 );
+const SecuritySettingsForm = lazy(() =>
+  import("../forms/security-settings-form").then(module => ({
+    default: module.SecuritySettingsForm,
+  })),
+);
 
 export function SettingsMain() {
   const { missingAddress, missingHours, refetch } = useSettingsAlerts();
+  const location = useLocation();
+
+  useEffect(() => {
+    const hash = location.hash.replace("#", "");
+    if (hash) {
+      document
+        .getElementById(hash)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [location.hash]);
 
   return (
     <div className="w-full flex flex-col items-center overflow-x-hidden">
@@ -105,33 +121,39 @@ export function SettingsMain() {
         missingAddress={missingAddress}
         missingHours={missingHours}
       />
-      <div id="settings-section-barbershop" className="w-full scroll-mt-14">
+      <div id="dados-barbearia" className="w-full scroll-mt-14">
         <BarbershopSettingsForm />
       </div>
+      <div id="seguranca" className="w-full scroll-mt-14">
+        <DeferredSection fallback={<SecuritySectionSkeleton />}>
+          <SecuritySettingsForm />
+        </DeferredSection>
+      </div>
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
-      <div id="settings-section-address" className="w-full scroll-mt-14">
+      <div id="endereco" className="w-full scroll-mt-14">
         <DeferredSection fallback={<FormSectionSkeleton />}>
           <AddressForm onSaved={refetch} />
         </DeferredSection>
       </div>
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
-      <div id="settings-section-hours" className="w-full scroll-mt-14">
+      <div id="horarios" className="w-full scroll-mt-14">
         <DeferredSection fallback={<HoursSectionSkeleton />}>
           <OpeningHoursSection onSaved={refetch} />
         </DeferredSection>
       </div>
       <Separator className="my-4 max-w-180 px-6 md:px-16" />
-      <div id="settings-section-gallery" className="w-full scroll-mt-14">
+      <div id="galeria" className="w-full scroll-mt-14">
         <DeferredSection fallback={<GallerySectionSkeleton />}>
           <BarbershopGallery />
         </DeferredSection>
       </div>
       <Separator className="my-4 max-w-180 px-6 sm:mx-auto md:px-16" />
-      <div id="settings-section-users" className="w-full scroll-mt-14">
+      <div id="usuarios" className="w-full scroll-mt-14">
         <DeferredSection fallback={<UsersSectionSkeleton />}>
           <UsersSection />
         </DeferredSection>
       </div>
+      <Separator className="my-4 max-w-180 px-6 sm:mx-auto md:px-16" />
       {/* <Separator className="my-4 max-w-180 mx-16" />
       <PlansSection /> */}
     </div>
@@ -266,6 +288,20 @@ function UsersSectionSkeleton() {
         ))}
       </div>
       <Skeleton className="h-10 w-36 rounded-full" />
+    </div>
+  );
+}
+
+function SecuritySectionSkeleton() {
+  return (
+    <div className="w-full max-w-180 sm:mx-auto md:px-16 flex flex-col gap-6 mb-18">
+      <div className="px-3 mt-3 space-y-2">
+        <Skeleton className="h-8 w-36" />
+        <Skeleton className="h-4 w-full max-w-72" />
+      </div>
+      <div className="px-3">
+        <Skeleton className="h-10 w-full" />
+      </div>
     </div>
   );
 }

@@ -18,9 +18,6 @@ const getPreviewUrl = (slug: string) => {
   return `${previewOrigin}/${slug}?preview=true`;
 };
 
-// const PREVIEW_URL = "http://localhost:5174/barber?preview=true";
-// const PREVIEW_ORIGIN = "http://localhost:5174";
-
 export function ManagePageStyleMain() {
   const { barbershop } = useBarbershopStore();
   const iframeRef = useRef<HTMLIFrameElement | null>(null);

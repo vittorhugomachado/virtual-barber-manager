@@ -100,18 +100,26 @@ export function AddressForm({ onSaved }: { onSaved?: () => void }) {
 
   useEffect(() => {
     const { street, number, neighborhood, city, state } = watched;
-    if (!street || !number) {
-      return;
+    if (!street || !number) return;
+
+    let queryAddress = `${street}, ${number}`;
+    if (city && state) {
+      queryAddress += `, ${city} - ${state}`;
     }
-    const query =
-      neighborhood && city && state
-        ? `${street}, ${number}, ${neighborhood}, ${city}, ${state}`
-        : `${street}, ${number}`;
+    if (neighborhood) {
+      queryAddress += `, ${neighborhood}`;
+    }
+
+    console.log("Buscando endereço:", queryAddress);
 
     const timer = setTimeout(() => {
-      setMapEmbedUrl(
-        `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=16&output=embed`,
-      );
+      // ENDPOINT OFICIAL DE EMBED - Funciona 100% no iframe
+      // Porém, requer API Key gratuita
+      const API_KEY = import.meta.env.VITE_API_GOOGLE_MAPS; // Você precisa gerar no Google Cloud Console
+
+      const finalUrl = `https://www.google.com/maps/embed/v1/search?key=${API_KEY}&q=${encodeURIComponent(queryAddress)}&zoom=16`;
+
+      setMapEmbedUrl(finalUrl);
     }, 1000);
 
     return () => clearTimeout(timer);

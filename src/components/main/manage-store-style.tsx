@@ -12,8 +12,14 @@ const DEFAULT_STYLE: Omit<StoreStyle, "id"> = {
   background_color: "#09090B",
 };
 
-const PREVIEW_URL = "http://localhost:5173/barber?preview=true";
-const PREVIEW_ORIGIN = "http://localhost:5173";
+const previewOrigin = import.meta.env.VITE_PREVIEW_ORIGIN;
+
+const getPreviewUrl = (slug: string) => {
+  return `${previewOrigin}/${slug}?preview=true`;
+};
+
+// const PREVIEW_URL = "http://localhost:5174/barber?preview=true";
+// const PREVIEW_ORIGIN = "http://localhost:5174";
 
 export function ManagePageStyleMain() {
   const { barbershop } = useBarbershopStore();
@@ -29,6 +35,8 @@ export function ManagePageStyleMain() {
     style.primary_color !== initialStyle.primary_color ||
     style.text_button_color !== initialStyle.text_button_color ||
     style.background_color !== initialStyle.background_color;
+
+  const previewUrl = getPreviewUrl(barbershop?.slug ?? "");
 
   useEffect(() => {
     let cancelled = false;
@@ -88,7 +96,7 @@ export function ManagePageStyleMain() {
         type: "BARBERSHOP_PREVIEW_STYLE",
         style,
       },
-      PREVIEW_ORIGIN,
+      previewOrigin,
     );
   }, [style]);
 
@@ -146,7 +154,7 @@ export function ManagePageStyleMain() {
         type: "BARBERSHOP_PREVIEW_STYLE",
         style,
       },
-      PREVIEW_ORIGIN,
+      previewOrigin,
     );
   }
 
@@ -164,7 +172,7 @@ export function ManagePageStyleMain() {
         ref={iframeRef}
         title="Preview da loja"
         className="h-dvh w-full"
-        src={PREVIEW_URL}
+        src={previewUrl}
         onLoad={sendPreviewStyle}
       />
 

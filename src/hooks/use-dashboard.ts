@@ -2,22 +2,13 @@ import { useEffect, useState } from "react";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import type { AppointmentWithRelations } from "@/types/create-appointment";
 import { getSupabaseClient } from "@/lib/supabase/lazy-supabase";
+import {
+  getLocalDayRange,
+  getLocalMonthRange,
+  toLocalDateKey,
+} from "@/utils/date-time";
 
 export const DASHBOARD_REFRESH_EVENT = "dashboard-refresh";
-
-function getNaiveToday() {
-  const naive = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
-  const y = naive.getUTCFullYear();
-  const m = String(naive.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(naive.getUTCDate()).padStart(2, "0");
-  const month = naive.getUTCMonth() + 1;
-  return {
-    dateStr: `${y}-${m}-${d}`,
-    year: y,
-    month,
-    monthStr: m,
-  };
-}
 
 export interface TopService {
   name: string;
@@ -56,14 +47,11 @@ export function useDashboard(): DashboardData {
 
     let cancelled = false;
     const barbershopId = barbershop.id;
-    const { dateStr, year, month, monthStr } = getNaiveToday();
-    const todayStart = `${dateStr}T00:00:00Z`;
-    const todayEnd = `${dateStr}T23:59:59Z`;
-    const monthStart = `${year}-${monthStr}-01T00:00:00Z`;
-    const nextMonthStart =
-      month === 12
-        ? `${year + 1}-01-01T00:00:00Z`
-        : `${year}-${String(month + 1).padStart(2, "0")}-01T00:00:00Z`;
+    const todayRange = getLocalDayRange(toLocalDateKey());
+    const todayStart = todayRange.startIso;
+    const todayEnd = todayRange.endIso;
+    const { startIso: monthStart, endIso: nextMonthStart } =
+      getLocalMonthRange();
 
     async function loadDashboard() {
       const supabase = await getSupabaseClient();
@@ -80,7 +68,7 @@ export function useDashboard(): DashboardData {
           .select("*")
           .eq("barbershop_id", barbershopId)
           .gte("starts_at", todayStart)
-          .lte("starts_at", todayEnd)
+          .lt("starts_at", todayEnd)
           .order("starts_at"),
 
         supabase

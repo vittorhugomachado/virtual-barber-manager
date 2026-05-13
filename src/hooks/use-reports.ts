@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
+import {
+  getLocalDay,
+  getLocalHour,
+  getLocalInclusiveDayRange,
+} from "@/utils/date-time";
 
 export interface ReportsKpis {
   total: number;
@@ -81,8 +86,8 @@ export function useReports(
     const barbershopId = barbershop.id;
     let cancelled = false;
 
-    const rangeStart = `${from}T00:00:00Z`;
-    const rangeEnd = `${to}T23:59:59Z`;
+    const rangeStart = getLocalInclusiveDayRange(from).startIso;
+    const rangeEnd = getLocalInclusiveDayRange(to).endIso;
 
     async function loadReports() {
       await Promise.resolve();
@@ -168,7 +173,7 @@ export function useReports(
         cancelado: 0,
       }));
       for (const apt of apts) {
-        const h = new Date(apt.starts_at).getUTCHours();
+        const h = getLocalHour(apt.starts_at);
         if (apt.status === "completed") hourBuckets[h].concluido++;
         else if (
           apt.status === "cancelled_by_customer" ||
@@ -229,7 +234,7 @@ export function useReports(
           apt.status === "cancelled_by_barbershop"
         )
           continue;
-        weekCounts[new Date(apt.starts_at).getUTCDay()]++;
+        weekCounts[getLocalDay(apt.starts_at)]++;
       }
       const weekday: WeekdayReportData[] = weekCounts.map((total, i) => ({
         day: WEEKDAYS[i],

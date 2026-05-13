@@ -13,6 +13,7 @@ import { Step3Date } from "./components/step-3";
 import { Step4BarberTime } from "./components/step-4";
 import { ConfirmStep } from "./components/confirm-step";
 import { StepIndicator } from "./components/step-indicator";
+import { localDateTimeToIso } from "@/utils/date-time";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -77,7 +78,7 @@ export function CreateAppointmentModal({
       const inserts = serviceSelections.map(sel => {
         const service = services.find(s => s.id === sel.serviceId);
         const durationMin = service?.duration_min ?? 30;
-        const startsAt = new Date(`${date}T${sel.time}:00Z`);
+        const startsAt = new Date(localDateTimeToIso(date, sel.time));
         const endsAt = new Date(startsAt.getTime() + durationMin * 60 * 1000);
         return {
           barbershop_id: barbershop.id,

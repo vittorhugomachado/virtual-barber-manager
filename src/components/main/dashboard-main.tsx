@@ -17,6 +17,11 @@ import {
   APPOINTMENT_STATUS_COLORS,
   APPOINTMENT_STATUS_LABELS,
 } from "@/types/create-appointment";
+import {
+  APP_TIME_ZONE,
+  formatLocalTime,
+  getLocalMonthRange,
+} from "@/utils/date-time";
 
 const AppointmentsHourChart = lazy(() =>
   import("@/components/common/appointments-hour-chart").then(module => ({
@@ -25,9 +30,13 @@ const AppointmentsHourChart = lazy(() =>
 );
 
 function getGreeting() {
-  const hour = new Date(
-    new Date().getTime() - 3 * 60 * 60 * 1000,
-  ).getUTCHours();
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: APP_TIME_ZONE,
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(new Date()),
+  );
 
   if (hour >= 4 && hour < 13) return "Bom dia";
   if (hour >= 13 && hour < 19) return "Boa tarde";
@@ -43,21 +52,15 @@ function formatCurrency(value: number) {
 }
 
 function formatTime(isoString: string) {
-  return new Date(isoString).toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-  });
+  return formatLocalTime(isoString);
 }
 
 function formatTodayDate() {
-  const naive = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
-
-  return naive.toLocaleDateString("pt-BR", {
+  return new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "2-digit",
     month: "long",
-    timeZone: "UTC",
+    timeZone: APP_TIME_ZONE,
   });
 }
 
@@ -111,19 +114,14 @@ export function BarbershopDashboardMain() {
   const { customers: allCustomers } = useAllCustomers();
 
   const newCustomersThisMonth = useMemo(() => {
-    const naive = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
-    const monthStart = new Date(
-      Date.UTC(naive.getUTCFullYear(), naive.getUTCMonth(), 1),
-    ).getTime();
-    const monthEnd = new Date(
-      Date.UTC(naive.getUTCFullYear(), naive.getUTCMonth() + 1, 1),
-    ).getTime();
+    const { startIso, endIso } = getLocalMonthRange();
+    const monthStart = new Date(startIso).getTime();
+    const monthEnd = new Date(endIso).getTime();
 
     return allCustomers.filter(customer => {
       if (!customer.created_at) return false;
 
-      const createdAtMs =
-        new Date(customer.created_at).getTime() - 3 * 60 * 60 * 1000;
+      const createdAtMs = new Date(customer.created_at).getTime();
 
       return createdAtMs >= monthStart && createdAtMs < monthEnd;
     }).length;

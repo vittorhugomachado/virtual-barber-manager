@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/lib/supabase/supabase";
 import { CreateAppointmentModal } from "../modals/appointments/create-appointmend-modal/create-appointment-modal";
 import { DeleteAppointmentModal } from "../modals/appointments/delete-appointment-appointment";
+import { formatLocalTime, toLocalDateKey } from "@/utils/date-time";
 
 type FilterType = "today" | "week" | "month" | "year" | "custom";
 
@@ -242,11 +243,7 @@ function formatDayLabel(date: Date): string {
 }
 
 function formatTime(isoString: string): string {
-  return new Date(isoString).toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-  });
+  return formatLocalTime(isoString);
 }
 
 function getPhoneDigits(phone?: string | null) {
@@ -262,12 +259,7 @@ function WhatsappIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 function isSameDay(date: Date, isoString: string): boolean {
-  const d = new Date(isoString);
-  return (
-    d.getUTCFullYear() === date.getFullYear() &&
-    d.getUTCMonth() === date.getMonth() &&
-    d.getUTCDate() === date.getDate()
-  );
+  return toLocalDateKey(date) === toLocalDateKey(new Date(isoString));
 }
 
 // ─── DaySection ───────────────────────────────────────────────────────────────

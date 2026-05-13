@@ -11,6 +11,7 @@ import {
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { ChevronLeft, ChevronRight, Clock, StoreIcon } from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase/lazy-supabase";
+import { getLocalDayRange, getLocalHour } from "@/utils/date-time";
 
 const chartConfig = {
   concluido: { label: "Concluído", color: "#22c55e" },
@@ -82,8 +83,7 @@ export function AppointmentsHourChart({
     let cancelled = false;
 
     const dateStr = toLocalDateStr(selectedDate);
-    const dayStart = `${dateStr}T00:00:00Z`;
-    const dayEnd = `${dateStr}T23:59:59Z`;
+    const { startIso: dayStart, endIso: dayEnd } = getLocalDayRange(dateStr);
     const dayOfWeek = selectedDate.getDay();
 
     async function fetchData() {
@@ -101,7 +101,7 @@ export function AppointmentsHourChart({
           .select("starts_at, status")
           .eq("barbershop_id", barbershop!.id)
           .gte("starts_at", dayStart)
-          .lte("starts_at", dayEnd),
+          .lt("starts_at", dayEnd),
       ]);
 
       const closed =
@@ -120,7 +120,7 @@ export function AppointmentsHourChart({
       }));
 
       for (const apt of aptsData ?? []) {
-        const h = new Date(apt.starts_at).getUTCHours();
+        const h = getLocalHour(apt.starts_at);
         if (apt.status === "completed") {
           buckets[h].concluido++;
         } else if (

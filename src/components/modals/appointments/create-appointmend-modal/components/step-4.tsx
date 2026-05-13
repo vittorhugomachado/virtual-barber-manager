@@ -6,6 +6,7 @@ import { useServices } from "@/hooks/use-service";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import type { ServiceSelection, TimeSlot } from "@/types/create-appointment";
+import { getLocalDayRange, getLocalTimeMinutes } from "@/utils/date-time";
 import {
   AlertCircle,
   Check,
@@ -544,8 +545,8 @@ export function Step4BarberTime({
         .from("appointments")
         .select("starts_at, ends_at, status")
         .eq("barber_id", barberId)
-        .gte("starts_at", `${dateKey}T00:00:00`)
-        .lt("starts_at", `${nextDateKey}T00:00:00`),
+        .gte("starts_at", getLocalDayRange(dateKey).startIso)
+        .lt("starts_at", getLocalDayRange(nextDateKey).startIso),
     ]);
 
     // Base: períodos de funcionamento da barbearia
@@ -601,8 +602,8 @@ export function Step4BarberTime({
       }
 
       const overlapsAppointment = activeAppointments.some(a => {
-        const aStart = timeToMinutes(a.starts_at.slice(11, 16));
-        const aEnd = timeToMinutes(a.ends_at.slice(11, 16));
+        const aStart = getLocalTimeMinutes(a.starts_at);
+        const aEnd = getLocalTimeMinutes(a.ends_at);
         return slotStart < aEnd && slotEnd > aStart;
       });
 

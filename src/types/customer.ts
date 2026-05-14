@@ -5,6 +5,8 @@ export type Customer = {
   phone: string | null;
   created_at: string;
   updated_at?: string | null;
+  auth?: boolean;
+  auth_user_id?: string | null;
   total_appointments?: number;
   last_appointment?: string | null;
   source?: "customers" | "customers_auth";

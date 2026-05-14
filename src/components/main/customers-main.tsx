@@ -26,7 +26,10 @@ import { Pencil } from "lucide-react";
 import type { Customer } from "@/types/customer";
 
 function getPhoneDigits(phone: string | null) {
-  return (phone ?? "").replace(/\D/g, "").slice(0, 11);
+  const digits = (phone ?? "").replace(/\D/g, "");
+  return digits.startsWith("55") && digits.length > 11
+    ? digits.slice(2, 13)
+    : digits.slice(0, 11);
 }
 
 function formatPhone(phone: string | null) {
@@ -55,7 +58,7 @@ export function CustomersMain() {
       ),
     [customers, search],
   );
-  console.log(customers);
+
   if (loading) return <CustomersSkeleton />;
 
   return (

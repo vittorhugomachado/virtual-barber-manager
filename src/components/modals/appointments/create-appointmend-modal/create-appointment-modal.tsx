@@ -14,6 +14,7 @@ import { Step4BarberTime } from "./components/step-4";
 import { ConfirmStep } from "./components/confirm-step";
 import { StepIndicator } from "./components/step-indicator";
 import { localDateTimeToIso } from "@/utils/date-time";
+import { useAllCustomers } from "@/hooks/use-all-customers";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -30,7 +31,7 @@ export function CreateAppointmentModal({
 }: CreateAppointmentModalProps) {
   const { barbershop } = useBarbershopStore();
   const { services } = useServices();
-
+  const { customers, setCustomers, loading } = useAllCustomers();
   const [step, setStep] = useState<Step>(1);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -80,6 +81,8 @@ export function CreateAppointmentModal({
         const durationMin = service?.duration_min ?? 30;
         const startsAt = new Date(localDateTimeToIso(date, sel.time));
         const endsAt = new Date(startsAt.getTime() + durationMin * 60 * 1000);
+        console.log(date, sel.time);
+        console.log(startsAt.toISOString());
         return {
           barbershop_id: barbershop.id,
           customer_id: isManualCustomer ? null : customer.id,
@@ -91,7 +94,7 @@ export function CreateAppointmentModal({
           status: "scheduled",
         };
       });
-
+      console.log(inserts);
       const { error: err } = await supabase
         .from("appointments")
         .insert(inserts);

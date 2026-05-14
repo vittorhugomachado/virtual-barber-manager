@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useCustomers } from "@/hooks/use-customers";
+import { useAllCustomers } from "@/hooks/use-all-customers";
 import { createCustomer } from "@/lib/supabase/customers/create-customer";
-import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { maskPhone } from "@/utils/masked-input-phone";
 import {
@@ -38,9 +37,8 @@ export function Step1Customer({
 }: {
   onSelect: (customer: SelectedCustomer) => void;
 }) {
-  const { customers, loading } = useCustomers();
+  const { customers, loading } = useAllCustomers();
   const { barbershop } = useBarbershopStore();
-  const barbershopId = barbershop?.id;
   const [mode, setMode] = useState<CustomerMode>(null);
   const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
@@ -48,63 +46,6 @@ export function Step1Customer({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [authCustomers, setAuthCustomers] = useState<ExistingCustomerOption[]>(
-    [],
-  );
-  const [authCustomersLoading, setAuthCustomersLoading] = useState(false);
-
-  useEffect(() => {
-    if (!barbershopId) return;
-
-    let active = true;
-
-    async function loadCustomersAuthWithAppointments() {
-      setAuthCustomersLoading(true);
-
-      const { data: appointmentRows } = await supabase
-        .from("appointments")
-        .select("customer_id")
-        .eq("barbershop_id", barbershopId)
-        .not("customer_id", "is", null);
-
-      const authIds = Array.from(
-        new Set(
-          (appointmentRows ?? []).map(row => row.customer_id).filter(Boolean),
-        ),
-      );
-
-      if (authIds.length === 0) {
-        if (!active) return;
-        setAuthCustomers([]);
-        setAuthCustomersLoading(false);
-        return;
-      }
-
-      const { data: authRows } = await supabase
-        .from("customers")
-        .select("id, name, phone")
-        .in("id", authIds)
-        .eq("auth", true);
-
-      if (!active) return;
-
-      setAuthCustomers(
-        (authRows ?? []).map(row => ({
-          id: row.id,
-          name: row.name?.trim() || "Cliente sem nome",
-          phone: row.phone ?? "",
-          source: "customers_auth" as const,
-        })),
-      );
-      setAuthCustomersLoading(false);
-    }
-
-    void loadCustomersAuthWithAppointments();
-
-    return () => {
-      active = false;
-    };
-  }, [barbershopId]);
 
   const normalizeStr = (value: string) =>
     value
@@ -113,22 +54,13 @@ export function Step1Customer({
       .toLowerCase();
 
   const existingCustomers = useMemo<ExistingCustomerOption[]>(() => {
-    const localCustomers = customers.map(customer => ({
+    return customers.map(customer => ({
       id: customer.id,
-      name: customer.name,
+      name: customer.name?.trim() || "Cliente sem nome",
       phone: customer.phone ?? "",
-      source: "customers" as const,
+      source: customer.source ?? "customers",
     }));
-
-    const merged = new Map<string, ExistingCustomerOption>();
-
-    for (const customer of [...localCustomers, ...authCustomers]) {
-      const key = `${customer.source}:${customer.id}`;
-      merged.set(key, customer);
-    }
-
-    return Array.from(merged.values());
-  }, [customers, authCustomers]);
+  }, [customers]);
 
   const searchDigits = search.replace(/\D/g, "");
 
@@ -265,7 +197,7 @@ export function Step1Customer({
         </div>
 
         <div className="flex flex-col overflow-y-auto rounded-md border border-border divide-y divide-border">
-          {loading || authCustomersLoading ? (
+          {loading ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Carregando...
             </p>

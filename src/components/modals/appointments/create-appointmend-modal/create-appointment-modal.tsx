@@ -14,7 +14,6 @@ import { Step4BarberTime } from "./components/step-4";
 import { ConfirmStep } from "./components/confirm-step";
 import { StepIndicator } from "./components/step-indicator";
 import { localDateTimeToIso } from "@/utils/date-time";
-import { useAllCustomers } from "@/hooks/use-all-customers";
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -31,7 +30,6 @@ export function CreateAppointmentModal({
 }: CreateAppointmentModalProps) {
   const { barbershop } = useBarbershopStore();
   const { services } = useServices();
-  const { customers, setCustomers, loading } = useAllCustomers();
   const [step, setStep] = useState<Step>(1);
   const [showConfirm, setShowConfirm] = useState(false);
 

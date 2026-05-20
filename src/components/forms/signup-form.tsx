@@ -35,6 +35,9 @@ const formSchema = z.object({
     .max(30, "Nome deve ter no máximo 30 caracteres"),
   email: z.email("Email inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+  acceptedTerms: z.boolean().refine(value => value === true, {
+    message: "Você precisa aceitar os termos para criar a conta",
+  }),
 });
 
 const mensagens: Record<string, string> = {
@@ -57,6 +60,7 @@ export function SignupForm() {
       barbershopName: "",
       email: "",
       password: "",
+      acceptedTerms: false,
     },
   });
 
@@ -123,6 +127,17 @@ export function SignupForm() {
           form.setError("phone", {
             message: "Este celular já está cadastrado",
           });
+        } else if (
+          rpcError.message.includes("barbershops_email_key") ||
+          rpcError.message.includes("email_already_exists") ||
+          (rpcError.message.includes("duplicate key") &&
+            rpcError.message.includes("email"))
+        ) {
+          form.setError(
+            "email",
+            { message: "Este email já está cadastrado" },
+            { shouldFocus: true },
+          );
         } else if (
           rpcError.message.includes("barbershops_name_max_length") ||
           rpcError.message.includes("name_max_length")
@@ -278,6 +293,44 @@ export function SignupForm() {
                             )}
                           </button>
                         </div>
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    name="acceptedTerms"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <label
+                          htmlFor="signup-form-accepted-terms"
+                          className="flex items-start gap-3 rounded-xl p-3 text-sm leading-6"
+                        >
+                          <input
+                            id="signup-form-accepted-terms"
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={event =>
+                              field.onChange(event.target.checked)
+                            }
+                            className="mt-1 size-4 shrink-0 accent-[#0458EE]"
+                          />
+                          <span>
+                            Li e concordo com os{" "}
+                            <a
+                              href="https://virtualbarber.com.br/termos-de-servico"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-semibold text-[#0458EE] underline underline-offset-2"
+                            >
+                              Termos de Serviço
+                            </a>{" "}
+                            da Virtual Barber. Ao criar a conta, declaro estar
+                            ciente e de acordo com os termos do aplicativo.
+                          </span>
+                        </label>
                         {fieldState.invalid && (
                           <FieldError errors={[fieldState.error]} />
                         )}

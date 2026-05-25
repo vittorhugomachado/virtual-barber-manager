@@ -2,7 +2,7 @@ export function Logo({ style }: { style?: string }) {
   return (
     <div className={`${style} flex items-center gap-2`}>
       <img
-        src="/logo-dark.png"
+        src="/logo-dark-beta.png"
         alt="logo"
         width={600}
         height={63}
@@ -11,7 +11,7 @@ export function Logo({ style }: { style?: string }) {
         className="hidden dark:block object-contain"
       />
       <img
-        src="/logo-light.png"
+        src="/logo-light-beta.png"
         alt="logo"
         width={600}
         height={61}

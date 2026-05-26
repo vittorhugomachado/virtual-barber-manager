@@ -23,7 +23,7 @@
 //   AlertDialogHeader,
 //   AlertDialogTitle,
 // } from "@/components/ui/alert-dialog";
-// 
+//
 // type GalleryImage = {
 //   id: string;
 //   url: string;
@@ -31,23 +31,23 @@
 //   file?: File;
 //   isNew?: boolean;
 // };
-// 
+//
 // type BarbershopGalleryProps = {
 //   className?: string;
 //   onDirtyChange?: (dirty: boolean) => void;
 //   onSaved?: () => void;
 //   inModal?: boolean;
 // };
-// 
+//
 // function getStoragePath(url: string) {
 //   const storagePath = url.split("/object/public/gallery/")[1];
 //   return storagePath ? decodeURIComponent(storagePath) : null;
 // }
-// 
+//
 // function normalizeOrder(images: GalleryImage[]) {
 //   return images.map((image, index) => ({ ...image, order: index }));
 // }
-// 
+//
 // export function BarbershopGallery({
 //   className,
 //   onDirtyChange,
@@ -64,27 +64,27 @@
 //   const [savedSignature, setSavedSignature] = useState("");
 //   const fileInputRef = useRef<HTMLInputElement>(null);
 //   const imagesRef = useRef<GalleryImage[]>([]);
-// 
+//
 //   const hasUnsavedChanges = useMemo(
 //     () =>
 //       images.map(image => image.id).join("|") !== savedSignature ||
 //       removedImages.length > 0,
 //     [images, removedImages.length, savedSignature],
 //   );
-// 
+//
 //   useEffect(() => {
 //     onDirtyChange?.(hasUnsavedChanges);
 //   }, [hasUnsavedChanges, onDirtyChange]);
-// 
+//
 //   useEffect(() => {
 //     if (!barbershop?.id) {
 //       setLoading(false);
 //       return;
 //     }
-// 
+//
 //     let mounted = true;
 //     setLoading(true);
-// 
+//
 //     supabase
 //       .from("barbershop_gallery")
 //       .select("id, url, order")
@@ -102,16 +102,16 @@
 //         }
 //         setLoading(false);
 //       });
-// 
+//
 //     return () => {
 //       mounted = false;
 //     };
 //   }, [barbershop?.id]);
-// 
+//
 //   useEffect(() => {
 //     imagesRef.current = images;
 //   }, [images]);
-// 
+//
 //   useEffect(
 //     () => () => {
 //       imagesRef.current.forEach(image => {
@@ -120,13 +120,13 @@
 //     },
 //     [],
 //   );
-// 
+//
 //   function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
 //     const files = Array.from(e.target.files ?? []);
 //     if (!files.length) return;
-// 
+//
 //     setAddingFiles(true);
-// 
+//
 //     const validImages = files.filter(file => {
 //       if (!file.type.startsWith("image/")) {
 //         toast.error(`${file.name} nao e uma imagem valida`);
@@ -134,7 +134,7 @@
 //       }
 //       return true;
 //     });
-// 
+//
 //     if (validImages.length) {
 //       setImages(prev =>
 //         normalizeOrder([
@@ -151,25 +151,25 @@
 //         ]),
 //       );
 //     }
-// 
+//
 //     setAddingFiles(false);
 //     if (fileInputRef.current) fileInputRef.current.value = "";
 //   }
-// 
+//
 //   function handleDelete(image: GalleryImage) {
 //     setImages(prev => normalizeOrder(prev.filter(img => img.id !== image.id)));
-// 
+//
 //     if (image.isNew) {
 //       URL.revokeObjectURL(image.url);
 //       return;
 //     }
-// 
+//
 //     setRemovedImages(prev => [...prev, image]);
 //   }
-// 
+//
 //   const [draggedId, setDraggedId] = useState<string | null>(null);
 //   const [dragOverId, setDragOverId] = useState<string | null>(null);
-// 
+//
 //   const displayedImages = useMemo(() => {
 //     if (!draggedId || !dragOverId || draggedId === dragOverId) return images;
 //     const from = images.findIndex(img => img.id === draggedId);
@@ -180,7 +180,7 @@
 //     reordered.splice(to, 0, moved);
 //     return normalizeOrder(reordered);
 //   }, [images, draggedId, dragOverId]);
-// 
+//
 //   function handleDragStart(e: React.DragEvent, id: string) {
 //     setDraggedId(id);
 //     const el = e.currentTarget as HTMLElement;
@@ -190,11 +190,11 @@
 //     e.dataTransfer.setDragImage(clone, el.offsetWidth / 2, el.offsetHeight / 2);
 //     setTimeout(() => document.body.removeChild(clone), 0);
 //   }
-// 
+//
 //   function handleDragEnter(id: string) {
 //     if (dragOverId !== id) setDragOverId(id);
 //   }
-// 
+//
 //   function handleDrop() {
 //     if (draggedId && dragOverId && draggedId !== dragOverId) {
 //       setImages(displayedImages);
@@ -202,64 +202,64 @@
 //     setDraggedId(null);
 //     setDragOverId(null);
 //   }
-// 
+//
 //   async function saveImages() {
 //     if (!barbershop?.id) {
 //       toast.error("Barbearia nao encontrada.");
 //       return;
 //     }
-// 
+//
 //     setSaving(true);
-// 
+//
 //     const uploadedStoragePaths: string[] = [];
-// 
+//
 //     try {
 //       for (const image of removedImages) {
 //         const storagePath = getStoragePath(image.url);
 //         if (storagePath) {
 //           await supabase.storage.from("gallery").remove([storagePath]);
 //         }
-// 
+//
 //         const { error } = await supabase
 //           .from("barbershop_gallery")
 //           .delete()
 //           .eq("id", image.id);
-// 
+//
 //         if (error) throw error;
 //       }
-// 
+//
 //       const savedImages: GalleryImage[] = [];
-// 
+//
 //       for (const [index, image] of images.entries()) {
 //         if (!image.isNew) {
 //           const { error } = await supabase
 //             .from("barbershop_gallery")
 //             .update({ order: index })
 //             .eq("id", image.id);
-// 
+//
 //           if (error) throw error;
 //           savedImages.push({ ...image, order: index });
 //           continue;
 //         }
-// 
+//
 //         if (!image.file) continue;
-// 
+//
 //         const ext = image.file.name.split(".").pop() || "jpg";
 //         const fileName = `${barbershop.id}/${Date.now()}-${Math.random()
 //           .toString(36)
 //           .slice(2)}.${ext}`;
-// 
+//
 //         const { error: storageError } = await supabase.storage
 //           .from("gallery")
 //           .upload(fileName, image.file, { upsert: false });
-// 
+//
 //         if (storageError) throw storageError;
 //         uploadedStoragePaths.push(fileName);
-// 
+//
 //         const { data: urlData } = supabase.storage
 //           .from("gallery")
 //           .getPublicUrl(fileName);
-// 
+//
 //         const { data: inserted, error: dbError } = await supabase
 //           .from("barbershop_gallery")
 //           .insert({
@@ -269,13 +269,13 @@
 //           })
 //           .select("id, url, order")
 //           .single();
-// 
+//
 //         if (dbError) throw dbError;
-// 
+//
 //         URL.revokeObjectURL(image.url);
 //         savedImages.push(inserted);
 //       }
-// 
+//
 //       setImages(normalizeOrder(savedImages));
 //       setSavedSignature(savedImages.map(image => image.id).join("|"));
 //       setRemovedImages([]);
@@ -291,11 +291,11 @@
 //       setSaving(false);
 //     }
 //   }
-// 
+//
 //   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-// 
+//
 //   const openLightbox = useCallback((i: number) => setLightboxIndex(i), []);
-// 
+//
 //   useEffect(() => {
 //     if (lightboxIndex === null) return;
 //     function handleKey(e: KeyboardEvent) {
@@ -308,14 +308,14 @@
 //     window.addEventListener("keydown", handleKey);
 //     return () => window.removeEventListener("keydown", handleKey);
 //   }, [lightboxIndex, displayedImages.length]);
-// 
+//
 //   useEffect(() => {
 //     document.body.style.overflow = lightboxIndex !== null ? "hidden" : "";
 //     return () => {
 //       document.body.style.overflow = "";
 //     };
 //   }, [lightboxIndex]);
-// 
+//
 //   return (
 //     <div
 //       className={[
@@ -333,7 +333,7 @@
 //             As imagens da galeria aparecem na pagina de agendamento do seu site
 //           </p>
 //         </CardHeader>
-// 
+//
 //         <CardContent className="flex px-3 flex-col gap-4">
 //           {loading ? (
 //             <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -384,21 +384,21 @@
 //                           alt={`Foto ${idx + 1}`}
 //                           className="w-full h-full object-cover pointer-events-none cursor-pointer"
 //                         />
-// 
+//
 //                         <span className="absolute top-1.5 left-1.5 bg-black/50 text-white text-xs font-medium rounded-md px-1.5 py-0.5">
 //                           {idx + 1}
 //                         </span>
-// 
+//
 //                         {image.isNew && (
 //                           <span className="absolute bottom-1.5 left-1.5 bg-primary text-primary-foreground text-xs font-medium rounded-md px-1.5 py-0.5">
 //                             Nova
 //                           </span>
 //                         )}
-// 
+//
 //                         <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 rounded-md p-0.5 cursor-pointer">
 //                           <GripVertical className="h-4 w-4 text-white" />
 //                         </div>
-// 
+//
 //                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3 cursor-pointer">
 //                           <Button
 //                             type="button"
@@ -416,14 +416,14 @@
 //                   </div>
 //                 </>
 //               )}
-// 
+//
 //               {hasUnsavedChanges && (
 //                 <p className="text-xs text-amber-600">
 //                   Existem imagens nao salvas. Clique em Salvar imagens para
 //                   enviar as mudancas ao banco de dados.
 //                 </p>
 //               )}
-// 
+//
 //               <input
 //                 ref={fileInputRef}
 //                 type="file"
@@ -432,7 +432,7 @@
 //                 className="hidden"
 //                 onChange={handleUpload}
 //               />
-// 
+//
 //               <div
 //                 className={`${inModal && "fixed bottom-2 left-1/2 -translate-x-1/2"} flex gap-2`}
 //               >
@@ -455,7 +455,7 @@
 //                     </>
 //                   )}
 //                 </Button>
-// 
+//
 //                 <Button
 //                   type="button"
 //                   disabled={loading || saving || !hasUnsavedChanges}
@@ -476,7 +476,7 @@
 //           )}
 //         </CardContent>
 //       </Card>
-// 
+//
 //       {displayedImages.length > 0 && (
 //         <Card className="bg-transparent border-none">
 //           <CardHeader className="mt-3">
@@ -505,7 +505,7 @@
 //                   <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
 //                 </div>
 //               )}
-// 
+//
 //               {displayedImages.length === 2 && (
 //                 <div className="grid h-full grid-cols-2 gap-2">
 //                   {displayedImages.map((img, i) => (
@@ -524,7 +524,7 @@
 //                   ))}
 //                 </div>
 //               )}
-// 
+//
 //               {displayedImages.length === 3 && (
 //                 <div className="grid h-full grid-cols-[2fr_1fr] gap-2">
 //                   <div
@@ -556,7 +556,7 @@
 //                   </div>
 //                 </div>
 //               )}
-// 
+//
 //               {displayedImages.length === 4 && (
 //                 <div className="grid h-full grid-cols-[2fr_1fr] gap-2">
 //                   <div
@@ -601,7 +601,7 @@
 //                   </div>
 //                 </div>
 //               )}
-// 
+//
 //               {displayedImages.length >= 5 && (
 //                 <div className="grid h-full grid-cols-[2fr_1fr_1fr] gap-2">
 //                   <div
@@ -668,7 +668,7 @@
 //           </CardContent>
 //         </Card>
 //       )}
-// 
+//
 //       {lightboxIndex !== null && (
 //         <div
 //           className="fixed inset-0 z-50 flex flex-col bg-black/95"
@@ -727,7 +727,7 @@
 //           </div>
 //         </div>
 //       )}
-// 
+//
 //       <AlertDialog
 //         open={!!confirmDelete}
 //         onOpenChange={open => {

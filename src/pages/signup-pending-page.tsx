@@ -7,7 +7,7 @@
 // import { useNavigate } from "react-router";
 // import { toast } from "sonner";
 // import { Spinner } from "@/components/ui/spinner";
-// 
+//
 // export const SignupPendingPage = () => {
 //   const SUPPORT_PHONE = import.meta.env.VITE_SUPPORT_PHONE;
 //   const phone = formatPhone(SUPPORT_PHONE);
@@ -18,17 +18,17 @@
 //   console.log(isConfirmed);
 //   useEffect(() => {
 //     let isMounted = true;
-// 
+//
 //     const verificarStatusEmail = async () => {
 //       if (!isMounted) return;
 //       setIsLoading(true);
-// 
+//
 //       try {
 //         // 1. Tenta pegar o email da URL
 //         let userEmail = window.location.pathname.split(
 //           "/cadastro-pendente/",
 //         )[1];
-// 
+//
 //         // 2. Se não tiver na URL, tenta do sessionStorage
 //         if (!userEmail || userEmail === "") {
 //           const pendingSignup = sessionStorage.getItem("pending-signup");
@@ -39,46 +39,46 @@
 //             sessionStorage.removeItem("pending-signup");
 //           }
 //         }
-// 
+//
 //         // 3. Decodifica o email (caso tenha @ ou caracteres especiais)
 //         if (userEmail) {
 //           userEmail = decodeURIComponent(userEmail);
 //         }
-// 
+//
 //         console.log("Email a ser verificado:", userEmail);
-// 
+//
 //         if (!userEmail || userEmail === "") {
 //           toast.error("Email não encontrado");
 //           navigate("/entrar");
 //           return;
 //         }
-// 
+//
 //         if (isMounted) {
 //           setEmail(userEmail);
 //         }
-// 
+//
 //         // 4. 🔍 USA A RPC PARA CONSULTAR O AUTH.USERS
 //         const { data: userStatus, error: rpcError } = await supabase.rpc(
 //           "check_user_confirmation_status",
 //           { p_email: userEmail },
 //         );
-// 
+//
 //         console.log("Status retornado pela RPC:", userStatus);
-// 
+//
 //         if (rpcError) {
 //           console.error("Erro na RPC:", rpcError);
 //           toast.error("Erro ao verificar status da conta");
 //           if (isMounted) setIsLoading(false);
 //           return;
 //         }
-// 
+//
 //         if (!userStatus?.exists) {
 //           // Usuário não existe no auth.users
 //           toast.error("Usuário não encontrado");
 //           navigate("/entrar");
 //           return;
 //         }
-// 
+//
 //         // 5. VERIFICA SE O USUÁRIO JÁ FEZ LOGIN ALGUMA VEZ
 //         if (userStatus.is_confirmed) {
 //           console.log("Usuário já fez login em:", userStatus.last_sign_in_at);
@@ -97,21 +97,21 @@
 //         if (isMounted) setIsLoading(false);
 //       }
 //     };
-// 
+//
 //     verificarStatusEmail();
-// 
+//
 //     return () => {
 //       isMounted = false;
 //     };
 //   }, [navigate]); // Dependências necessárias
-// 
+//
 //   // Função para reenviar email de confirmação
 //   const reenviarEmailConfirmacao = async () => {
 //     if (!email) {
 //       toast.error("Email não encontrado");
 //       return;
 //     }
-// 
+//
 //     try {
 //       const { error } = await supabase.auth.resend({
 //         type: "signup",
@@ -120,7 +120,7 @@
 //           emailRedirectTo: `${window.location.origin}/email-confirmado`,
 //         },
 //       });
-// 
+//
 //       if (error) {
 //         toast.error("Erro ao reenviar email", {
 //           description: error.message,
@@ -136,18 +136,18 @@
 //       });
 //     }
 //   };
-// 
+//
 //   // Função para verificar manualmente (botão "Já confirmei")
 //   const verificarNovamente = async () => {
 //     setEmail(email); // Manter o email atual
 //     setIsLoading(true);
-// 
+//
 //     try {
 //       const { data: userStatus, error: rpcError } = await supabase.rpc(
 //         "check_user_confirmation_status",
 //         { p_email: email },
 //       );
-// 
+//
 //       if (!rpcError && userStatus?.is_confirmed) {
 //         setIsConfirmed(true);
 //         toast.success("Email já confirmado! Faça login.", {
@@ -167,7 +167,7 @@
 //       setIsLoading(false);
 //     }
 //   };
-// 
+//
 //   if (isLoading) {
 //     return (
 //       <main className="w-screen min-h-screen bg-zinc-100 dark:bg-transparent flex flex-col items-center justify-center px-4 lg:px-0 overflow-x-hidden">
@@ -178,7 +178,7 @@
 //       </main>
 //     );
 //   }
-// 
+//
 //   // Se já estiver confirmado (já fez login), mostra mensagem e redireciona
 //   if (isConfirmed) {
 //     return (
@@ -202,18 +202,18 @@
 //       </main>
 //     );
 //   }
-// 
+//
 //   // Se está pendente (nunca fez login), mostra a página de aguardando confirmação
 //   return (
 //     <main className=" py-6 w-screen min-h-screen bg-zinc-100 dark:bg-transparent flex flex-col items-center justify-center px-4 lg:px-0 overflow-x-hidden">
 //       <Logo style="w-55 md:w-60 mb-8" />
-// 
+//
 //       <div className="flex flex-col items-center justify-center max-w-md w-full mx-4 lg:mx-0">
 //         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-8 text-center w-full">
 //           <div className="flex justify-center my-2">
 //             <Mail className="h-12 w-12 text-[#0458EE]" />
 //           </div>
-// 
+//
 //           <h1 className="text-2xl font-bold mb-2">
 //             Aguardando ativação da conta
 //           </h1>
@@ -221,18 +221,18 @@
 //             Enviamos um link de confirmação para:
 //           </p>
 //           <p className="font-medium text-foreground mb-4">{email}</p>
-// 
+//
 //           <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 mb-6">
 //             <p className="text-sm text-muted-foreground">
 //               ⚠️ Verifique sua caixa de spam ou lixo eletrônico se não encontrar
 //               o email.
 //             </p>
 //           </div>
-// 
+//
 //           <p className="text-xs text-muted-foreground mb-6">
 //             Precisa de ajuda? Fale conosco: {phone}
 //           </p>
-// 
+//
 //           <div className="flex flex-col gap-3">
 //             <Button
 //               type="button"
@@ -241,7 +241,7 @@
 //             >
 //               Reenviar email de confirmação
 //             </Button>
-// 
+//
 //             <Button
 //               type="button"
 //               variant="ghost"
@@ -250,7 +250,7 @@
 //             >
 //               Já confirmei meu email
 //             </Button>
-// 
+//
 //             <Button
 //               type="button"
 //               variant="default"

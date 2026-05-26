@@ -2,11 +2,11 @@
 // import { supabase } from "@/lib/supabase/supabase";
 // import { useBarbershopStore } from "@/store/barbershop.store";
 // import type { AppointmentWithRelations } from "@/types/create-appointment";
-// 
+//
 // type AppointmentRow = Omit<AppointmentWithRelations, "customer"> & {
 //   customer: null;
 // };
-// 
+//
 // export function useAppointments(startDate?: Date, endDate?: Date) {
 //   const { barbershop } = useBarbershopStore();
 //   const barbershopId = barbershop?.id;
@@ -15,7 +15,7 @@
 //   );
 //   const [loading, setLoading] = useState(true);
 //   const [tick, setTick] = useState(0);
-// 
+//
 //   const startIso =
 //     startDate?.toISOString() ??
 //     (() => {
@@ -23,7 +23,7 @@
 //       date.setHours(0, 0, 0, 0);
 //       return date.toISOString();
 //     })();
-// 
+//
 //   const endIso =
 //     endDate?.toISOString() ??
 //     (() => {
@@ -32,15 +32,15 @@
 //       date.setDate(date.getDate() + 7);
 //       return date.toISOString();
 //     })();
-// 
+//
 //   useEffect(() => {
 //     if (!barbershopId) return;
-// 
+//
 //     let active = true;
-// 
+//
 //     async function loadAppointments() {
 //       setLoading(true);
-// 
+//
 //       const { data, error } = await supabase
 //         .from("appointments")
 //         .select(
@@ -54,7 +54,7 @@
 //         .gte("starts_at", startIso)
 //         .lte("starts_at", endIso)
 //         .order("starts_at");
-// 
+//
 //       if (error) {
 //         console.error("[useAppointments] error:", error);
 //         if (!active) return;
@@ -62,19 +62,19 @@
 //         setLoading(false);
 //         return;
 //       }
-// 
+//
 //       type AppointmentRowExtended = AppointmentRow & {
 //         manual_customer_id: string | null;
 //       };
 //       const rows = (data as AppointmentRowExtended[] | null) ?? [];
-// 
+//
 //       const authIds = Array.from(
 //         new Set(rows.map(row => row.customer_id).filter(Boolean)),
 //       );
 //       const manualIds = Array.from(
 //         new Set(rows.map(row => row.manual_customer_id).filter(Boolean)),
 //       );
-// 
+//
 //       const customerMap = new Map<
 //         string,
 //         {
@@ -84,7 +84,7 @@
 //           source: "customers" | "customers_auth";
 //         }
 //       >();
-// 
+//
 //       await Promise.all([
 //         authIds.length > 0
 //           ? supabase
@@ -120,9 +120,9 @@
 //               })
 //           : Promise.resolve(),
 //       ]);
-// 
+//
 //       if (!active) return;
-// 
+//
 //       setAppointments(
 //         rows.map(row => {
 //           const resolvedId = row.customer_id ?? row.manual_customer_id;
@@ -134,14 +134,14 @@
 //       );
 //       setLoading(false);
 //     }
-// 
+//
 //     void loadAppointments();
-// 
+//
 //     return () => {
 //       active = false;
 //     };
 //   }, [barbershopId, startIso, endIso, tick]);
-// 
+//
 //   return {
 //     appointments,
 //     setAppointments,

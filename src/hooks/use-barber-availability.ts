@@ -1,22 +1,22 @@
 ﻿// import { useEffect, useState } from "react";
 // import { supabase } from "@/lib/supabase/supabase";
-// 
+//
 // // ─── Tipos ────────────────────────────────────────────────────────────────────
-// 
+//
 // export type DayPeriod = {
 //   starts_at: string; // "HH:MM"
 //   ends_at: string; // "HH:MM"
 // };
-// 
+//
 // export type DayAvailability = {
 //   day_of_week: number; // 0=domingo ... 6=sábado
 //   is_day_off: boolean;
 //   use_custom_hours: boolean;
 //   periods: DayPeriod[];
 // };
-// 
+//
 // // ─── Defaults ─────────────────────────────────────────────────────────────────
-// 
+//
 // export function defaultAvailability(): DayAvailability[] {
 //   return Array.from({ length: 7 }, (_, i) => ({
 //     day_of_week: i,
@@ -25,20 +25,20 @@
 //     periods: [{ starts_at: "08:00", ends_at: "18:00" }],
 //   }));
 // }
-// 
+//
 // // ─── Hook ─────────────────────────────────────────────────────────────────────
-// 
+//
 // export function useBarberAvailability(barberId: string | null) {
 //   const [availability, setAvailability] =
 //     useState<DayAvailability[]>(defaultAvailability);
 //   const [loading, setLoading] = useState(false);
-// 
+//
 //   useEffect(() => {
 //     if (!barberId) return;
-// 
+//
 //     async function load() {
 //       setLoading(true);
-// 
+//
 //       const { data } = await supabase
 //         .from("barber_availability")
 //         .select(
@@ -47,14 +47,14 @@
 //         .eq("barber_id", barberId)
 //         .order("day_of_week")
 //         .order("period_order");
-// 
+//
 //       if (data && data.length > 0) {
 //         const byDay = new Map<number, typeof data>();
 //         for (const row of data) {
 //           if (!byDay.has(row.day_of_week)) byDay.set(row.day_of_week, []);
 //           byDay.get(row.day_of_week)!.push(row);
 //         }
-// 
+//
 //         setAvailability(
 //           defaultAvailability().map(def => {
 //             const rows = byDay.get(def.day_of_week);
@@ -74,18 +74,18 @@
 //           }),
 //         );
 //       }
-// 
+//
 //       setLoading(false);
 //     }
-// 
+//
 //     void load();
 //   }, [barberId]);
-// 
+//
 //   return { availability, setAvailability, loading };
 // }
-// 
+//
 // // ─── Salvar ───────────────────────────────────────────────────────────────────
-// 
+//
 // export async function saveBarberAvailability(
 //   barberId: string,
 //   barbershopId: string,
@@ -95,9 +95,9 @@
 //     .from("barber_availability")
 //     .delete()
 //     .eq("barber_id", barberId);
-// 
+//
 //   if (delError) return false;
-// 
+//
 //   type AvailabilityRow = {
 //     barber_id: string;
 //     barbershop_id: string;
@@ -108,7 +108,7 @@
 //     ends_at: string | null;
 //     period_order: number;
 //   };
-// 
+//
 //   const rows = availability.flatMap<AvailabilityRow>(day => {
 //     if (!day.use_custom_hours) {
 //       return [
@@ -135,7 +135,7 @@
 //       period_order: idx,
 //     }));
 //   });
-// 
+//
 //   const { error } = await supabase.from("barber_availability").insert(rows);
 //   return !error;
 // }

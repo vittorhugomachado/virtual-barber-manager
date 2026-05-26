@@ -1,5 +1,5 @@
 ﻿// import { Skeleton } from "../ui/skeleton";
-// 
+//
 // export function ReportsSkeleton() {
 //   return (
 //     <div className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
@@ -22,7 +22,7 @@
 //           </div>
 //         </div>
 //       </div>
-// 
+//
 //       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
 //         {Array.from({ length: 5 }).map((_, i) => (
 //           <div key={i} className="bg-card border rounded-xl p-4 space-y-3">
@@ -35,7 +35,7 @@
 //           </div>
 //         ))}
 //       </div>
-// 
+//
 //       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 //         {Array.from({ length: 4 }).map((_, i) => (
 //           <div key={i} className="bg-card border rounded-xl overflow-hidden">

@@ -1,5 +1,5 @@
 ﻿// import { AlertCircle } from "lucide-react";
-// 
+//
 // export function Field({
 //   label,
 //   icon,
@@ -27,6 +27,6 @@
 //     </div>
 //   );
 // }
-// 
+//
 // export const INPUT_CLS =
 //   "h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60";

@@ -64,55 +64,55 @@
 //   AlertDialogHeader,
 //   AlertDialogTitle,
 // } from "@/components/ui/alert-dialog";
-// 
+//
 // type Member = {
 //   id: string;
 //   user_id: string;
 //   role: "admin" | "reader";
 //   username: string;
 // };
-// 
+//
 // type EditMemberData = {
 //   username?: string;
 //   password?: string;
 //   role?: "admin" | "reader";
 // };
-// 
+//
 // type CreateMemberData = {
 //   username: string;
 //   password: string;
 //   role: "admin" | "reader";
 // };
-// 
+//
 // const usernameSchema = z
 //   .string()
 //   .min(3, "Minimo 3 caracteres")
 //   .max(30, "Maximo 30 caracteres")
 //   .regex(/^[a-z0-9_]+$/, "Apenas letras minusculas, numeros e _");
-// 
+//
 // const createMemberSchema = z.object({
 //   username: usernameSchema,
 //   password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
 //   role: z.enum(["admin", "reader"]),
 // });
-// 
+//
 // function getRoleLabel(role: "admin" | "reader") {
 //   return role === "admin" ? "Admin" : "Leitor";
 // }
-// 
+//
 // function getRoleDescription(role: "admin" | "reader") {
 //   return role === "admin" ? "Acesso completo" : "Apenas agenda";
 // }
-// 
+//
 // function getRoleHelpText(role: "admin" | "reader") {
 //   return role === "admin"
 //     ? "Acesso total, com exceção das configurações."
 //     : "Acesso restrito apenas a agenda.";
 // }
-// 
+//
 // function RoleHelpIcon({ role }: { role: "admin" | "reader" }) {
 //   const text = getRoleHelpText(role);
-// 
+//
 //   return (
 //     <>
 //       <Tooltip>
@@ -129,7 +129,7 @@
 //           {text}
 //         </TooltipContent>
 //       </Tooltip>
-// 
+//
 //       <Popover>
 //         <PopoverTrigger asChild>
 //           <button
@@ -150,7 +150,7 @@
 //     </>
 //   );
 // }
-// 
+//
 // export function UsersSection() {
 //   const { barbershop, memberRole } = useBarbershopStore();
 //   const [members, setMembers] = useState<Member[] | null>(null);
@@ -176,58 +176,58 @@
 //     editForm.username.trim().length > 0 && !editUsernameValidation.success
 //       ? editUsernameValidation.error.issues[0]?.message
 //       : null;
-// 
+//
 //   const form = useForm<CreateMemberData>({
 //     resolver: zodResolver(createMemberSchema) as Resolver<CreateMemberData>,
 //     defaultValues: { username: "", password: "", role: "reader" },
 //   });
-// 
+//
 //   useEffect(() => {
 //     if (!barbershop?.id) return;
 //     let mounted = true;
-// 
+//
 //     supabase
 //       .rpc("get_barbershop_members", { p_barbershop_id: barbershop.id })
 //       .then(({ data, error }) => {
 //         if (!mounted) return;
 //         setMembers(!error && data ? (data as Member[]) : []);
 //       });
-// 
+//
 //     return () => {
 //       mounted = false;
 //     };
 //   }, [barbershop?.id, fetchKey]);
-// 
+//
 //   async function getAccessToken() {
 //     const { data: refreshed, error: refreshError } =
 //       await supabase.auth.refreshSession();
-// 
+//
 //     if (refreshed.session?.access_token) {
 //       return refreshed.session.access_token;
 //     }
-// 
+//
 //     const {
 //       data: { session },
 //       error,
 //     } = await supabase.auth.getSession();
-// 
+//
 //     if (error) {
 //       throw error;
 //     }
-// 
+//
 //     if (!session?.access_token) {
 //       throw refreshError ?? new Error("Sessao expirada. Entre novamente.");
 //     }
-// 
+//
 //     return session.access_token;
 //   }
-// 
+//
 //   async function handleCreateMember(values: CreateMemberData) {
 //     if (!barbershop || memberRole !== "owner") {
 //       toast.error("Apenas o proprietario pode adicionar usuarios.");
 //       return;
 //     }
-// 
+//
 //     let accessToken: string;
 //     try {
 //       accessToken = await getAccessToken();
@@ -239,7 +239,7 @@
 //       );
 //       return;
 //     }
-// 
+//
 //     const res = await supabase.functions.invoke("create-member", {
 //       body: {
 //         username: values.username,
@@ -251,14 +251,14 @@
 //         Authorization: `Bearer ${accessToken}`,
 //       },
 //     });
-// 
+//
 //     if (res.error) {
 //       let message = res.error.message;
-// 
+//
 //       try {
 //         const errorBody = await res.error.context.json();
 //         message = errorBody?.error ?? message;
-// 
+//
 //         if (errorBody?.error?.toLowerCase().includes("nome de usuário")) {
 //           form.setError("username", { message });
 //           return;
@@ -266,35 +266,35 @@
 //       } catch {
 //         // mantém mensagem genérica se não conseguir ler o body
 //       }
-// 
+//
 //       toast.error(message);
 //       return;
 //     }
-// 
+//
 //     if (res.data?.error) {
 //       const message = res.data.error;
-// 
+//
 //       if (message.toLowerCase().includes("nome de usuário")) {
 //         form.setError("username", { message });
 //         return;
 //       }
-// 
+//
 //       toast.error(message);
 //       return;
 //     }
-// 
+//
 //     toast.success("Usuário adicionado com sucesso.");
 //     form.reset();
 //     setShowCreateDialog(false);
 //     setFetchKey(k => k + 1);
 //   }
-// 
+//
 //   async function handleRemoveMember(memberId: string) {
 //     if (memberRole !== "owner") {
 //       toast.error("Apenas o proprietario pode remover usuarios.");
 //       return;
 //     }
-// 
+//
 //     setRemovingId(memberId);
 //     let accessToken: string;
 //     try {
@@ -314,7 +314,7 @@
 //         Authorization: `Bearer ${accessToken}`,
 //       },
 //     });
-// 
+//
 //     if (res.error || res.data?.error) {
 //       toast.error(res.data?.error ?? res.error?.message);
 //     } else {
@@ -323,20 +323,20 @@
 //     }
 //     setRemovingId(null);
 //   }
-// 
+//
 //   async function handleEditMember(values: EditMemberData) {
 //     if (!editMember || memberRole !== "owner") {
 //       toast.error("Apenas o proprietario pode editar usuarios.");
 //       return;
 //     }
-// 
+//
 //     if (values.username && !usernameSchema.safeParse(values.username).success) {
 //       toast.error(
 //         "O nome de usuario deve ter 3 a 30 caracteres e usar apenas letras minusculas, numeros e _.",
 //       );
 //       return;
 //     }
-// 
+//
 //     let accessToken: string;
 //     try {
 //       accessToken = await getAccessToken();
@@ -348,45 +348,45 @@
 //       );
 //       return;
 //     }
-// 
+//
 //     const body: EditMemberData & { member_id: string } = {
 //       member_id: editMember.user_id,
 //     };
-// 
+//
 //     if (values.username && values.username !== editMember.username) {
 //       body.username = values.username;
 //     }
-// 
+//
 //     if (values.password && values.password.length >= 6) {
 //       body.password = values.password;
 //     }
-// 
+//
 //     if (values.role && values.role !== editMember.role) {
 //       body.role = values.role;
 //     }
-// 
+//
 //     // Se não tiver nada para atualizar
 //     if (!body.username && !body.password && !body.role) {
 //       toast.error("Nenhuma alteração detectada");
 //       return;
 //     }
-// 
+//
 //     const res = await supabase.functions.invoke("update-member", {
 //       body,
 //       headers: { Authorization: `Bearer ${accessToken}` },
 //     });
-// 
+//
 //     if (res.error || res.data?.error) {
 //       toast.error(res.data?.error ?? res.error?.message);
 //       return;
 //     }
-// 
+//
 //     toast.success(res.data?.message || "Membro atualizado com sucesso!");
 //     setEditMember(null);
 //     setShowEditDialog(false);
 //     setFetchKey(k => k + 1);
 //   }
-// 
+//
 //   return (
 //     <TooltipProvider delayDuration={120}>
 //       <div className="w-full max-w-180 lg:mx-auto mt-2 mb-8 px-3 flex flex-col gap-4">
@@ -396,13 +396,13 @@
 //             Gerencie quem tem acesso ao painel da sua barbearia.
 //           </p>
 //         </div>
-// 
+//
 //         {memberRole !== "owner" && (
 //           <p className="px-3 text-sm text-muted-foreground">
 //             Apenas o proprietario da barbearia pode gerenciar usuarios.
 //           </p>
 //         )}
-// 
+//
 //         <div className="flex flex-col gap-2">
 //           {members === null ? (
 //             <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
@@ -475,7 +475,7 @@
 //             ))
 //           )}
 //         </div>
-// 
+//
 //         <Button
 //           variant="outline"
 //           className="w-fit cursor-pointer rounded-full"
@@ -485,7 +485,7 @@
 //           <Plus className="h-4 w-4 mr-2" />
 //           Novo usuário
 //         </Button>
-// 
+//
 //         {/* Dialog de criação de usuário */}
 //         <Dialog
 //           open={showCreateDialog}
@@ -535,7 +535,7 @@
 //                       </Field>
 //                     )}
 //                   />
-// 
+//
 //                   <Controller
 //                     name="password"
 //                     control={form.control}
@@ -571,7 +571,7 @@
 //                       </Field>
 //                     )}
 //                   />
-// 
+//
 //                   <Controller
 //                     name="role"
 //                     control={form.control}
@@ -608,7 +608,7 @@
 //                   />
 //                 </FieldGroup>
 //               </form>
-// 
+//
 //               <DialogFooter>
 //                 <Button
 //                   type="button"
@@ -634,7 +634,7 @@
 //             </DialogContent>
 //           )}
 //         </Dialog>
-// 
+//
 //         {/* Dialog de edição de usuário */}
 //         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
 //           {showEditDialog && (
@@ -746,7 +746,7 @@
 //             </DialogContent>
 //           )}
 //         </Dialog>
-// 
+//
 //         {/* Dialog de confirmação de remoção */}
 //         <AlertDialog
 //           open={!!confirmRemove}

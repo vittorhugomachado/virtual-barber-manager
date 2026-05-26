@@ -21,7 +21,7 @@
 //   AlertDialogHeader,
 //   AlertDialogTitle,
 // } from "../ui/alert-dialog";
-// 
+//
 // export function StyleControlBar({
 //   style,
 //   isLoading,
@@ -47,23 +47,23 @@
 //   const [galleryHasChanges, setGalleryHasChanges] = useState(false);
 //   const [discardWarningOpen, setDiscardWarningOpen] = useState(false);
 //   const [galleryKey, setGalleryKey] = useState(0);
-// 
+//
 //   function handleGalleryOpenChange(open: boolean) {
 //     if (!open && galleryHasChanges) {
 //       setDiscardWarningOpen(true);
 //       return;
 //     }
-// 
+//
 //     setGalleryOpen(open);
 //   }
-// 
+//
 //   function discardGalleryChanges() {
 //     setGalleryHasChanges(false);
 //     setDiscardWarningOpen(false);
 //     setGalleryOpen(false);
 //     setGalleryKey(current => current + 1);
 //   }
-// 
+//
 //   return (
 //     <>
 //       <div className="fixed right-2 bottom-4 md:top-1/2 md:-translate-y-1/2 z-20 w-fit h-fit flex flex-col items-center gap-2">
@@ -95,13 +95,13 @@
 //               value={style.text_button_color}
 //               onChange={value => onChange("text_button_color", value)}
 //             />
-// 
+//
 //             <ColorField
 //               label="Fundo"
 //               value={style.background_color}
 //               onChange={value => onChange("background_color", value)}
 //             />
-// 
+//
 //             <Button
 //               type="button"
 //               className="h-10 w-[95%] mx-0.5 scale-90 shrink-0 rounded-md md:mb-1 absolute bottom-1 md:bottom-0"
@@ -119,7 +119,7 @@
 //           {isOpen ? "✕" : "Editar cores"}
 //         </button>
 //       </div>
-// 
+//
 //       <Dialog open={galleryOpen} onOpenChange={handleGalleryOpenChange}>
 //         <DialogContent
 //           className="max-h-[92vh] mb-12 mt-2 overflow-y-auto sm:max-w-5xl"
@@ -150,7 +150,7 @@
 //           />
 //         </DialogContent>
 //       </Dialog>
-// 
+//
 //       <AlertDialog
 //         open={discardWarningOpen}
 //         onOpenChange={setDiscardWarningOpen}

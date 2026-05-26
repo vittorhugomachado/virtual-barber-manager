@@ -12,7 +12,7 @@
 // import { Input } from "@/components/ui/input";
 // import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 // import { Eye, EyeOff, Lock } from "lucide-react";
-// 
+//
 // interface PasswordConfirmModalProps {
 //   open: boolean;
 //   onClose: () => void;
@@ -23,7 +23,7 @@
 //   isLoading?: boolean;
 //   errorMessage?: string | undefined | null;
 // }
-// 
+//
 // export function PasswordConfirmModal({
 //   open,
 //   onClose,
@@ -37,16 +37,16 @@
 //   const [password, setPassword] = useState("");
 //   const [showPassword, setShowPassword] = useState(false);
 //   const [localError, setLocalError] = useState<string | null>(null);
-// 
+//
 //   // Usa erro local ou erro externo
 //   const displayError = localError || errorMessage;
-// 
+//
 //   const handleConfirm = async () => {
 //     if (!password) {
 //       setLocalError("Senha é obrigatória");
 //       return;
 //     }
-// 
+//
 //     setLocalError(null);
 //     try {
 //       await onConfirm(password);
@@ -57,7 +57,7 @@
 //       console.error("Erro na confirmação:", err);
 //     }
 //   };
-// 
+//
 //   const handleClose = () => {
 //     // Limpa tudo ao fechar
 //     setPassword("");
@@ -68,7 +68,7 @@
 //     }
 //     onClose();
 //   };
-// 
+//
 //   // Limpa TODOS os erros quando o usuário digita
 //   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 //     setPassword(e.target.value);
@@ -77,10 +77,10 @@
 //       onClearError();
 //     }
 //   };
-// 
+//
 //   // Reseta o estado quando o modal abre usando key prop no pai
 //   // Em vez de useEffect, usamos um padrão de reset via key
-// 
+//
 //   return (
 //     <Dialog open={open} onOpenChange={o => !o && handleClose()}>
 //       <DialogContent className="max-w-md w-[calc(100%-2rem)]">
@@ -93,7 +93,7 @@
 //             {description}
 //           </DialogDescription>
 //         </DialogHeader>
-// 
+//
 //         <div className="mt-4">
 //           <FieldGroup>
 //             <Field>
@@ -128,7 +128,7 @@
 //             </Field>
 //           </FieldGroup>
 //         </div>
-// 
+//
 //         <DialogFooter className="mt-6 gap-2">
 //           <Button
 //             type="button"

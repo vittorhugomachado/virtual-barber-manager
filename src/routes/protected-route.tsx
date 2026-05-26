@@ -5,13 +5,13 @@
 // import { useBarbershopStore } from "@/store/barbershop.store";
 // import { SidebarComponent } from "@/components/common/sidebar";
 // import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-// 
+//
 // interface ProtectedRouteProps {
 //   children?: React.ReactNode;
 //   skeleton?: React.ReactNode;
 //   withSidebar?: boolean;
 // }
-// 
+//
 // export function ProtectedRoute({
 //   children,
 //   skeleton,
@@ -21,7 +21,7 @@
 //   const { barbershop, loading: barbershopLoading } = useBarbershopData();
 //   const { memberRole } = useBarbershopStore();
 //   const { pathname } = useLocation();
-// 
+//
 //   if (authLoading || barbershopLoading)
 //     return skeleton ? (
 //       <>{skeleton}</>
@@ -30,15 +30,15 @@
 //         <Spinner className="size-10" />
 //       </div>
 //     );
-// 
+//
 //   if (!isLogged || !barbershop) return <Navigate to="/entrar" />;
-// 
+//
 //   if (memberRole === "reader" && pathname !== "/agenda")
 //     return <Navigate to="/agenda" replace />;
-// 
+//
 //   if (pathname === "/configuracoes" && memberRole !== "owner")
 //     return <Navigate to="/" replace />;
-// 
+//
 //   if (withSidebar) {
 //     return (
 //       <SidebarProvider>
@@ -49,6 +49,6 @@
 //       </SidebarProvider>
 //     );
 //   }
-// 
+//
 //   return children;
 // }

@@ -7,16 +7,16 @@
 // } from "@/components/ui/chart";
 // import { CalendarDays } from "lucide-react";
 // import type { WeekdayReportData } from "@/hooks/use-reports";
-// 
+//
 // const chartConfig = {
 //   total: { label: "Agendamentos", color: "#a855f7" },
 // } satisfies ChartConfig;
-// 
+//
 // interface WeekdayChartProps {
 //   data: WeekdayReportData[];
 //   title?: string;
 // }
-// 
+//
 // export function WeekdayChart({
 //   data,
 //   title = "Dias da semana mais movimentados",

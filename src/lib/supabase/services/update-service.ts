@@ -1,5 +1,5 @@
 ﻿// import { supabase } from "../supabase";
-// 
+//
 // type UpdateServiceParams = {
 //   id: string;
 //   name: string;
@@ -7,7 +7,7 @@
 //   price?: number;
 //   duration_min?: number;
 // };
-// 
+//
 // export async function updateService({
 //   id,
 //   name,
@@ -25,6 +25,6 @@
 //       updated_at: new Date().toISOString(),
 //     })
 //     .eq("id", id);
-// 
+//
 //   return !error;
 // }

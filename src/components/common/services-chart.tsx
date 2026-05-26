@@ -7,16 +7,16 @@
 // } from "@/components/ui/chart";
 // import { Scissors } from "lucide-react";
 // import type { ServiceReportData } from "@/hooks/use-reports";
-// 
+//
 // const chartConfig = {
 //   total: { label: "Realizados", color: "hsl(var(--primary))" },
 // } satisfies ChartConfig;
-// 
+//
 // interface ServicesChartProps {
 //   data: ServiceReportData[];
 //   title?: string;
 // }
-// 
+//
 // export function ServicesChart({
 //   data,
 //   title = "Serviços mais realizados",

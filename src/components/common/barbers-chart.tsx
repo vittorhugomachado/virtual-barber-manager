@@ -9,17 +9,17 @@
 // } from "@/components/ui/chart";
 // import { Scissors } from "lucide-react";
 // import type { BarberReportData } from "@/hooks/use-reports";
-// 
+//
 // const chartConfig = {
 //   total: { label: "Total", color: "#3b82f6" },
 //   completed: { label: "Concluídos", color: "#22c55e" },
 // } satisfies ChartConfig;
-// 
+//
 // interface BarbersChartProps {
 //   data: BarberReportData[];
 //   title?: string;
 // }
-// 
+//
 // export function BarbersChart({
 //   data,
 //   title = "Atendimentos por barbeiro",

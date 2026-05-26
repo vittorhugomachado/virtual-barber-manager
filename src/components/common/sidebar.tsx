@@ -29,7 +29,7 @@
 // import { useBarbershopStore } from "@/store/barbershop.store";
 // import { useDashboard } from "@/hooks/use-dashboard";
 // import { useSettingsAlerts } from "@/hooks/use-settings-alerts";
-// 
+//
 // const menuItems = [
 //   { title: "Visão Geral", url: "/", icon: ChartLine },
 //   { title: "Agenda", url: "/agenda", icon: CalendarDays },
@@ -39,15 +39,15 @@
 //   { title: "Relatórios", url: "/relatorios", icon: ChartBar },
 //   { title: "Página", url: "/editar-pagina", icon: Palette },
 // ];
-// 
+//
 // const readerMenuItems = [
 //   { title: "Agenda", url: "/agenda", icon: CalendarDays },
 // ];
-// 
+//
 // const configItems = [
 //   { title: "Configurações", url: "/configuracoes", icon: Cog },
 // ];
-// 
+//
 // export function SidebarComponent() {
 //   const location = useLocation();
 //   const navigate = useNavigate();
@@ -58,19 +58,19 @@
 //   const visibleMenuItems =
 //     memberRole === "reader" ? readerMenuItems : menuItems;
 //   const visibleConfigItems = memberRole === "owner" ? configItems : [];
-// 
+//
 //   function handleNavigate(url: string) {
 //     if (isMobile) setOpenMobile(false);
 //     navigate(url);
 //   }
-// 
+//
 //   function showMenuAlert(url: string) {
 //     if (loading) return false;
 //     if (url === "/servicos") return activeServices === 0;
 //     if (url === "/equipe") return activeProfessionals === 0;
 //     return false;
 //   }
-// 
+//
 //   return (
 //     <Sidebar collapsible="icon" className="h-screen">
 //       <SidebarHeader className="flex items-center justify-between">
@@ -91,7 +91,7 @@
 //           <SidebarTrigger className="bg-[#18181B]" />
 //         </div>
 //       </SidebarHeader>
-// 
+//
 //       <SidebarContent>
 //         <SidebarGroup>
 //           <SidebarGroupContent>
@@ -116,7 +116,7 @@
 //           </SidebarGroupContent>
 //         </SidebarGroup>
 //       </SidebarContent>
-// 
+//
 //       <SidebarFooter>
 //         <SidebarMenu>
 //           {visibleConfigItems.map(item => (
@@ -136,7 +136,7 @@
 //             </SidebarMenuItem>
 //           ))}
 //         </SidebarMenu>
-// 
+//
 //         {(memberRole === "admin" || memberRole === "reader") &&
 //           memberUsername && (
 //             <div className="flex items-center gap-2.5 px-2 py-2 mx-1 mb-1 rounded-lg bg-muted/60">

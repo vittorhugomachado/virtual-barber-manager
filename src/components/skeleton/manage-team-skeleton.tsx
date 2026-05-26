@@ -1,6 +1,6 @@
 ﻿// import { Card, CardContent } from "@/components/ui/card";
 // import { Skeleton } from "@/components/ui/skeleton";
-// 
+//
 // export function ManageTeamSkeleton() {
 //   return (
 //     <main className="w-full max-w-325 flex flex-col gap-6 px-6 md:px-12 pb-12 mx-auto">

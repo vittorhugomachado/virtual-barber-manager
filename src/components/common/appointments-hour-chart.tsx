@@ -11,20 +11,20 @@
 // import { useBarbershopStore } from "@/store/barbershop.store";
 // import { ChevronLeft, ChevronRight, Clock, StoreIcon } from "lucide-react";
 // import { getSupabaseClient } from "@/lib/supabase/lazy-supabase";
-// 
+//
 // const chartConfig = {
 //   concluido: { label: "Concluído", color: "#22c55e" },
 //   agendado: { label: "Agendado", color: "#3b82f6" },
 //   cancelado: { label: "Cancelado", color: "#ef4444" },
 // } satisfies ChartConfig;
-// 
+//
 // interface HourlyData {
 //   hour: string;
 //   concluido: number;
 //   agendado: number;
 //   cancelado: number;
 // }
-// 
+//
 // function buildEmpty(): HourlyData[] {
 //   return Array.from({ length: 24 }, (_, h) => ({
 //     hour: `${String(h).padStart(2, "0")}:00`,
@@ -33,11 +33,11 @@
 //     cancelado: 0,
 //   }));
 // }
-// 
+//
 // function toLocalDateStr(date: Date): string {
 //   return date.toLocaleDateString("en-CA");
 // }
-// 
+//
 // function formatLabel(date: Date): string {
 //   const today = new Date();
 //   today.setHours(0, 0, 0, 0);
@@ -45,13 +45,13 @@
 //   yesterday.setDate(yesterday.getDate() - 1);
 //   const tomorrow = new Date(today);
 //   tomorrow.setDate(tomorrow.getDate() + 1);
-// 
+//
 //   if (date.getTime() === today.getTime()) return "Hoje";
 //   if (date.getTime() === yesterday.getTime()) return "Ontem";
 //   if (date.getTime() === tomorrow.getTime()) return "Amanhã";
 //   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 // }
-// 
+//
 // interface AppointmentsHourChartProps {
 //   title?: string;
 //   /** Dados externos (modo relatórios). Quando fornecido, desativa navegação interna. */
@@ -59,7 +59,7 @@
 //   /** Label de data exibido quando em modo externo */
 //   dateLabel?: string;
 // }
-// 
+//
 // export function AppointmentsHourChart({
 //   title = "Agendamentos por horário",
 //   externalData,
@@ -67,29 +67,29 @@
 // }: AppointmentsHourChartProps) {
 //   const { barbershop } = useBarbershopStore();
 //   const isControlled = externalData !== undefined;
-// 
+//
 //   const today = new Date();
 //   today.setHours(0, 0, 0, 0);
-// 
+//
 //   const [selectedDate, setSelectedDate] = useState<Date>(today);
 //   const [internalData, setInternalData] = useState<HourlyData[]>(buildEmpty());
 //   const [loading, setLoading] = useState(false);
 //   const [isClosed, setIsClosed] = useState(false);
-// 
+//
 //   useEffect(() => {
 //     if (isControlled || !barbershop?.id) return;
-// 
+//
 //     let cancelled = false;
-// 
+//
 //     const dateStr = toLocalDateStr(selectedDate);
 //     const dayStart = `${dateStr}T00:00:00Z`;
 //     const dayEnd = `${dateStr}T23:59:59Z`;
 //     const dayOfWeek = selectedDate.getDay();
-// 
+//
 //     async function fetchData() {
 //       setLoading(true);
 //       const supabase = await getSupabaseClient();
-// 
+//
 //       const [{ data: hoursData }, { data: aptsData }] = await Promise.all([
 //         supabase
 //           .from("opening_hours")
@@ -103,22 +103,22 @@
 //           .gte("starts_at", dayStart)
 //           .lte("starts_at", dayEnd),
 //       ]);
-// 
+//
 //       const closed =
 //         !hoursData ||
 //         hoursData.length === 0 ||
 //         hoursData.every(r => !r.is_open);
-// 
+//
 //       if (cancelled) return;
-// 
+//
 //       setIsClosed(closed);
-// 
+//
 //       const buckets = Array.from({ length: 24 }, () => ({
 //         concluido: 0,
 //         agendado: 0,
 //         cancelado: 0,
 //       }));
-// 
+//
 //       for (const apt of aptsData ?? []) {
 //         const h = new Date(apt.starts_at).getUTCHours();
 //         if (apt.status === "completed") {
@@ -132,7 +132,7 @@
 //           buckets[h].agendado++;
 //         }
 //       }
-// 
+//
 //       setInternalData(
 //         buckets.map((bucket, h) => ({
 //           hour: `${String(h).padStart(2, "0")}:00`,
@@ -141,14 +141,14 @@
 //       );
 //       setLoading(false);
 //     }
-// 
+//
 //     void fetchData();
-// 
+//
 //     return () => {
 //       cancelled = true;
 //     };
 //   }, [barbershop, selectedDate, isControlled]);
-// 
+//
 //   function changeDate(delta: number) {
 //     setSelectedDate(prev => {
 //       const next = new Date(prev);
@@ -156,9 +156,9 @@
 //       return next;
 //     });
 //   }
-// 
+//
 //   const displayData = isControlled ? externalData : internalData;
-// 
+//
 //   return (
 //     <div className="bg-card border rounded-xl overflow-hidden">
 //       <div className="flex items-center justify-between px-4 py-3 border-b">
@@ -166,7 +166,7 @@
 //           <Clock className="h-4 w-4 text-muted-foreground" />
 //           <h2 className="font-semibold text-sm">{title}</h2>
 //         </div>
-// 
+//
 //         <div className="flex items-center gap-1">
 //           {isControlled && dateLabel && (
 //             <span className="text-xs text-muted-foreground">{dateLabel}</span>
@@ -198,7 +198,7 @@
 //           )}
 //         </div>
 //       </div>
-// 
+//
 //       <div className="p-4">
 //         {!isControlled && isClosed ? (
 //           <div className="h-56 flex flex-col items-center justify-center gap-3 text-muted-foreground">

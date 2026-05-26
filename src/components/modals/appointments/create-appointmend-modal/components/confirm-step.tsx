@@ -15,7 +15,7 @@
 //   Sparkles,
 //   User,
 // } from "lucide-react";
-// 
+//
 // export function ConfirmStep({
 //   customer,
 //   serviceSelections,
@@ -35,24 +35,24 @@
 // }) {
 //   const { services } = useServices();
 //   const { barbers } = useBarbers();
-// 
+//
 //   const dateLabel = new Date(`${date}T00:00:00`).toLocaleDateString("pt-BR", {
 //     weekday: "long",
 //     day: "2-digit",
 //     month: "long",
 //     year: "numeric",
 //   });
-// 
+//
 //   const totalDuration = serviceSelections.reduce((acc, sel) => {
 //     const s = services.find(sv => sv.id === sel.serviceId);
 //     return acc + (s?.duration_min ?? 0);
 //   }, 0);
-// 
+//
 //   const totalPrice = serviceSelections.reduce((acc, sel) => {
 //     const s = services.find(sv => sv.id === sel.serviceId);
 //     return acc + Number(s?.price ?? 0);
 //   }, 0);
-// 
+//
 //   //CONSOLE PARA DEBUG
 //   // console.log("ConfirmStep:", {
 //   //   // props recebidas
@@ -77,7 +77,7 @@
 //   //     barberName: barbers.find(b => b.id === sel.barberId)?.name,
 //   //   })),
 //   // });
-// 
+//
 //   return (
 //     <div className="flex flex-col gap-4 px-4 py-5">
 //       {/* Customer + date */}
@@ -129,13 +129,13 @@
 //           </div>
 //         )}
 //       </div>
-// 
+//
 //       {/* Per-service blocks */}
 //       <div className="flex flex-col gap-3">
 //         {serviceSelections.map((sel, i) => {
 //           const service = services.find(s => s.id === sel.serviceId);
 //           const barber = barbers.find(b => b.id === sel.barberId);
-// 
+//
 //           return (
 //             <div
 //               key={sel.serviceId}
@@ -184,14 +184,14 @@
 //           );
 //         })}
 //       </div>
-// 
+//
 //       {error && (
 //         <p className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md flex items-center gap-1.5">
 //           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
 //           {error}
 //         </p>
 //       )}
-// 
+//
 //       <div className="flex flex-wrap gap-2">
 //         <Button
 //           variant="outline"

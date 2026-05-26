@@ -38,7 +38,7 @@
 // import { CustomerConflictModal } from "./customer-conflict-modal";
 // import { useBarbershopStore } from "@/store/barbershop.store";
 // import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
-// 
+//
 // const formSchema = z.object({
 //   name: z.string().min(1, "Nome e obrigatorio"),
 //   phone: z
@@ -46,9 +46,9 @@
 //     .min(1, "Telefone e obrigatorio")
 //     .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Formato invalido: (XX) XXXXX-XXXX"),
 // });
-// 
+//
 // type FormValues = z.infer<typeof formSchema>;
-// 
+//
 // interface UpdateCustomerModalProps {
 //   open: boolean;
 //   customer: Customer | null;
@@ -57,7 +57,7 @@
 //   onDeleted: (id: string) => void;
 //   onEditExisting?: (customer: Customer) => void;
 // }
-// 
+//
 // export function UpdateCustomerModal({
 //   open,
 //   customer,
@@ -81,15 +81,15 @@
 //       customerField,
 //       open ? (customer?.id ?? null) : null,
 //     );
-// 
+//
 //   const form = useForm<FormValues>({
 //     resolver: zodResolver(formSchema) as Resolver<FormValues>,
 //     defaultValues: { name: "", phone: "" },
 //   });
-// 
+//
 //   useEffect(() => {
 //     if (!customer) return;
-// 
+//
 //     Promise.resolve().then(() => {
 //       form.reset({
 //         name: customer.name,
@@ -97,57 +97,57 @@
 //       });
 //     });
 //   }, [customer, form]);
-// 
+//
 //   async function onSubmit(data: FormValues) {
 //     if (!customer || !barbershop?.id) return;
-// 
+//
 //     const result = await updateCustomer({
 //       id: customer.id,
 //       barbershopId: barbershop.id,
 //       name: data.name,
 //       phone: data.phone,
 //     });
-// 
+//
 //     if (result.status === "conflict") {
 //       setConflictCustomer(result.existing);
 //       setConflictOpen(true);
 //       return;
 //     }
-// 
+//
 //     if (result.status === "error") {
 //       toast.error("Erro ao atualizar cliente.");
 //       return;
 //     }
-// 
+//
 //     toast.success("Cliente atualizado!");
 //     onUpdated({ ...customer, name: data.name, phone: data.phone });
 //     onClose();
 //   }
-// 
+//
 //   async function handleDelete() {
 //     if (!customer) return;
-// 
+//
 //     setDeleting(true);
 //     const result = await deleteCustomer(customer.id);
 //     setDeleting(false);
-// 
+//
 //     if (result.status === "conflict") {
 //       toast.error(
 //         "Este cliente possui agendamentos vinculados e nao pode ser excluido.",
 //       );
 //       return;
 //     }
-// 
+//
 //     if (result.status !== "deleted") {
 //       toast.error("Erro ao excluir cliente.");
 //       return;
 //     }
-// 
+//
 //     toast.success("Cliente excluido!");
 //     onDeleted(customer.id);
 //     onClose();
 //   }
-// 
+//
 //   return (
 //     <>
 //       <Dialog open={open} onOpenChange={nextOpen => !nextOpen && onClose()}>
@@ -158,7 +158,7 @@
 //           <DialogDescription className="sr-only">
 //             Editar cliente
 //           </DialogDescription>
-// 
+//
 //           <form
 //             id="update-customer-form"
 //             onSubmit={form.handleSubmit(onSubmit)}
@@ -183,7 +183,7 @@
 //                   </Field>
 //                 )}
 //               />
-// 
+//
 //               <Controller
 //                 name="phone"
 //                 control={form.control}
@@ -209,7 +209,7 @@
 //               />
 //             </FieldGroup>
 //           </form>
-// 
+//
 //           <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
 //             <AlertDialog>
 //               <AlertDialogTrigger asChild>
@@ -263,7 +263,7 @@
 //                 </AlertDialogFooter>
 //               </AlertDialogContent>
 //             </AlertDialog>
-// 
+//
 //             <div className="flex gap-2">
 //               <Button
 //                 type="button"
@@ -285,7 +285,7 @@
 //           </DialogFooter>
 //         </DialogContent>
 //       </Dialog>
-// 
+//
 //       <CustomerConflictModal
 //         open={conflictOpen}
 //         customer={conflictCustomer}
@@ -301,7 +301,7 @@
 //         }}
 //         onDelete={async existing => {
 //           const result = await deleteCustomer(existing.id);
-// 
+//
 //           if (result.status === "deleted") {
 //             setConflictOpen(false);
 //             setConflictCustomer(null);
@@ -311,14 +311,14 @@
 //             );
 //             return;
 //           }
-// 
+//
 //           if (result.status === "conflict") {
 //             toast.error(
 //               "Este cliente possui agendamentos vinculados e nao pode ser excluido.",
 //             );
 //             return;
 //           }
-// 
+//
 //           toast.error("Erro ao excluir cliente.");
 //         }}
 //       />

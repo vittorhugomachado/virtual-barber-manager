@@ -1,5 +1,5 @@
 ﻿// import { supabase } from "../supabase";
-// 
+//
 // type CreateServiceParams = {
 //   barbershopId: string;
 //   name: string;
@@ -7,7 +7,7 @@
 //   price?: number;
 //   duration_min?: number;
 // };
-// 
+//
 // export async function createService({
 //   barbershopId,
 //   name,
@@ -27,7 +27,7 @@
 //     })
 //     .select("id")
 //     .single();
-// 
+//
 //   if (error || !data) return null;
 //   return data;
 // }

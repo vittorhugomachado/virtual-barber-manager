@@ -26,7 +26,7 @@
 // import { toast } from "sonner";
 // import { useEffect, useState } from "react";
 // import * as z from "zod";
-// 
+//
 // const resetPasswordSchema = z
 //   .object({
 //     password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
@@ -36,16 +36,16 @@
 //     message: "As senhas não coincidem",
 //     path: ["confirmPassword"],
 //   });
-// 
+//
 // type ResetPasswordStatus = "loading" | "valid" | "invalid" | "success";
-// 
+//
 // export function ResetPasswordPage() {
 //   const navigate = useNavigate();
 //   const [status, setStatus] = useState<ResetPasswordStatus>("loading");
 //   const [isLoading, setIsLoading] = useState(false);
 //   const [showPassword, setShowPassword] = useState(false);
 //   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-// 
+//
 //   const form = useForm<z.infer<typeof resetPasswordSchema>>({
 //     resolver: zodResolver(resetPasswordSchema),
 //     defaultValues: {
@@ -53,11 +53,11 @@
 //       confirmPassword: "",
 //     },
 //   });
-// 
+//
 //   useEffect(() => {
 //     let active = true;
 //     let recoveryAccepted = false;
-// 
+//
 //     const searchParams = new URLSearchParams(window.location.search);
 //     const hashParams = new URLSearchParams(window.location.hash.slice(1));
 //     const code = searchParams.get("code");
@@ -69,132 +69,132 @@
 //     const hasRecoveryMarker = Boolean(
 //       sessionStorage.getItem(PASSWORD_RECOVERY_STORAGE_KEY),
 //     );
-// 
+//
 //     const markValid = () => {
 //       recoveryAccepted = true;
 //       window.history.replaceState({}, document.title, "/criar-nova-senha");
 //       if (active) setStatus("valid");
 //     };
-// 
+//
 //     const markInvalid = async () => {
 //       await supabase.auth.signOut();
 //       sessionStorage.removeItem(PASSWORD_RECOVERY_STORAGE_KEY);
 //       if (active) setStatus("invalid");
 //     };
-// 
+//
 //     const { data: authListener } = supabase.auth.onAuthStateChange(event => {
 //       if (event === "PASSWORD_RECOVERY") {
 //         markValid();
 //       }
 //     });
-// 
+//
 //     async function getRecoverySession() {
 //       for (let attempt = 0; attempt < 6; attempt += 1) {
 //         const { data, error } = await supabase.auth.getSession();
-// 
+//
 //         if (error) {
 //           return null;
 //         }
-// 
+//
 //         if (data.session) {
 //           return data.session;
 //         }
-// 
+//
 //         await new Promise(resolve => window.setTimeout(resolve, 250));
 //       }
-// 
+//
 //       return null;
 //     }
-// 
+//
 //     async function validateRecoveryLink() {
 //       if (!code && !tokenHash && !hasRecoveryHash && !hasRecoveryMarker) {
 //         await markInvalid();
 //         return;
 //       }
-// 
+//
 //       if (tokenHash && type === "recovery") {
 //         const { data, error } = await supabase.auth.verifyOtp({
 //           token_hash: tokenHash,
 //           type: "recovery",
 //         });
-// 
+//
 //         if (!active) return;
-// 
+//
 //         if (error || !data.session) {
 //           await markInvalid();
 //           return;
 //         }
-// 
+//
 //         markValid();
 //         return;
 //       }
-// 
+//
 //       if (code) {
 //         const currentSession = await getRecoverySession();
-// 
+//
 //         if (!active) return;
-// 
+//
 //         if (currentSession && hasRecoveryMarker) {
 //           markValid();
 //           return;
 //         }
-// 
+//
 //         const { data, error } =
 //           await supabase.auth.exchangeCodeForSession(code);
-// 
+//
 //         if (!active) return;
-// 
+//
 //         if (error || !data.session) {
 //           const session = await getRecoverySession();
-// 
+//
 //           if (active && session && hasRecoveryMarker) {
 //             markValid();
 //             return;
 //           }
-// 
+//
 //           await markInvalid();
 //           return;
 //         }
-// 
+//
 //         markValid();
 //         return;
 //       }
-// 
+//
 //       const session = await getRecoverySession();
-// 
+//
 //       if (!active || recoveryAccepted) return;
-// 
+//
 //       if (!session || (!hasRecoveryMarker && type !== "recovery")) {
 //         await markInvalid();
 //         return;
 //       }
-// 
+//
 //       markValid();
 //     }
-// 
+//
 //     void validateRecoveryLink();
-// 
+//
 //     return () => {
 //       active = false;
 //       authListener.subscription.unsubscribe();
 //     };
 //   }, []);
-// 
+//
 //   async function onSubmit(data: z.infer<typeof resetPasswordSchema>) {
 //     if (isLoading || status !== "valid") return;
-// 
+//
 //     setIsLoading(true);
-// 
+//
 //     try {
 //       const { error } = await supabase.auth.updateUser({
 //         password: data.password,
 //       });
-// 
+//
 //       if (error) {
 //         const isSamePasswordError = error.message.includes(
 //           "New password should be different from the old password",
 //         );
-// 
+//
 //         toast.error(
 //           isSamePasswordError
 //             ? "A nova senha precisa ser diferente da senha atual"
@@ -205,7 +205,7 @@
 //         );
 //         return;
 //       }
-// 
+//
 //       await supabase.auth.signOut();
 //       sessionStorage.removeItem(PASSWORD_RECOVERY_STORAGE_KEY);
 //       setStatus("success");
@@ -214,7 +214,7 @@
 //       setIsLoading(false);
 //     }
 //   }
-// 
+//
 //   if (status === "loading") {
 //     return (
 //       <main className="w-full min-h-screen bg-zinc-100 dark:bg-transparent flex flex-col items-center justify-center gap-4 px-4">
@@ -224,12 +224,12 @@
 //       </main>
 //     );
 //   }
-// 
+//
 //   if (status === "invalid") {
 //     return (
 //       <main className="w-full min-h-screen bg-zinc-100 dark:bg-transparent flex flex-col items-center justify-center px-4">
 //         <Logo style="w-55 md:w-60 mb-8" />
-// 
+//
 //         <Card className="w-full max-w-md text-center">
 //           <CardHeader className="items-center">
 //             <CircleX className="w-8 h-8 text-red-600 mb-2 mx-auto" />
@@ -259,12 +259,12 @@
 //       </main>
 //     );
 //   }
-// 
+//
 //   if (status === "success") {
 //     return (
 //       <main className="w-full min-h-screen bg-zinc-100 dark:bg-transparent flex flex-col items-center justify-center px-4">
 //         <Logo style="w-55 md:w-60 mb-8" />
-// 
+//
 //         <Card className="w-full max-w-md text-center">
 //           <CardHeader>
 //             <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-4 dark:text-green-400" />
@@ -290,7 +290,7 @@
 //       </main>
 //     );
 //   }
-// 
+//
 //   return (
 //     <main className="w-full min-h-screen bg-zinc-100 dark:bg-transparent flex items-center justify-center px-4 lg:justify-between lg:px-0">
 //       <Logo style="w-55 md:w-80 absolute top-8 lg:left-8" />
@@ -301,7 +301,7 @@
 //           resultados reais
 //         </h3>
 //       </div>
-// 
+//
 //       <div className="w-full max-w-lg lg:max-w-285 lg:flex lg:items-center justify-center lg:h-screen lg:w-[50vw] lg:bg-card text-card-foreground lg:border-l border-zinc-300 dark:border-none">
 //         <Card className="w-full max-w-lg lg:border-none lg:rounded-none lg:shadow-none">
 //           <CardHeader>
@@ -352,7 +352,7 @@
 //                     </Field>
 //                   )}
 //                 />
-// 
+//
 //                 <Controller
 //                   name="confirmPassword"
 //                   control={form.control}

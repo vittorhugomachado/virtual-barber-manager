@@ -21,13 +21,13 @@
 // import { maskPhone } from "@/utils/masked-input-phone";
 // import { Copy } from "lucide-react";
 // import { getOptimizedPublicImageUrl } from "@/lib/supabase/storage/get-optimized-public-image-url";
-// 
+//
 // const ImageCropper = lazy(() =>
 //   import("../ui/image-cropped").then(module => ({
 //     default: module.ImageCropper,
 //   })),
 // );
-// 
+//
 // const formSchema = z.object({
 //   name: z
 //     .string()
@@ -40,9 +40,9 @@
 //   description: z.string().optional(),
 //   ownerName: z.string().min(1, "Nome do proprietário é obrigatório"),
 // });
-// 
+//
 // type FormValues = z.infer<typeof formSchema>;
-// 
+//
 // export function BarbershopSettingsForm() {
 //   const [cropperOpen, setCropperOpen] = useState(false);
 //   const [cropperImageUrl, setCropperImageUrl] = useState("");
@@ -50,17 +50,17 @@
 //   const [uploadingLogo, setUploadingLogo] = useState(false);
 //   const [, setUploadingBanner] = useState(false);
 //   const { barbershop, setBarbershop } = useBarbershopStore();
-// 
+//
 //   const logoInputRef = useRef<HTMLInputElement>(null);
 //   const bannerInputRef = useRef<HTMLInputElement>(null);
-// 
+//
 //   const DOMAIN = import.meta.env.VITE_DOMAIN;
 //   const optimizedLogoUrl = getOptimizedPublicImageUrl(barbershop?.logo_url, {
 //     width: 280,
 //     height: 280,
 //     quality: 75,
 //   });
-// 
+//
 //   const form = useForm<FormValues>({
 //     resolver: zodResolver(formSchema),
 //     defaultValues: {
@@ -71,7 +71,7 @@
 //       ownerName: barbershop?.owner_name ?? "",
 //     },
 //   });
-// 
+//
 //   useEffect(() => {
 //     if (barbershop) {
 //       form.reset({
@@ -83,7 +83,7 @@
 //       });
 //     }
 //   }, [barbershop, form]);
-// 
+//
 //   async function handleImageUpload(file: File, type: "logo" | "banner") {
 //     if (file.size > 5 * 1024 * 1024) {
 //       toast.error("Imagem deve ter no máximo 5MB");
@@ -93,37 +93,37 @@
 //       toast.error("Arquivo deve ser uma imagem");
 //       return;
 //     }
-// 
+//
 //     if (!barbershop?.id || !barbershop?.owner_id) return;
-// 
+//
 //     const setUploading =
 //       type === "logo" ? setUploadingLogo : setUploadingBanner;
 //     setUploading(true);
-// 
+//
 //     try {
 //       const params = {
 //         file,
 //         barbershopId: barbershop.id,
 //         ownerId: barbershop.owner_id,
 //       };
-// 
+//
 //       const { publicUrl, error } =
 //         type === "logo"
 //           ? await handleUploadLogo(params)
 //           : await handleUploadBanner(params);
-// 
+//
 //       if (error || !publicUrl) {
 //         toast.error(`Erro ao atualizar ${type === "logo" ? "foto" : "banner"}`);
 //         return;
 //       }
-// 
+//
 //       setBarbershop({
 //         ...barbershop,
 //         ...(type === "logo"
 //           ? { logo_url: publicUrl }
 //           : { banner_url: publicUrl }),
 //       });
-// 
+//
 //       toast.success(
 //         type === "logo" ? "Foto atualizada!" : "Banner atualizado!",
 //       );
@@ -141,12 +141,12 @@
 //       }
 //     }
 //   }
-// 
+//
 //   async function onSubmit(data: FormValues) {
 //     if (!barbershop?.id) return;
-// 
+//
 //     const rawPhone = data.phone.replace(/\D/g, "");
-// 
+//
 //     const [barbershopResult, profileResult] = await Promise.all([
 //       supabase
 //         .from("barbershops")
@@ -160,7 +160,7 @@
 //         .eq("id", barbershop.id)
 //         .select()
 //         .single(),
-// 
+//
 //       supabase
 //         .from("profiles")
 //         .update({
@@ -169,7 +169,7 @@
 //         })
 //         .eq("id", barbershop.owner_id),
 //     ]);
-// 
+//
 //     if (barbershopResult.error) {
 //       const msg = barbershopResult.error.message;
 //       if (
@@ -191,7 +191,7 @@
 //       }
 //       return;
 //     }
-// 
+//
 //     if (profileResult.error) {
 //       const msg = profileResult.error.message;
 //       if (msg.includes("profiles_phone_key") || msg.includes("phone")) {
@@ -201,7 +201,7 @@
 //       }
 //       return;
 //     }
-// 
+//
 //     setBarbershop({
 //       ...barbershop,
 //       ...barbershopResult.data,
@@ -209,15 +209,15 @@
 //     });
 //     toast.success("Alterações salvas!");
 //   }
-// 
+//
 //   async function handleCopySite() {
 //     const slug = form.getValues("slug")?.trim();
-// 
+//
 //     if (!slug) {
 //       form.setError("slug", { message: "Digite um slug para copiar o site" });
 //       return;
 //     }
-// 
+//
 //     try {
 //       await navigator.clipboard.writeText(`${DOMAIN}${slug}`);
 //       toast.success("Link do site copiado!");
@@ -226,7 +226,7 @@
 //       toast.error("Não foi possível copiar o link");
 //     }
 //   }
-// 
+//
 //   return (
 //     <form
 //       onSubmit={form.handleSubmit(onSubmit)}
@@ -283,7 +283,7 @@
 //               />
 //             </div>
 //           </div>
-// 
+//
 //           <FieldGroup>
 //             <Controller
 //               name="name"
@@ -306,7 +306,7 @@
 //                 </Field>
 //               )}
 //             />
-// 
+//
 //             <Controller
 //               name="phone"
 //               control={form.control}
@@ -327,7 +327,7 @@
 //                 </Field>
 //               )}
 //             />
-// 
+//
 //             <Controller
 //               name="slug"
 //               control={form.control}
@@ -397,7 +397,7 @@
 //           </FieldGroup>
 //         </CardContent>
 //       </Card>
-// 
+//
 //       <Button
 //         type="submit"
 //         disabled={form.formState.isSubmitting || !form.formState.isDirty}

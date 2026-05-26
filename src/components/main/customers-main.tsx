@@ -24,11 +24,11 @@
 // import { UpdateCustomerModal } from "@/components/modals/customers/update-customer-modal";
 // import { Pencil } from "lucide-react";
 // import type { Customer } from "@/types/customer";
-// 
+//
 // function getPhoneDigits(phone: string | null) {
 //   return (phone ?? "").replace(/\D/g, "").slice(0, 11);
 // }
-// 
+//
 // function formatPhone(phone: string | null) {
 //   const digits = getPhoneDigits(phone);
 //   if (!digits) return "Sem telefone";
@@ -37,7 +37,7 @@
 //   }
 //   return digits.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3");
 // }
-// 
+//
 // export function CustomersMain() {
 //   const { customers, setCustomers, loading } = useAllCustomers();
 //   const [search, setSearch] = useState("");
@@ -57,7 +57,7 @@
 //   );
 //   console.log(customers);
 //   if (loading) return <CustomersSkeleton />;
-// 
+//
 //   return (
 //     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
 //       {/* Header */}
@@ -67,7 +67,7 @@
 //           {customers.length} cliente{customers.length !== 1 ? "s" : ""}{" "}
 //           cadastrado{customers.length !== 1 ? "s" : ""}
 //         </p>
-// 
+//
 //         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
 //           <div className="relative w-full md:w-72">
 //             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -87,7 +87,7 @@
 //           </Button>
 //         </div>
 //       </div>
-// 
+//
 //       {/* Tabela */}
 //       {filtered.length === 0 ? (
 //         <div className="flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground">
@@ -117,7 +117,7 @@
 //                 const phoneDigits = getPhoneDigits(customer.phone);
 //                 const hasPhone = phoneDigits.length > 0;
 //                 const isManualCustomer = customer.source !== "customers_auth";
-// 
+//
 //                 return (
 //                   <TableRow key={customer.id}>
 //                     <TableCell className="md:pl-6 max-w-0">
@@ -204,7 +204,7 @@
 //           </Table>
 //         </div>
 //       )}
-// 
+//
 //       <CustomerHistoryModal
 //         open={!!selectedCustomer}
 //         customer={selectedCustomer}

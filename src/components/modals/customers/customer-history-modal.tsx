@@ -10,16 +10,16 @@
 // import { supabase } from "@/lib/supabase/supabase";
 // import type { Customer } from "@/types/customer";
 // import type { AppointmentWithRelations } from "@/types/create-appointment";
-// 
+//
 // interface CustomerHistoryModalProps {
 //   open: boolean;
 //   customer: Customer | null;
 //   onClose: () => void;
 // }
-// 
+//
 // function formatDateTime(isoString: string): string {
 //   const date = new Date(isoString);
-// 
+//
 //   return (
 //     date.toLocaleDateString("pt-BR", {
 //       day: "2-digit",
@@ -33,7 +33,7 @@
 //     })
 //   );
 // }
-// 
+//
 // function getStatusBadge(status: AppointmentWithRelations["status"]) {
 //   switch (status) {
 //     case "scheduled":
@@ -60,7 +60,7 @@
 //       };
 //   }
 // }
-// 
+//
 // export function CustomerHistoryModal({
 //   open,
 //   customer,
@@ -70,21 +70,21 @@
 //     [],
 //   );
 //   const [loading, setLoading] = useState(false);
-// 
+//
 //   useEffect(() => {
 //     if (!open || !customer) return;
-// 
+//
 //     const currentCustomer = customer;
 //     let active = true;
-// 
+//
 //     async function fetchHistory() {
 //       setLoading(true);
-// 
+//
 //       const customerColumn =
 //         currentCustomer.source === "customers_auth"
 //           ? "customer_id"
 //           : "manual_customer_id";
-// 
+//
 //       const { data } = await supabase
 //         .from("appointments")
 //         .select(
@@ -92,24 +92,24 @@
 //         )
 //         .eq(customerColumn, currentCustomer.id)
 //         .order("starts_at", { ascending: false });
-// 
+//
 //       if (!active) return;
-// 
+//
 //       setAppointments((data as AppointmentWithRelations[]) ?? []);
 //       setLoading(false);
 //     }
-// 
+//
 //     void fetchHistory();
-// 
+//
 //     return () => {
 //       active = false;
 //     };
 //   }, [open, customer]);
-// 
+//
 //   if (!customer) return null;
-// 
+//
 //   const lastAppointment = appointments[0];
-// 
+//
 //   return (
 //     <Dialog open={open} onOpenChange={nextOpen => !nextOpen && onClose()}>
 //       <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto">
@@ -124,7 +124,7 @@
 //             <Phone className="h-4 w-4" />
 //             {customer.phone || "Sem telefone"}
 //           </div>
-// 
+//
 //           <div className="flex items-center justify-center gap-6 rounded-lg border py-4">
 //             <div className="flex flex-col items-center gap-1">
 //               <span className="text-2xl font-bold">{appointments.length}</span>
@@ -146,7 +146,7 @@
 //               </span>
 //             </div>
 //           </div>
-// 
+//
 //           {loading ? (
 //             <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
 //               Carregando...
@@ -162,7 +162,7 @@
 //             <div className="flex flex-col gap-2">
 //               {appointments.map(appointment => {
 //                 const statusBadge = getStatusBadge(appointment.status);
-// 
+//
 //                 return (
 //                   <div
 //                     key={appointment.id}
@@ -179,7 +179,7 @@
 //                         {statusBadge.label}
 //                       </span>
 //                     </div>
-// 
+//
 //                     <div className="flex items-center gap-1.5 text-muted-foreground">
 //                       <Scissors className="h-3.5 w-3.5 shrink-0" />
 //                       <span>

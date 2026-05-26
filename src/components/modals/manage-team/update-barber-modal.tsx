@@ -48,14 +48,14 @@
 //   AlertDialogTrigger,
 // } from "@/components/ui/alert-dialog";
 // import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
-// 
+//
 // const formSchema = z.object({
 //   name: z.string().min(1, "Nome é obrigatório"),
 //   serviceIds: z.array(z.string()),
 // });
-// 
+//
 // type FormValues = z.infer<typeof formSchema>;
-// 
+//
 // interface UpdateBarberModalProps {
 //   open: boolean;
 //   barber: Barber | null;
@@ -63,7 +63,7 @@
 //   onUpdated: (barber: Barber) => void;
 //   onDeleted: (id: string) => void;
 // }
-// 
+//
 // export function UpdateBarberModal({
 //   open,
 //   barber,
@@ -84,20 +84,20 @@
 //   >({});
 //   const { count: futureCount, loading: countLoading } =
 //     useFutureAppointmentsCount("barber_id", open ? (barber?.id ?? null) : null);
-// 
+//
 //   const {
 //     availability,
 //     setAvailability,
 //     loading: loadingAvailability,
 //   } = useBarberAvailability(open ? (barber?.id ?? null) : null);
-// 
+//
 //   const form = useForm<FormValues>({
 //     resolver: zodResolver(formSchema),
 //     defaultValues: { name: "", serviceIds: [] },
 //   });
-// 
+//
 //   const watchedName = useWatch({ control: form.control, name: "name" });
-// 
+//
 //   useEffect(() => {
 //     if (!barber) return;
 //     supabase
@@ -114,12 +114,12 @@
 //         setRemoveAvatar(false);
 //       });
 //   }, [barber, form]);
-// 
+//
 //   function handleAvailabilityChange(next: typeof availability) {
 //     setAvailability(next);
 //     setAvailabilityErrors(validateAvailability(next));
 //   }
-// 
+//
 //   function clearError(key: string) {
 //     setAvailabilityErrors(prev => {
 //       const e = { ...prev };
@@ -127,19 +127,19 @@
 //       return e;
 //     });
 //   }
-// 
+//
 //   async function onSubmit(data: FormValues) {
 //     if (!barber || !barbershop?.id) return;
-// 
+//
 //     const errors = validateAvailability(availability);
 //     if (Object.keys(errors).length > 0) {
 //       setAvailabilityErrors(errors);
 //       toast.error("Corrija os horários destacados em vermelho.");
 //       return;
 //     }
-// 
+//
 //     let avatarUrl = barber.avatar_url;
-// 
+//
 //     if (removeAvatar && barber.avatar_url) {
 //       const folder = `${barbershop.owner_id}/barbers/`;
 //       const { data: files } = await supabase.storage
@@ -157,14 +157,14 @@
 //         .update({ avatar_url: null })
 //         .eq("id", barber.id);
 //     }
-// 
+//
 //     if (avatarFile) {
 //       const fileExt = avatarFile.name.split(".").pop();
 //       const filePath = `${barbershop.owner_id}/barbers/${barber.id}.${fileExt}`;
 //       const { data: uploaded } = await supabase.storage
 //         .from("barbershop-assets")
 //         .upload(filePath, avatarFile, { upsert: true });
-// 
+//
 //       if (uploaded) {
 //         const { data: urlData } = await supabase.storage
 //           .from("barbershop-assets")
@@ -178,36 +178,36 @@
 //         }
 //       }
 //     }
-// 
+//
 //     const success = await updateBarber({
 //       id: barber.id,
 //       name: data.name,
 //       serviceIds: data.serviceIds,
 //     });
-// 
+//
 //     if (!success) {
 //       toast.error("Erro ao atualizar barbeiro");
 //       return;
 //     }
-// 
+//
 //     await saveBarberAvailability(barber.id, barbershop.id, availability);
-// 
+//
 //     toast.success("Barbeiro atualizado!");
 //     onUpdated({ ...barber, name: data.name, avatar_url: avatarUrl });
 //     onClose();
 //   }
-// 
+//
 //   async function handleDelete() {
 //     if (!barber) return;
 //     setDeleting(true);
 //     const success = await deleteBarber(barber.id);
-// 
+//
 //     if (!success) {
 //       setDeleting(false);
 //       toast.error("Erro ao excluir barbeiro");
 //       return;
 //     }
-// 
+//
 //     if (barber.avatar_url && barbershop) {
 //       const folder = `${barbershop.owner_id}/barbers/`;
 //       const { data: files } = await supabase.storage
@@ -220,13 +220,13 @@
 //           .remove(matches.map(f => `${folder}${f.name}`));
 //       }
 //     }
-// 
+//
 //     setDeleting(false);
 //     toast.success("Barbeiro excluído!");
 //     onDeleted(barber.id);
 //     onClose();
 //   }
-// 
+//
 //   return (
 //     <>
 //       <Dialog open={open} onOpenChange={o => !o && onClose()}>
@@ -291,7 +291,7 @@
 //                 />
 //               </div>
 //             </div>
-// 
+//
 //             {/* Nome */}
 //             <FieldGroup>
 //               <Controller
@@ -313,7 +313,7 @@
 //                 )}
 //               />
 //             </FieldGroup>
-// 
+//
 //             {/* Serviços */}
 //             {services.length > 0 && (
 //               <div className="flex flex-col gap-2">
@@ -350,7 +350,7 @@
 //                 </div>
 //               </div>
 //             )}
-// 
+//
 //             {/* Disponibilidade */}
 //             {loadingAvailability ? (
 //               <span className="text-xs text-muted-foreground">
@@ -365,7 +365,7 @@
 //               />
 //             )}
 //           </form>
-// 
+//
 //           <DialogFooter
 //             style={{ justifyContent: "space-between" }}
 //             className="flex-row flex-wrap items-center justify-between gap-2"
@@ -443,7 +443,7 @@
 //           </DialogFooter>
 //         </DialogContent>
 //       </Dialog>
-// 
+//
 //       <ImageCropper
 //         open={cropperOpen}
 //         imageUrl={cropperImageUrl}

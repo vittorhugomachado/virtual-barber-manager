@@ -1,6 +1,6 @@
 ﻿// import { Logo } from "@/components/common/logo";
 // import { LoginForm } from "@/components/forms/login-form";
-// 
+//
 // export function LoginPage() {
 //   return (
 //     <main className="w-full min-h-screen bg-zinc-100 dark:bg-transparent flex items-center justify-center px-4 lg:justify-between lg:px-0">

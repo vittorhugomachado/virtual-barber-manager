@@ -11,14 +11,14 @@
 //   AlertDialogHeader,
 //   AlertDialogTitle,
 // } from "@/components/ui/alert-dialog";
-// 
+//
 // interface CancelAppointmentModalProps {
 //   open: boolean;
 //   appointment: AppointmentWithRelations | null;
 //   onClose: () => void;
 //   onSuccess?: () => void;
 // }
-// 
+//
 // function formatDateTime(isoString: string): string {
 //   const d = new Date(isoString);
 //   return (
@@ -32,7 +32,7 @@
 //     d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
 //   );
 // }
-// 
+//
 // export function DeleteAppointmentModal({
 //   open,
 //   appointment,
@@ -41,19 +41,19 @@
 // }: CancelAppointmentModalProps) {
 //   const [submitting, setSubmitting] = useState(false);
 //   const [error, setError] = useState<string | null>(null);
-// 
+//
 //   async function handleConfirm() {
 //     setSubmitting(true);
 //     setError(null);
-// 
+//
 //     try {
 //       const { error: err } = await supabase
 //         .from("appointments")
 //         .update({ status: "cancelled_by_barbershop" })
 //         .eq("id", appointment!.id);
-// 
+//
 //       if (err) throw err;
-// 
+//
 //       onSuccess?.();
 //       onClose();
 //     } catch {
@@ -62,7 +62,7 @@
 //       setSubmitting(false);
 //     }
 //   }
-// 
+//
 //   return (
 //     <AlertDialog open={open} onOpenChange={o => !o && onClose()}>
 //       <AlertDialogContent>
@@ -71,7 +71,7 @@
 //           <AlertDialogDescription asChild>
 //             <div className="w-full flex flex-col gap-3">
 //               <span>Tem certeza que deseja cancelar o agendamento abaixo?</span>
-// 
+//
 //               {appointment && (
 //                 <div className="w-full rounded-lg border bg-muted/30 px-4 py-3 flex flex-col gap-1.5 text-sm">
 //                   <div className="font-medium text-foreground">
@@ -85,9 +85,9 @@
 //                   </div>
 //                 </div>
 //               )}
-// 
+//
 //               <span className="text-xs">Esta ação não pode ser desfeita.</span>
-// 
+//
 //               {error && (
 //                 <p className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
 //                   {error}
@@ -96,7 +96,7 @@
 //             </div>
 //           </AlertDialogDescription>
 //         </AlertDialogHeader>
-// 
+//
 //         <AlertDialogFooter>
 //           <AlertDialogCancel disabled={submitting} onClick={onClose}>
 //             Voltar

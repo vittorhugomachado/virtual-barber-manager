@@ -20,11 +20,11 @@
 //   Ticket,
 // } from "lucide-react";
 // import { ReportsSkeleton } from "../skeleton/reports-skeleton";
-// 
+//
 // // ─── Tipos de período ─────────────────────────────────────────────────────────
-// 
+//
 // type Period = "today" | "week" | "month" | "year" | "custom";
-// 
+//
 // const PERIOD_LABELS: Record<Period, string> = {
 //   today: "Hoje",
 //   week: "Esta semana",
@@ -32,18 +32,18 @@
 //   year: "Este ano",
 //   custom: "Personalizado",
 // };
-// 
+//
 // function getRange(
 //   period: Period,
 //   custom: { from: string; to: string },
 // ): { from: string; to: string; label: string } {
 //   const today = new Date();
-// 
+//
 //   if (period === "today") {
 //     const from = today.toLocaleDateString("en-CA");
 //     return { from, to: from, label: fmtBR(from) };
 //   }
-// 
+//
 //   if (period === "week") {
 //     const dow = today.getDay();
 //     const mon = new Date(today);
@@ -54,7 +54,7 @@
 //     const to = sun.toLocaleDateString("en-CA");
 //     return { from, to, label: `${fmtBR(from)} – ${fmtBR(to)}` };
 //   }
-// 
+//
 //   if (period === "month") {
 //     const from = new Date(
 //       today.getFullYear(),
@@ -68,13 +68,13 @@
 //     ).toLocaleDateString("en-CA");
 //     return { from, to, label: `${fmtBR(from)} – ${fmtBR(to)}` };
 //   }
-// 
+//
 //   if (period === "year") {
 //     const from = `${today.getFullYear()}-01-01`;
 //     const to = `${today.getFullYear()}-12-31`;
 //     return { from, to, label: String(today.getFullYear()) };
 //   }
-// 
+//
 //   // custom
 //   if (custom.from && custom.to) {
 //     return {
@@ -85,25 +85,25 @@
 //   }
 //   return { from: "", to: "", label: "—" };
 // }
-// 
+//
 // function fmtBR(iso: string): string {
 //   if (!iso) return "";
 //   const [y, m, d] = iso.split("-");
 //   return `${d}/${m}/${y}`;
 // }
-// 
+//
 // function formatCurrency(v: number) {
 //   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 // }
-// 
+//
 // function formatMinutes(totalMinutes: number) {
 //   const h = Math.floor(totalMinutes / 60);
 //   const m = totalMinutes % 60;
 //   return `${h}h ${String(m).padStart(2, "0")}min`;
 // }
-// 
+//
 // // ─── KpiCard ──────────────────────────────────────────────────────────────────
-// 
+//
 // function KpiCard({
 //   label,
 //   value,
@@ -123,7 +123,7 @@
 //     blue: "text-blue-500",
 //     orange: "text-orange-500",
 //   };
-// 
+//
 //   return (
 //     <div className="bg-card border rounded-xl p-4 flex flex-col gap-2">
 //       <div className="flex items-center justify-between">
@@ -139,16 +139,16 @@
 //     </div>
 //   );
 // }
-// 
+//
 // // ─── StatusOverview (cards + pie chart) ───────────────────────────────────────
-// 
+//
 // const PIE_COLORS = {
 //   completed: "#22c55e",
 //   cancelled: "#ef4444",
 //   noShow: "#f97316",
 //   scheduled: "#3b82f6",
 // };
-// 
+//
 // function StatusOverview({
 //   total,
 //   completed,
@@ -163,23 +163,23 @@
 //   completionRate: number;
 // }) {
 //   const scheduled = Math.max(0, total - completed - cancelled - noShow);
-// 
+//
 //   const pieData = [
 //     { name: "Concluídos", value: completed, color: PIE_COLORS.completed },
 //     { name: "Cancelados", value: cancelled, color: PIE_COLORS.cancelled },
 //     { name: "Não compareceu", value: noShow, color: PIE_COLORS.noShow },
 //     { name: "Agendados", value: scheduled, color: PIE_COLORS.scheduled },
 //   ].filter(d => d.value > 0);
-// 
+//
 //   const isEmpty = total === 0;
-// 
+//
 //   return (
 //     <div className="bg-card border rounded-xl overflow-hidden">
 //       <div className="flex items-center gap-2 px-4 py-3 border-b">
 //         <CalendarDays className="h-4 w-4 text-muted-foreground" />
 //         <h2 className="font-semibold text-sm">Visão geral dos agendamentos</h2>
 //       </div>
-// 
+//
 //       <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
 //         {/* KPI cards lado esquerdo */}
 //         <div className="grid grid-cols-2 gap-px border-r bg-border">
@@ -251,7 +251,7 @@
 //             </div>
 //           ))}
 //         </div>
-// 
+//
 //         {/* Pie chart lado direito */}
 //         <div className="flex flex-col items-center justify-center p-4 gap-4">
 //           {isEmpty ? (
@@ -275,7 +275,7 @@
 //                   ))}
 //                 </Pie>
 //               </PieChart>
-// 
+//
 //               <div className="flex flex-col gap-1.5 w-full max-w-45">
 //                 {pieData.map(entry => (
 //                   <div
@@ -302,27 +302,27 @@
 //     </div>
 //   );
 // }
-// 
+//
 // // ─── ReportsMain ──────────────────────────────────────────────────────────────
-// 
+//
 // export function ReportsMain() {
 //   const [period, setPeriod] = useState<Period>("month");
 //   const [custom, setCustom] = useState({ from: "", to: "" });
 //   const [selectedBarberId, setSelectedBarberId] = useState<string | null>(null);
-// 
+//
 //   const { from, to, label } = useMemo(
 //     () => getRange(period, custom),
 //     [period, custom],
 //   );
-// 
+//
 //   const { barbers } = useBarbers();
-// 
+//
 //   const { kpis, hourlyData, barbersData, servicesData, weekdayData, loading } =
 //     useReports(from, to, selectedBarberId);
 //   const canFetch = !!from && !!to;
-// 
+//
 //   const { customers: allCustomers } = useAllCustomers();
-// 
+//
 //   const newCustomersInPeriod = useMemo(() => {
 //     if (!from || !to) return 0;
 //     const fromMs = new Date(`${from}T00:00:00`).getTime();
@@ -334,7 +334,7 @@
 //       return createdMs >= fromMs && createdMs <= toMs;
 //     }).length;
 //   }, [allCustomers, from, to]);
-// 
+//
 //   return (
 //     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
 //       {/* Header + seletor de período */}
@@ -354,7 +354,7 @@
 //             </button>
 //           ))}
 //         </div>
-// 
+//
 //         {period === "custom" && (
 //           <div className="flex flex-wrap items-center gap-3">
 //             <div className="flex items-center gap-2">
@@ -392,11 +392,11 @@
 //             </div>
 //           </div>
 //         )}
-// 
+//
 //         {label && label !== "—" && (
 //           <p className="text-sm text-muted-foreground">{label}</p>
 //         )}
-// 
+//
 //         {barbers.length > 1 && (
 //           <div className="flex flex-wrap items-center gap-2">
 //             <button
@@ -425,7 +425,7 @@
 //           </div>
 //         )}
 //       </div>
-// 
+//
 //       {/* Bloco principal */}
 //       {!canFetch ? (
 //         <p className="text-sm text-muted-foreground text-center py-10">
@@ -467,7 +467,7 @@
 //             noShow={kpis.noShow}
 //             completionRate={kpis.completionRate}
 //           />
-// 
+//
 //           {/* Gráficos */}
 //           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 //             <AppointmentsHourChart

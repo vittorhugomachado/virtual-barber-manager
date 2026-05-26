@@ -1,6 +1,6 @@
 ﻿// import { supabase } from "../supabase";
 // import { toast } from "sonner";
-// 
+//
 // export async function toggleActiveBarber(
 //   id: string,
 //   isActive: boolean,
@@ -9,7 +9,7 @@
 //     .from("barbers")
 //     .update({ is_active: isActive })
 //     .eq("id", id);
-// 
+//
 //   if (error) {
 //     if (error.message.includes("plan_limit_exceeded")) {
 //       toast.error(
@@ -20,6 +20,6 @@
 //     }
 //     return false;
 //   }
-// 
+//
 //   return true;
 // }

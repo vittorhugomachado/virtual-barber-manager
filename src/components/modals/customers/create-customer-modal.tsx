@@ -25,14 +25,14 @@
 // import { useState } from "react";
 // import { CustomerConflictModal } from "./customer-conflict-modal";
 // import { deleteCustomer } from "@/lib/supabase/customers/delete-customer";
-// 
+//
 // const formSchema = z.object({
 //   name: z.string().min(1, "Nome é obrigatório"),
 //   phone: z.string().min(10, "Telefone inválido"),
 // });
-// 
+//
 // type FormValues = z.infer<typeof formSchema>;
-// 
+//
 // interface CreateCustomerModalProps {
 //   open: boolean;
 //   onClose: () => void;
@@ -40,7 +40,7 @@
 //   onEditExisting?: (customer: Customer) => void;
 //   onDeleted?: (id: string) => void;
 // }
-// 
+//
 // export function CreateCustomerModal({
 //   open,
 //   onClose,
@@ -49,7 +49,7 @@
 //   onDeleted,
 // }: CreateCustomerModalProps) {
 //   const { barbershop } = useBarbershopStore();
-// 
+//
 //   const form = useForm<FormValues>({
 //     resolver: zodResolver(formSchema) as Resolver<FormValues>,
 //     defaultValues: { name: "", phone: "" },
@@ -58,33 +58,33 @@
 //     null,
 //   );
 //   const [conflictOpen, setConflictOpen] = useState(false);
-// 
+//
 //   async function onSubmit(data: FormValues) {
 //     if (!barbershop?.id) return;
-// 
+//
 //     const result = await createCustomer({
 //       barbershopId: barbershop.id,
 //       name: data.name,
 //       phone: data.phone,
 //     });
-// 
+//
 //     if (result.status === "conflict") {
 //       setConflictCustomer(result.existing);
 //       setConflictOpen(true);
 //       return;
 //     }
-// 
+//
 //     if (result.status === "error") {
 //       toast.error("Erro ao criar cliente.");
 //       return;
 //     }
-// 
+//
 //     toast.success("Cliente criado!");
 //     onCreated(result.customer);
 //     form.reset();
 //     onClose();
 //   }
-// 
+//
 //   return (
 //     <>
 //       <Dialog open={open} onOpenChange={o => !o && onClose()}>
@@ -119,7 +119,7 @@
 //                   </Field>
 //                 )}
 //               />
-// 
+//
 //               <Controller
 //                 name="phone"
 //                 control={form.control}
@@ -143,7 +143,7 @@
 //               />
 //             </FieldGroup>
 //           </form>
-// 
+//
 //           <DialogFooter>
 //             <Button
 //               type="button"

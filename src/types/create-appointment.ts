@@ -1,5 +1,5 @@
 ﻿// // ─── Appointment ─────────────────────────────────────────────────────────────
-// 
+//
 // export type AppointmentStatus =
 //   | "scheduled"
 //   | "confirmed"
@@ -8,7 +8,7 @@
 //   | "cancelled_by_customer"
 //   | "cancelled_by_barbershop"
 //   | "no_show";
-// 
+//
 // export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
 //   scheduled: "Agendado",
 //   confirmed: "Confirmado",
@@ -18,7 +18,7 @@
 //   cancelled_by_barbershop: "Cancelado",
 //   no_show: "Não compareceu",
 // };
-// 
+//
 // export const APPOINTMENT_STATUS_COLORS: Record<AppointmentStatus, string> = {
 //   scheduled: "bg-blue-700 text-blue-100",
 //   confirmed: "bg-emerald-700 text-emerald-100",
@@ -28,7 +28,7 @@
 //   cancelled_by_barbershop: "bg-red-700 text-red-100",
 //   no_show: "bg-zinc-800 text-zinc-100",
 // };
-// 
+//
 // export interface AppointmentWithRelations {
 //   id: string;
 //   service_name: string | null;
@@ -63,18 +63,18 @@
 //     price: number | null;
 //   } | null;
 // }
-// 
+//
 // // ─── Modal steps ─────────────────────────────────────────────────────────────
-// 
+//
 // export type Step = 1 | 2 | 3;
 // export type CustomerMode = "existing" | "new" | null;
-// 
+//
 // export interface ServiceSelection {
 //   serviceId: string;
 //   barberId: string;
 //   time: string;
 // }
-// 
+//
 // export interface SelectedCustomer {
 //   id: string;
 //   name: string;
@@ -82,12 +82,12 @@
 //   isNew?: boolean;
 //   source?: "customers" | "customers_auth";
 // }
-// 
+//
 // export interface TimeSlot {
 //   time: string; // "HH:MM"
 //   available: boolean;
 // }
-// 
+//
 // export interface OpeningHourRow {
 //   day_of_week: number;
 //   opens_at: string;
@@ -95,7 +95,7 @@
 //   is_open: boolean;
 //   period_order: number;
 // }
-// 
+//
 // export interface BarberAvailabilityRow {
 //   day_of_week: number;
 //   is_day_off: boolean;

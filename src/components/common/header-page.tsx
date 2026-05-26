@@ -11,15 +11,15 @@
 //   DropdownMenuTrigger,
 // } from "@/components/ui/dropdown-menu";
 // import { getOptimizedPublicImageUrl } from "@/lib/supabase/storage/get-optimized-public-image-url";
-// 
+//
 // interface HeaderPageProps {
 //   page: string;
 // }
-// 
+//
 // export function HeaderPage({ page }: HeaderPageProps) {
 //   const { barbershop, memberRole, memberUsername } = useBarbershopStore();
 //   const { logout, isLoading } = useLogout();
-// 
+//
 //   const isMember = memberRole === "admin" || memberRole === "reader";
 //   const displayName = isMember
 //     ? `@${memberUsername}`
@@ -34,7 +34,7 @@
 //     height: 96,
 //     quality: 70,
 //   });
-// 
+//
 //   return (
 //     <header className="w-full relative flex items-center justify-center md:justify-start gap-2 min-w-0 md:pl-12 mb-4 mt-3 md:mb-3.5">
 //       <div className="flex items-baseline gap-2 min-w-0">

@@ -22,7 +22,7 @@
 //   FieldGroup,
 //   FieldLabel,
 // } from "@/components/ui/field";
-// 
+//
 // const BRAZIL_STATES = [
 //   "AC",
 //   "AL",
@@ -52,13 +52,13 @@
 //   "SE",
 //   "TO",
 // ];
-// 
+//
 // function maskCep(value: string) {
 //   const digits = value.replace(/\D/g, "").slice(0, 8);
 //   if (digits.length > 5) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 //   return digits;
 // }
-// 
+//
 // const formSchema = z.object({
 //   zip_code: z
 //     .string()
@@ -71,16 +71,16 @@
 //   state: z.string().min(1, "Estado é obrigatório"),
 //   country: z.string().min(1, "País é obrigatório"),
 // });
-// 
+//
 // type FormValues = z.infer<typeof formSchema>;
-// 
+//
 // export function AddressForm({ onSaved }: { onSaved?: () => void }) {
 //   const { barbershop } = useBarbershopStore();
 //   const [loading, setLoading] = useState(true);
 //   const [addressId, setAddressId] = useState<string | null>(null);
 //   const [fetchingCep, setFetchingCep] = useState(false);
 //   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
-// 
+//
 //   const form = useForm<FormValues>({
 //     resolver: zodResolver(formSchema),
 //     defaultValues: {
@@ -94,10 +94,10 @@
 //       country: "Brasil",
 //     },
 //   });
-// 
+//
 //   // Watch fields to build live map preview
 //   const watched = useWatch({ control: form.control });
-// 
+//
 //   useEffect(() => {
 //     const { street, number, neighborhood, city, state } = watched;
 //     if (!street || !number) {
@@ -107,20 +107,20 @@
 //       neighborhood && city && state
 //         ? `${street}, ${number}, ${neighborhood}, ${city}, ${state}`
 //         : `${street}, ${number}`;
-// 
+//
 //     const timer = setTimeout(() => {
 //       setMapEmbedUrl(
 //         `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=16&output=embed`,
 //       );
 //     }, 1000);
-// 
+//
 //     return () => clearTimeout(timer);
 //   }, [watched]);
-// 
+//
 //   useEffect(() => {
 //     if (!barbershop?.id) return;
 //     let mounted = true;
-// 
+//
 //     supabase
 //       .from("addresses")
 //       .select("*")
@@ -141,7 +141,7 @@
 //             country: data.country ?? "Brasil",
 //           };
 //           form.reset(values);
-// 
+//
 //           // Build initial map URL from saved address
 //           const query = data.neighborhood
 //             ? `${data.street}, ${data.number}, ${data.neighborhood}, ${data.city}, ${data.state}`
@@ -154,33 +154,33 @@
 //         }
 //         setLoading(false);
 //       });
-// 
+//
 //     return () => {
 //       mounted = false;
 //     };
 //   }, [barbershop?.id, form]);
-// 
+//
 //   async function handleCepBlur(cep: string) {
 //     const digits = cep.replace(/\D/g, "");
 //     if (digits.length !== 8) return;
-// 
+//
 //     setFetchingCep(true);
 //     try {
 //       const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
 //       const data = await res.json();
-// 
+//
 //       if (data.erro) {
 //         toast.error("CEP não encontrado");
 //         return;
 //       }
-// 
+//
 //       form.setValue("street", data.logradouro ?? "", { shouldDirty: true });
 //       form.setValue("neighborhood", data.bairro ?? "", { shouldDirty: true });
 //       form.setValue("city", data.localidade ?? "", { shouldDirty: true });
 //       form.setValue("state", data.uf ?? "", { shouldDirty: true });
 //       form.setValue("country", "Brasil", { shouldDirty: true });
 //       form.clearErrors(["street", "neighborhood", "city", "state"]);
-// 
+//
 //       toast.success("Endereço preenchido automaticamente");
 //     } catch {
 //       toast.error("Erro ao buscar CEP");
@@ -188,10 +188,10 @@
 //       setFetchingCep(false);
 //     }
 //   }
-// 
+//
 //   async function onSubmit(data: FormValues) {
 //     if (!barbershop?.id) return;
-// 
+//
 //     const payload = {
 //       barbershop_id: barbershop.id,
 //       zip_code: data.zip_code.replace(/\D/g, ""),
@@ -204,9 +204,9 @@
 //       country: data.country,
 //       updated_at: new Date().toISOString(),
 //     };
-// 
+//
 //     let error;
-// 
+//
 //     if (addressId) {
 //       ({ error } = await supabase
 //         .from("addresses")
@@ -221,17 +221,17 @@
 //       error = insertError;
 //       if (inserted) setAddressId(inserted.id);
 //     }
-// 
+//
 //     if (error) {
 //       toast.error("Erro ao salvar endereço");
 //       return;
 //     }
-// 
+//
 //     toast.success("Endereço salvo!");
 //     form.reset(data);
 //     onSaved?.();
 //   }
-// 
+//
 //   return (
 //     <form
 //       onSubmit={form.handleSubmit(onSubmit)}
@@ -244,7 +244,7 @@
 //             <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
 //           </div>
 //         </CardHeader>
-// 
+//
 //         {loading ? (
 //           <CardContent className="flex items-center gap-2 text-muted-foreground text-sm">
 //             <Loader2 className="h-4 w-4 animate-spin" />
@@ -292,7 +292,7 @@
 //                     </Field>
 //                   )}
 //                 />
-// 
+//
 //                 <Controller
 //                   name="state"
 //                   control={form.control}
@@ -324,7 +324,7 @@
 //                   )}
 //                 />
 //               </div>
-// 
+//
 //               {/* Rua */}
 //               <Controller
 //                 name="street"
@@ -344,7 +344,7 @@
 //                   </Field>
 //                 )}
 //               />
-// 
+//
 //               {/* Número + Complemento */}
 //               <div className="flex gap-3">
 //                 <Controller
@@ -365,7 +365,7 @@
 //                     </Field>
 //                   )}
 //                 />
-// 
+//
 //                 <Controller
 //                   name="complement"
 //                   control={form.control}
@@ -386,7 +386,7 @@
 //                   )}
 //                 />
 //               </div>
-// 
+//
 //               {/* Bairro + Cidade */}
 //               <div className="flex gap-3">
 //                 <Controller
@@ -409,7 +409,7 @@
 //                     </Field>
 //                   )}
 //                 />
-// 
+//
 //                 <Controller
 //                   name="city"
 //                   control={form.control}
@@ -429,7 +429,7 @@
 //                   )}
 //                 />
 //               </div>
-// 
+//
 //               {/* País */}
 //               <Controller
 //                 name="country"
@@ -450,7 +450,7 @@
 //                 )}
 //               />
 //             </FieldGroup>
-// 
+//
 //             {/* Preview do mapa */}
 //             {mapEmbedUrl ? (
 //               <div className="flex flex-col gap-2">
@@ -476,7 +476,7 @@
 //           </CardContent>
 //         )}
 //       </Card>
-// 
+//
 //       <Button
 //         type="submit"
 //         disabled={

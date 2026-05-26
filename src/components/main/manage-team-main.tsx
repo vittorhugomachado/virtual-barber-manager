@@ -13,51 +13,51 @@
 // import { UpdateBarberModal } from "../modals/manage-team/update-barber-modal";
 // import { PlansModal } from "../modals/plans/plans-modal";
 // import type { Barber } from "@/types/barber";
-// 
+//
 // const planLimits: Record<string, number> = {
 //   iniciante: 1,
 //   profissional: 5,
 //   master: Infinity,
 // };
-// 
+//
 // const planLabels: Record<string, string> = {
 //   iniciante: "Iniciante",
 //   profissional: "Profissional",
 //   master: "Master",
 // };
-// 
+//
 // export function ManageTeamMain() {
 //   const { barbershop } = useBarbershopStore();
 //   const { barbers, setBarbers, loading } = useBarbers();
 //   const [plansOpen, setPlansOpen] = useState(false);
 //   const [createOpen, setCreateOpen] = useState(false);
 //   const [editBarber, setEditBarber] = useState<Barber | null>(null);
-// 
+//
 //   const plan = barbershop?.plan ?? "iniciante";
 //   const limit = planLimits[plan];
 //   const activeCount = barbers.filter(b => b.is_active).length;
 //   const canAddMore = activeCount < limit;
-// 
+//
 //   function notifyDashboardRefresh() {
 //     window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT));
 //   }
-// 
+//
 //   async function toggleActive(id: string) {
 //     const target = barbers.find(b => b.id === id);
 //     if (!target) return;
-// 
+//
 //     const newStatus = !target.is_active;
-// 
+//
 //     if (newStatus && activeCount >= limit && limit !== Infinity) {
 //       const firstActive = barbers.find(b => b.is_active);
-// 
+//
 //       if (firstActive) {
 //         const deactivated = await toggleActiveBarber(firstActive.id, false);
 //         if (!deactivated) return;
-// 
+//
 //         const activated = await toggleActiveBarber(id, true);
 //         if (!activated) return;
-// 
+//
 //         setBarbers(prev =>
 //           prev.map(b => {
 //             if (b.id === id) return { ...b, is_active: true };
@@ -69,7 +69,7 @@
 //       }
 //       return;
 //     }
-// 
+//
 //     const success = await toggleActiveBarber(id, newStatus);
 //     if (success) {
 //       setBarbers(prev =>
@@ -78,9 +78,9 @@
 //       notifyDashboardRefresh();
 //     }
 //   }
-// 
+//
 //   if (loading) return <ManageTeamSkeleton />;
-// 
+//
 //   return (
 //     <main className="w-full max-w-325 flex flex-col gap-6 px-6 md:px-12 pb-12 mx-auto mt-8">
 //       <div className="flex flex-col md:flex-row items-center justify-center md:justify-between">
@@ -129,7 +129,7 @@
 //           </Button>
 //         )}
 //       </div>
-// 
+//
 //       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 //         {barbers.map(barber => (
 //           <Card
@@ -145,7 +145,7 @@
 //               >
 //                 {barber.is_active ? "Ativo" : "Inativo"}
 //               </Badge>
-// 
+//
 //               {/* Resto com opacidade quando inativo */}
 //               <div className="flex flex-col items-center gap-4 w-full">
 //                 <div
@@ -157,7 +157,7 @@
 //                       {barber.name.slice(0, 2).toUpperCase()}
 //                     </AvatarFallback>
 //                   </Avatar>
-// 
+//
 //                   <div className="flex flex-col items-center gap-1 text-center">
 //                     <span className="font-semibold">{barber.name}</span>
 //                     <span className="text-sm text-muted-foreground line-clamp-2">
@@ -178,7 +178,7 @@
 //             </CardContent>
 //           </Card>
 //         ))}
-// 
+//
 //         {canAddMore ? (
 //           <Card
 //             onClick={() => setCreateOpen(true)}

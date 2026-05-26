@@ -21,19 +21,19 @@
 // import { supabase } from "@/lib/supabase/supabase";
 // import { CreateAppointmentModal } from "../modals/appointments/create-appointmend-modal/create-appointment-modal";
 // import { DeleteAppointmentModal } from "../modals/appointments/delete-appointment-appointment";
-// 
+//
 // type FilterType = "today" | "week" | "month" | "year" | "custom";
-// 
+//
 // // ─── StatusPicker ─────────────────────────────────────────────────────────────
 // type AppointmentStatus = AppointmentWithRelations["status"];
-// 
+//
 // const STATUS_OPTIONS: { value: AppointmentStatus; label: string }[] = [
 //   { value: "scheduled", label: "Agendado" },
 //   { value: "completed", label: "Concluído" },
 //   { value: "no_show", label: "Não compareceu" },
 //   { value: "cancelled_by_barbershop", label: "Cancelado" },
 // ];
-// 
+//
 // function StatusPicker({
 //   apt,
 //   onStatusChange,
@@ -44,7 +44,7 @@
 //   const [open, setOpen] = useState(false);
 //   const [updating, setUpdating] = useState(false);
 //   const ref = useRef<HTMLDivElement>(null);
-// 
+//
 //   useEffect(() => {
 //     if (!open) return;
 //     function handleClick(e: MouseEvent) {
@@ -55,7 +55,7 @@
 //     document.addEventListener("mousedown", handleClick);
 //     return () => document.removeEventListener("mousedown", handleClick);
 //   }, [open]);
-// 
+//
 //   const nowBRT = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
 //   const startsAt = new Date(apt.starts_at);
 //   const isPast = nowBRT.getTime() - startsAt.getTime() > 40 * 60 * 1000;
@@ -67,7 +67,7 @@
 //           if (isPast && o.value === "scheduled") return false;
 //           return true;
 //         });
-// 
+//
 //   async function changeStatus(newStatus: AppointmentStatus) {
 //     setUpdating(true);
 //     setOpen(false);
@@ -78,7 +78,7 @@
 //     if (!error) onStatusChange(apt.id, newStatus);
 //     setUpdating(false);
 //   }
-// 
+//
 //   return (
 //     <div ref={ref} className="relative">
 //       <button
@@ -93,7 +93,7 @@
 //         {updating ? "..." : APPOINTMENT_STATUS_LABELS[apt.status]}
 //         {options.length > 0 && <ChevronDown className="h-3 w-3 shrink-0" />}
 //       </button>
-// 
+//
 //       {open && (
 //         <div className="absolute right-0 top-full mt-1 z-20 bg-popover border rounded-lg shadow-lg py-1 min-w-36 overflow-hidden">
 //           {options.map(opt => (
@@ -110,18 +110,18 @@
 //     </div>
 //   );
 // }
-// 
+//
 // function getDaysForFilter(
 //   filter: FilterType,
 //   customRange?: { from?: Date; to?: Date },
 // ): Date[] {
 //   const today = new Date();
 //   today.setHours(0, 0, 0, 0);
-// 
+//
 //   if (filter === "today") {
 //     return [new Date(today)];
 //   }
-// 
+//
 //   if (filter === "week") {
 //     return Array.from({ length: 7 }, (_, i) => {
 //       const d = new Date(today);
@@ -129,7 +129,7 @@
 //       return d;
 //     });
 //   }
-// 
+//
 //   if (filter === "month") {
 //     const year = today.getFullYear();
 //     const month = today.getMonth();
@@ -139,7 +139,7 @@
 //       return d;
 //     });
 //   }
-// 
+//
 //   if (filter === "year") {
 //     const year = today.getFullYear();
 //     const days: Date[] = [];
@@ -151,7 +151,7 @@
 //     }
 //     return days;
 //   }
-// 
+//
 //   if (filter === "custom" && customRange?.from) {
 //     const days: Date[] = [];
 //     const start = new Date(customRange.from);
@@ -165,10 +165,10 @@
 //     }
 //     return days;
 //   }
-// 
+//
 //   return [];
 // }
-// 
+//
 // const FILTER_LABELS: Record<FilterType, string> = {
 //   today: "Hoje",
 //   week: "Esta semana",
@@ -176,41 +176,41 @@
 //   year: "Este ano",
 //   custom: "Data específica",
 // };
-// 
+//
 // function getRangeForFilter(
 //   filter: FilterType,
 //   customRange?: { from?: Date; to?: Date },
 // ): { start: Date; end: Date } {
 //   const today = new Date();
 //   today.setHours(0, 0, 0, 0);
-// 
+//
 //   if (filter === "today") {
 //     const end = new Date(today);
 //     end.setHours(23, 59, 59);
 //     return { start: today, end };
 //   }
-// 
+//
 //   if (filter === "week") {
 //     const end = new Date(today);
 //     end.setDate(end.getDate() + 7);
 //     end.setHours(23, 59, 59);
 //     return { start: today, end };
 //   }
-// 
+//
 //   if (filter === "month") {
 //     const start = new Date(today.getFullYear(), today.getMonth(), 1);
 //     const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 //     end.setHours(23, 59, 59);
 //     return { start, end };
 //   }
-// 
+//
 //   if (filter === "year") {
 //     const start = new Date(today.getFullYear(), 0, 1);
 //     const end = new Date(today.getFullYear(), 11, 31);
 //     end.setHours(23, 59, 59);
 //     return { start, end };
 //   }
-// 
+//
 //   if (filter === "custom" && customRange?.from) {
 //     const start = new Date(customRange.from);
 //     start.setHours(0, 0, 0, 0);
@@ -218,21 +218,21 @@
 //     end.setHours(23, 59, 59);
 //     return { start, end };
 //   }
-// 
+//
 //   const end = new Date(today);
 //   end.setDate(end.getDate() + 7);
 //   return { start: today, end };
 // }
-// 
+//
 // function formatDayLabel(date: Date): string {
 //   const today = new Date();
 //   today.setHours(0, 0, 0, 0);
 //   const tomorrow = new Date(today);
 //   tomorrow.setDate(tomorrow.getDate() + 1);
-// 
+//
 //   if (date.getTime() === today.getTime()) return "Hoje";
 //   if (date.getTime() === tomorrow.getTime()) return "Amanhã";
-// 
+//
 //   return date.toLocaleDateString("pt-BR", {
 //     weekday: "long",
 //     day: "2-digit",
@@ -240,7 +240,7 @@
 //     year: "numeric",
 //   });
 // }
-// 
+//
 // function formatTime(isoString: string): string {
 //   return new Date(isoString).toLocaleTimeString("pt-BR", {
 //     hour: "2-digit",
@@ -248,11 +248,11 @@
 //     timeZone: "UTC",
 //   });
 // }
-// 
+//
 // function getPhoneDigits(phone?: string | null) {
 //   return (phone ?? "").replace(/\D/g, "").slice(0, 11);
 // }
-// 
+//
 // function WhatsappIcon(props: React.SVGProps<SVGSVGElement>) {
 //   return (
 //     <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
@@ -260,7 +260,7 @@
 //     </svg>
 //   );
 // }
-// 
+//
 // function isSameDay(date: Date, isoString: string): boolean {
 //   const d = new Date(isoString);
 //   return (
@@ -269,7 +269,7 @@
 //     d.getUTCDate() === date.getDate()
 //   );
 // }
-// 
+//
 // // ─── DaySection ───────────────────────────────────────────────────────────────
 // const DaySection = memo(function DaySection({
 //   date,
@@ -284,7 +284,7 @@
 //   const [open, setOpen] = useState(false);
 //   const label = formatDayLabel(date);
 //   const isToday = label === "Hoje";
-// 
+//
 //   return (
 //     <div className="rounded-lg border">
 //       <button
@@ -303,7 +303,7 @@
 //             {label}
 //           </span>
 //         </div>
-// 
+//
 //         <div className="flex items-center gap-2">
 //           {appointments.length > 0 && (
 //             <Badge variant="secondary" className="text-xs">
@@ -316,7 +316,7 @@
 //           )}
 //         </div>
 //       </button>
-// 
+//
 //       {open && (
 //         <div className="border-t">
 //           {appointments.length === 0 ? (
@@ -413,14 +413,14 @@
 //     </div>
 //   );
 // });
-// 
+//
 // // ─── AppointmentsMain ─────────────────────────────────────────────────────────
 // export function AppointmentsMain() {
 //   const [filter, setFilter] = useState<FilterType>("month");
 //   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>(
 //     {},
 //   );
-// 
+//
 //   const { start, end } = useMemo(
 //     () => getRangeForFilter(filter, customRange),
 //     [filter, customRange],
@@ -429,7 +429,7 @@
 //     start,
 //     end,
 //   );
-// 
+//
 //   const handleStatusChange = useCallback(
 //     (id: string, status: AppointmentStatus) => {
 //       setAppointments(prev =>
@@ -438,7 +438,7 @@
 //     },
 //     [setAppointments],
 //   );
-// 
+//
 //   const days = useMemo(
 //     () =>
 //       getDaysForFilter(filter, customRange).filter(day =>
@@ -446,7 +446,7 @@
 //       ),
 //     [filter, customRange, appointments],
 //   );
-// 
+//
 //   const appointmentsByDay = useMemo(() => {
 //     const map = new Map<string, AppointmentWithRelations[]>();
 //     for (const day of days) {
@@ -457,15 +457,15 @@
 //     }
 //     return map;
 //   }, [days, appointments]);
-// 
+//
 //   const [newModalOpen, setNewModalOpen] = useState(false);
 //   const [cancelAppointment, setCancelAppointment] =
 //     useState<AppointmentWithRelations | null>(null);
-// 
+//
 //   const handleCancel = useCallback((apt: AppointmentWithRelations) => {
 //     setCancelAppointment(apt);
 //   }, []);
-// 
+//
 //   return (
 //     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
 //       <div className="lg:flex lg:flex-row-reverse">
@@ -479,7 +479,7 @@
 //             <span>Novo agendamento</span>
 //           </Button>
 //         </div>
-// 
+//
 //         {/* Filtros */}
 //         <div>
 //           <div className="w-fit mx-auto lg:ml-0 flex flex-col items-center lg:items-start gap-3">
@@ -497,7 +497,7 @@
 //                   {FILTER_LABELS[f]}
 //                 </button>
 //               ))}
-// 
+//
 //               <button
 //                 onClick={() => setFilter("custom")}
 //                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors cursor-pointer border inline-flex items-center gap-1.5 ${
@@ -537,7 +537,7 @@
 //                   <CalendarDays className="absolute right-2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
 //                 </div>
 //               </div>
-// 
+//
 //               <div className="flex items-center gap-2">
 //                 <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">
 //                   Até
@@ -571,7 +571,7 @@
 //           )}
 //         </div>
 //       </div>
-// 
+//
 //       {/* Dias */}
 //       {loading ? (
 //         <div className="flex flex-col gap-3">
@@ -599,13 +599,13 @@
 //           ))}
 //         </div>
 //       )}
-// 
+//
 //       <CreateAppointmentModal
 //         open={newModalOpen}
 //         onClose={() => setNewModalOpen(false)}
 //         onSuccess={refetch}
 //       />
-// 
+//
 //       <DeleteAppointmentModal
 //         open={!!cancelAppointment}
 //         appointment={cancelAppointment}

@@ -2,7 +2,7 @@
 // import { Check, ChevronLeft, Clock, Scissors } from "lucide-react";
 // import { Button } from "@/components/ui/button";
 // import { useState } from "react";
-// 
+//
 // export function Step2Service({
 //   onBack,
 //   onSelect,
@@ -12,31 +12,31 @@
 // }) {
 //   const { services, loading } = useServices();
 //   const [selected, setSelected] = useState<string[]>([]);
-// 
+//
 //   const activeServices = services.filter(s => s.is_active);
-// 
+//
 //   function toggle(id: string) {
 //     setSelected(prev =>
 //       prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id],
 //     );
 //   }
-// 
+//
 //   const totalDuration = selected.reduce((acc, id) => {
 //     const s = services.find(sv => sv.id === id);
 //     return acc + (s?.duration_min ?? 0);
 //   }, 0);
-// 
+//
 //   const totalPrice = selected.reduce((acc, id) => {
 //     const s = services.find(sv => sv.id === id);
 //     return acc + Number(s?.price ?? 0);
 //   }, 0);
-// 
+//
 //   //CONSOLE PARA DEBUG
 //   // console.log("compoenente step 2 ", {
 //   //   selected,
 //   //   activeServices,
 //   // });
-// 
+//
 //   return (
 //     <div className="flex flex-col gap-5 px-4 py-5">
 //       <button
@@ -46,7 +46,7 @@
 //         <ChevronLeft className="h-3.5 w-3.5" />
 //         Voltar
 //       </button>
-// 
+//
 //       <div className="flex flex-col gap-2">
 //         <div className="flex items-center justify-between ml-2">
 //           <label className="text-md font-medium text-muted-foreground">
@@ -61,7 +61,7 @@
 //             </span>
 //           )}
 //         </div>
-// 
+//
 //         {loading ? (
 //           <p className="text-sm text-muted-foreground">Carregando…</p>
 //         ) : activeServices.length === 0 ? (
@@ -127,7 +127,7 @@
 //           </div>
 //         )}
 //       </div>
-// 
+//
 //       <Button
 //         onClick={() => selected.length > 0 && onSelect(selected)}
 //         disabled={selected.length === 0}

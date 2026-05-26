@@ -42,7 +42,7 @@
 // } from "@/components/ui/alert-dialog";
 // import { Trash2 } from "lucide-react";
 // import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
-// 
+//
 // function formatPriceInput(value?: number) {
 //   if (value == null || Number.isNaN(value)) return "";
 //   return value.toLocaleString("pt-BR", {
@@ -50,13 +50,13 @@
 //     maximumFractionDigits: 2,
 //   });
 // }
-// 
+//
 // function parsePriceInput(value: string) {
 //   const digits = value.replace(/\D/g, "");
 //   if (!digits) return undefined;
 //   return Number(digits) / 100;
 // }
-// 
+//
 // const formSchema = z.object({
 //   name: z.string().min(1, "Nome e obrigatorio"),
 //   description: z
@@ -69,9 +69,9 @@
 //     .min(1, "Duracao invalida"),
 //   barberIds: z.array(z.string()),
 // });
-// 
+//
 // type FormValues = z.infer<typeof formSchema>;
-// 
+//
 // interface UpdateServiceModalProps {
 //   open: boolean;
 //   service: Service | null;
@@ -79,7 +79,7 @@
 //   onUpdated: (service: Service) => void;
 //   onDeleted: (id: string) => void;
 // }
-// 
+//
 // export function UpdateServiceModal({
 //   open,
 //   service,
@@ -100,7 +100,7 @@
 //       "service_id",
 //       open ? (service?.id ?? null) : null,
 //     );
-// 
+//
 //   const form = useForm<FormValues>({
 //     resolver: zodResolver(formSchema) as Resolver<FormValues>,
 //     defaultValues: {
@@ -111,10 +111,10 @@
 //       barberIds: [],
 //     },
 //   });
-// 
+//
 //   useEffect(() => {
 //     if (!service) return;
-// 
+//
 //     supabase
 //       .from("barber_services")
 //       .select("barber_id")
@@ -132,7 +132,7 @@
 //         setRemoveImage(false);
 //       });
 //   }, [service, form]);
-// 
+//
 //   async function deleteStorageImage(serviceId: string) {
 //     const folder = `${barbershop!.owner_id}/services/`;
 //     const { data: files } = await supabase.storage
@@ -146,12 +146,12 @@
 //         .remove(matches.map(file => `${folder}${file.name}`));
 //     }
 //   }
-// 
+//
 //   async function onSubmit(data: FormValues) {
 //     if (!service || !barbershop?.id) return;
-// 
+//
 //     let imageUrl = service.image_url;
-// 
+//
 //     if (removeImage && service.image_url) {
 //       await deleteStorageImage(service.id);
 //       imageUrl = null;
@@ -160,14 +160,14 @@
 //         .update({ image_url: null })
 //         .eq("id", service.id);
 //     }
-// 
+//
 //     if (imageFile) {
 //       const fileExt = imageFile.name.split(".").pop();
 //       const filePath = `${barbershop.owner_id}/services/${service.id}.${fileExt}`;
 //       const { data: uploaded } = await supabase.storage
 //         .from("barbershop-assets")
 //         .upload(filePath, imageFile, { upsert: true });
-// 
+//
 //       if (uploaded) {
 //         const { data: urlData } = await supabase.storage
 //           .from("barbershop-assets")
@@ -181,7 +181,7 @@
 //         }
 //       }
 //     }
-// 
+//
 //     const success = await updateService({
 //       id: service.id,
 //       name: data.name,
@@ -189,17 +189,17 @@
 //       price: data.price,
 //       duration_min: data.duration_min,
 //     });
-// 
+//
 //     if (!success) {
 //       toast.error("Erro ao atualizar servico");
 //       return;
 //     }
-// 
+//
 //     await supabase
 //       .from("barber_services")
 //       .delete()
 //       .eq("service_id", service.id);
-// 
+//
 //     if (data.barberIds.length > 0) {
 //       await supabase.from("barber_services").insert(
 //         data.barberIds.map(barberId => ({
@@ -208,7 +208,7 @@
 //         })),
 //       );
 //     }
-// 
+//
 //     toast.success("Servico atualizado!");
 //     onUpdated({
 //       ...service,
@@ -220,28 +220,28 @@
 //     });
 //     onClose();
 //   }
-// 
+//
 //   async function handleDelete() {
 //     if (!service) return;
 //     setDeleting(true);
 //     const success = await deleteService(service.id);
-// 
+//
 //     if (!success) {
 //       setDeleting(false);
 //       toast.error("Erro ao excluir servico");
 //       return;
 //     }
-// 
+//
 //     if (service.image_url && barbershop) {
 //       await deleteStorageImage(service.id);
 //     }
-// 
+//
 //     setDeleting(false);
 //     toast.success("Servico excluido!");
 //     onDeleted(service.id);
 //     onClose();
 //   }
-// 
+//
 //   return (
 //     <>
 //       <Dialog open={open} onOpenChange={nextOpen => !nextOpen && onClose()}>
@@ -315,7 +315,7 @@
 //                 />
 //               </div>
 //             </div>
-// 
+//
 //             <FieldGroup>
 //               <Controller
 //                 name="name"
@@ -335,7 +335,7 @@
 //                   </Field>
 //                 )}
 //               />
-// 
+//
 //               <Controller
 //                 name="description"
 //                 control={form.control}
@@ -364,7 +364,7 @@
 //                   </Field>
 //                 )}
 //               />
-// 
+//
 //               <div className="grid grid-cols-2 gap-3">
 //                 <Controller
 //                   name="price"
@@ -400,7 +400,7 @@
 //                     </Field>
 //                   )}
 //                 />
-// 
+//
 //                 <Controller
 //                   name="duration_min"
 //                   control={form.control}
@@ -439,7 +439,7 @@
 //                 />
 //               </div>
 //             </FieldGroup>
-// 
+//
 //             {barbers.length > 0 && (
 //               <div className="flex flex-col gap-2">
 //                 <Label>Barbeiros</Label>
@@ -481,7 +481,7 @@
 //               </div>
 //             )}
 //           </form>
-// 
+//
 //           <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
 //             <AlertDialog>
 //               <AlertDialogTrigger asChild>
@@ -535,7 +535,7 @@
 //                 </AlertDialogFooter>
 //               </AlertDialogContent>
 //             </AlertDialog>
-// 
+//
 //             <div className="flex justify-center gap-2">
 //               <Button
 //                 type="button"
@@ -557,7 +557,7 @@
 //           </DialogFooter>
 //         </DialogContent>
 //       </Dialog>
-// 
+//
 //       <ImageCropper
 //         open={cropperOpen}
 //         imageUrl={cropperImageUrl}

@@ -1,13 +1,13 @@
 ﻿// import { Calendar } from "@/components/ui/calendar";
 // import { ptBR } from "date-fns/locale";
 // import type { OpeningHours } from "@/types/opening-hours";
-// 
+//
 // interface BarbershopCalendarProps {
 //   selected: Date | undefined;
 //   onSelect: (date: Date | undefined) => void;
 //   openingHours: OpeningHours[];
 // }
-// 
+//
 // export function BarbershopCalendar({
 //   selected,
 //   onSelect,

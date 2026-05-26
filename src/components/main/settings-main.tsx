@@ -5,7 +5,7 @@
 // import { AlertTriangle } from "lucide-react";
 // import { useSettingsAlerts } from "@/hooks/use-settings-alerts";
 // import { useLocation } from "react-router";
-// 
+//
 // const SECTIONS = [
 //   { id: "dados-barbearia", label: "Barbearia" },
 //   { id: "seguranca", label: "Segurança" },
@@ -14,7 +14,7 @@
 //   { id: "galeria", label: "Galeria" },
 //   { id: "usuarios", label: "Usuários" },
 // ] as const;
-// 
+//
 // function SettingsNav({
 //   missingAddress,
 //   missingHours,
@@ -23,10 +23,10 @@
 //   missingHours: boolean;
 // }) {
 //   const [active, setActive] = useState<string>("barbershop");
-// 
+//
 //   useEffect(() => {
 //     const observers: IntersectionObserver[] = [];
-// 
+//
 //     SECTIONS.forEach(({ id }) => {
 //       const el = document.getElementById(`${id}`);
 //       if (!el) return;
@@ -39,16 +39,16 @@
 //       obs.observe(el);
 //       observers.push(obs);
 //     });
-// 
+//
 //     return () => observers.forEach(o => o.disconnect());
 //   }, []);
-// 
+//
 //   function scrollTo(id: string) {
 //     document
 //       .getElementById(`${id}`)
 //       ?.scrollIntoView({ behavior: "smooth", block: "start" });
 //   }
-// 
+//
 //   return (
 //     <div className="sticky top-2 z-10 bg-background/90 backdrop-blur border-b px-4 md:px-12 py-2.5 flex flex-wrap gap-2">
 //       {SECTIONS.map(({ id, label }) => {
@@ -75,7 +75,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 // const AddressForm = lazy(() =>
 //   import("../forms/address-form").then(module => ({
 //     default: module.AddressForm,
@@ -101,11 +101,11 @@
 //     default: module.SecuritySettingsForm,
 //   })),
 // );
-// 
+//
 // export function SettingsMain() {
 //   const { missingAddress, missingHours, refetch } = useSettingsAlerts();
 //   const location = useLocation();
-// 
+//
 //   useEffect(() => {
 //     const hash = location.hash.replace("#", "");
 //     if (hash) {
@@ -114,7 +114,7 @@
 //         ?.scrollIntoView({ behavior: "smooth", block: "start" });
 //     }
 //   }, [location.hash]);
-// 
+//
 //   return (
 //     <div className="w-full flex flex-col items-center overflow-x-hidden">
 //       <SettingsNav
@@ -159,7 +159,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 // function DeferredSection({
 //   children,
 //   fallback,
@@ -169,10 +169,10 @@
 // }) {
 //   const ref = useRef<HTMLDivElement | null>(null);
 //   const [shouldRender, setShouldRender] = useState(false);
-// 
+//
 //   useEffect(() => {
 //     if (shouldRender) return;
-// 
+//
 //     const observer = new IntersectionObserver(
 //       entries => {
 //         if (entries.some(entry => entry.isIntersecting)) {
@@ -182,14 +182,14 @@
 //       },
 //       { rootMargin: "300px 0px" },
 //     );
-// 
+//
 //     if (ref.current) {
 //       observer.observe(ref.current);
 //     }
-// 
+//
 //     return () => observer.disconnect();
 //   }, [shouldRender]);
-// 
+//
 //   return (
 //     <div ref={ref} className="w-full">
 //       {shouldRender ? (
@@ -200,7 +200,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 // function FormSectionSkeleton() {
 //   return (
 //     <div className="w-full max-w-180 sm:mx-auto md:px-16 flex flex-col gap-6 mb-6">
@@ -225,7 +225,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 // function HoursSectionSkeleton() {
 //   return (
 //     <div className="w-full max-w-180 px-3 md:px-16 mx-auto flex flex-col gap-6 mb-18">
@@ -248,7 +248,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 // function GallerySectionSkeleton() {
 //   return (
 //     <div className="w-full max-w-180 sm:mx-auto md:px-16 flex flex-col gap-6 mb-6">
@@ -265,7 +265,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 // function UsersSectionSkeleton() {
 //   return (
 //     <div className="w-full max-w-180 sm:mx-auto mt-2 mb-8 px-3 flex flex-col gap-4">
@@ -291,7 +291,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 // function SecuritySectionSkeleton() {
 //   return (
 //     <div className="w-full max-w-180 sm:mx-auto md:px-16 flex flex-col gap-6 mb-18">

@@ -1,5 +1,5 @@
 ﻿// import { Skeleton } from "@/components/ui/skeleton";
-// 
+//
 // export function DashboardSkeleton() {
 //   return (
 //     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
@@ -8,7 +8,7 @@
 //         <Skeleton className="h-8 w-56" />
 //         <Skeleton className="h-4 w-40" />
 //       </div>
-// 
+//
 //       {/* KPI Cards */}
 //       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
 //         {Array.from({ length: 4 }).map((_, i) => (
@@ -21,7 +21,7 @@
 //           </div>
 //         ))}
 //       </div>
-// 
+//
 //       {/* Main content */}
 //       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 //         {/* Today's schedule */}
@@ -42,7 +42,7 @@
 //             ))}
 //           </div>
 //         </div>
-// 
+//
 //         {/* Right column */}
 //         <div className="flex flex-col gap-4">
 //           {/* Top services */}
@@ -63,7 +63,7 @@
 //               ))}
 //             </div>
 //           </div>
-// 
+//
 //           {/* New customers card */}
 //           <div className="bg-card border rounded-xl p-4 flex items-center gap-4">
 //             <Skeleton className="h-10 w-10 rounded-full shrink-0" />

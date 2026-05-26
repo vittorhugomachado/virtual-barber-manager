@@ -34,20 +34,20 @@
 // import { AvailabilitySection } from "@/components/modals/manage-team/availability-section";
 // import { validateAvailability } from "@/utils/validate-availability.constants";
 // import type { Barber } from "@/types/barber";
-// 
+//
 // const formSchema = z.object({
 //   name: z.string().min(1, "Nome é obrigatório"),
 //   serviceIds: z.array(z.string()),
 // });
-// 
+//
 // type FormValues = z.infer<typeof formSchema>;
-// 
+//
 // interface CreateBarberModalProps {
 //   open: boolean;
 //   onClose: () => void;
 //   onCreated: (barber: Barber) => void;
 // }
-// 
+//
 // export function CreateBarberModal({
 //   open,
 //   onClose,
@@ -64,19 +64,19 @@
 //   const [availabilityErrors, setAvailabilityErrors] = useState<
 //     Record<string, string>
 //   >({});
-// 
+//
 //   const form = useForm<FormValues>({
 //     resolver: zodResolver(formSchema),
 //     defaultValues: { name: "", serviceIds: [] },
 //   });
-// 
+//
 //   const { setValue } = form;
-// 
+//
 //   function handleAvailabilityChange(next: DayAvailability[]) {
 //     setAvailability(next);
 //     setAvailabilityErrors(validateAvailability(next));
 //   }
-// 
+//
 //   function clearError(key: string) {
 //     setAvailabilityErrors(prev => {
 //       const e = { ...prev };
@@ -84,28 +84,28 @@
 //       return e;
 //     });
 //   }
-// 
+//
 //   async function onSubmit(data: FormValues) {
 //     if (!barbershop?.id) return;
-// 
+//
 //     const errors = validateAvailability(availability);
 //     if (Object.keys(errors).length > 0) {
 //       setAvailabilityErrors(errors);
 //       toast.error("Corrija os horários destacados em vermelho.");
 //       return;
 //     }
-// 
+//
 //     const result = await createBarber({
 //       barbershopId: barbershop.id,
 //       name: data.name,
 //       serviceIds: data.serviceIds,
 //     });
-// 
+//
 //     if (!result) {
 //       toast.error("Erro ao criar barbeiro");
 //       return;
 //     }
-// 
+//
 //     if (avatarFile) {
 //       const { supabase } = await import("@/lib/supabase/supabase");
 //       const fileExt = avatarFile.name.split(".").pop();
@@ -113,7 +113,7 @@
 //       const { data: uploaded } = await supabase.storage
 //         .from("barbershop-assets")
 //         .upload(filePath, avatarFile, { upsert: true });
-// 
+//
 //       if (uploaded) {
 //         const { data: urlData } = await supabase.storage
 //           .from("barbershop-assets")
@@ -126,9 +126,9 @@
 //         }
 //       }
 //     }
-// 
+//
 //     await saveBarberAvailability(result.id, barbershop.id, availability);
-// 
+//
 //     toast.success("Barbeiro criado!");
 //     onCreated({
 //       id: result.id,
@@ -145,7 +145,7 @@
 //     setAvailabilityErrors({});
 //     onClose();
 //   }
-// 
+//
 //   useEffect(() => {
 //     if (open && services.length > 0) {
 //       setValue(
@@ -154,7 +154,7 @@
 //       );
 //     }
 //   }, [open, services, setValue]);
-// 
+//
 //   return (
 //     <>
 //       <Dialog open={open} onOpenChange={o => !o && onClose()}>
@@ -204,7 +204,7 @@
 //                 />
 //               </div>
 //             </div>
-// 
+//
 //             {/* Nome */}
 //             <FieldGroup>
 //               <Controller
@@ -226,7 +226,7 @@
 //                 )}
 //               />
 //             </FieldGroup>
-// 
+//
 //             {/* Serviços */}
 //             {services.length > 0 && (
 //               <div className="flex flex-col gap-2">
@@ -263,7 +263,7 @@
 //                 </div>
 //               </div>
 //             )}
-// 
+//
 //             {/* Disponibilidade */}
 //             <AvailabilitySection
 //               availability={availability}
@@ -272,7 +272,7 @@
 //               onClearError={clearError}
 //             />
 //           </form>
-// 
+//
 //           <DialogFooter>
 //             <Button
 //               type="button"
@@ -293,7 +293,7 @@
 //           </DialogFooter>
 //         </DialogContent>
 //       </Dialog>
-// 
+//
 //       <ImageCropper
 //         open={cropperOpen}
 //         imageUrl={cropperImageUrl}

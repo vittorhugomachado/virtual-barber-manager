@@ -1,5 +1,5 @@
 ﻿// import { Check } from "lucide-react";
-// 
+//
 // export function StepIndicator({ current }: { current: 1 | 2 | 3 | 4 }) {
 //   const steps = [
 //     { n: 1, label: "Cliente" },
@@ -7,7 +7,7 @@
 //     { n: 3, label: "Data" },
 //     { n: 4, label: "Profissional" },
 //   ] as const;
-// 
+//
 //   return (
 //     <div className="flex items-center justify-center px-4 py-4 gap-8 md:gap-12 bg-muted/20 shrink-0">
 //       {steps.map(s => (

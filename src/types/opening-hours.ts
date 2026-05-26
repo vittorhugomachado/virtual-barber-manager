@@ -7,7 +7,7 @@
 //   is_open: boolean;
 //   period_order: number;
 // };
-// 
+//
 // export const DAY_LABELS: Record<number, string> = {
 //   0: "Domingo",
 //   1: "Segunda-feira",

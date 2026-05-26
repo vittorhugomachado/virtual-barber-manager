@@ -4,7 +4,7 @@
 // import { Badge } from "@/components/ui/badge";
 // import { Separator } from "@/components/ui/separator";
 // import { useBarbershopStore } from "@/store/barbershop.store";
-// 
+//
 // // DADOS MOCADOS - SUBSTITUIR PELO BACKEND
 // type Plan = {
 //   id: string;
@@ -15,7 +15,7 @@
 //   buttonLabel: string;
 //   highlighted?: boolean;
 // };
-// 
+//
 // const plans: Plan[] = [
 //   {
 //     id: "gratuito",
@@ -65,11 +65,11 @@
 //     ],
 //   },
 // ];
-// 
+//
 // export function PlansSection() {
 //   const { barbershop } = useBarbershopStore();
 //   const currentPlan = barbershop?.plan ?? "gratuito";
-// 
+//
 //   return (
 //     <div className="w-full max-w-180 mx-16 mt-2 mb-18 flex flex-col gap-6">
 //       <div>
@@ -79,11 +79,11 @@
 //           Escolha o plano ideal para a sua barbearia.
 //         </p>
 //       </div>
-// 
+//
 //       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
 //         {plans.map(plan => {
 //           const isCurrentPlan = currentPlan === plan.id;
-// 
+//
 //           return (
 //             <Card
 //               key={plan.id}
@@ -97,7 +97,7 @@
 //                   </Badge>
 //                 </div>
 //               )}
-// 
+//
 //               <CardHeader className="pb-2">
 //                 <div className="flex items-center justify-between">
 //                   <CardTitle className="text-base">{plan.name}</CardTitle>
@@ -116,9 +116,9 @@
 //                   )}
 //                 </div>
 //               </CardHeader>
-// 
+//
 //               <Separator />
-// 
+//
 //               <CardContent className="flex flex-col gap-4 pt-4 flex-1">
 //                 <ul className="flex flex-col gap-2 flex-1">
 //                   {plan.benefits.map((benefit, i) => (
@@ -128,7 +128,7 @@
 //                     </li>
 //                   ))}
 //                 </ul>
-// 
+//
 //                 <Button
 //                   className="w-full cursor-pointer mt-auto"
 //                   variant={

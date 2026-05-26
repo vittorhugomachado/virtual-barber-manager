@@ -12,9 +12,9 @@
 // import { verifyPassword } from "@/utils/verify-password";
 // import { toast } from "sonner";
 // import { Eye, EyeOff } from "lucide-react";
-// 
+//
 // type PendingSecurityAction = "email" | "password" | null;
-// 
+//
 // export function SecuritySettingsForm() {
 //   const { barbershop } = useBarbershopStore();
 //   const [currentEmail, setCurrentEmail] = useState("");
@@ -30,11 +30,11 @@
 //   const [passwordError, setPasswordError] = useState<string | null>(null);
 //   const [pendingAction, setPendingAction] =
 //     useState<PendingSecurityAction>(null);
-// 
+//
 //   const handleClearPasswordError = () => {
 //     setPasswordError(null);
 //   };
-// 
+//
 //   useEffect(() => {
 //     const fetchCurrentEmail = async () => {
 //       const {
@@ -46,9 +46,9 @@
 //         setCurrentEmail(barbershop.email);
 //       }
 //     };
-// 
+//
 //     fetchCurrentEmail();
-// 
+//
 //     const {
 //       data: { subscription },
 //     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -56,36 +56,36 @@
 //         setCurrentEmail(session.user.email);
 //       }
 //     });
-// 
+//
 //     return () => subscription.unsubscribe();
 //   }, [barbershop?.email]);
-// 
+//
 //   const handleEmailChange = async (event: React.FormEvent<HTMLFormElement>) => {
 //     event.preventDefault();
-// 
+//
 //     const nextEmail = newEmail.trim();
-// 
+//
 //     if (!nextEmail || nextEmail === currentEmail) {
 //       toast.error("Por favor, insira um email diferente do atual");
 //       return;
 //     }
-// 
+//
 //     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 //     if (!emailRegex.test(nextEmail)) {
 //       toast.error("Por favor, insira um email válido");
 //       return;
 //     }
-// 
+//
 //     setIsCheckingEmail(true);
-// 
+//
 //     try {
 //       const emailExists = await checkEmailExists(nextEmail);
-// 
+//
 //       if (emailExists) {
 //         toast.error("Este email já está em uso. Por favor, use outro email.");
 //         return;
 //       }
-// 
+//
 //       setNewEmail(nextEmail);
 //       setPasswordError(null);
 //       setPendingAction("email");
@@ -99,42 +99,42 @@
 //       setIsCheckingEmail(false);
 //     }
 //   };
-// 
+//
 //   const handlePasswordChange = (event: React.FormEvent<HTMLFormElement>) => {
 //     event.preventDefault();
-// 
+//
 //     if (newPassword.length < 6) {
 //       toast.error("A nova senha deve ter pelo menos 6 caracteres");
 //       return;
 //     }
-// 
+//
 //     if (newPassword !== confirmNewPassword) {
 //       toast.error("As senhas não coincidem");
 //       return;
 //     }
-// 
+//
 //     setPasswordError(null);
 //     setPendingAction("password");
 //     setShowPasswordModal(true);
 //   };
-// 
+//
 //   const handlePasswordConfirm = async (password: string) => {
 //     setIsVerifyingPassword(true);
 //     setPasswordError(null);
-// 
+//
 //     try {
 //       const isPasswordValid = await verifyPassword(password);
-// 
+//
 //       if (!isPasswordValid) {
 //         setPasswordError("Senha incorreta. Tente novamente.");
 //         throw new Error("Senha incorreta");
 //       }
-// 
+//
 //       if (pendingAction === "password") {
 //         await updatePassword();
 //         return;
 //       }
-// 
+//
 //       if (pendingAction === "email") {
 //         await updateEmail();
 //       }
@@ -142,7 +142,7 @@
 //       if (error instanceof Error && error.message === "Senha incorreta") {
 //         throw error;
 //       }
-// 
+//
 //       if (!(error instanceof Error) || error.message !== "Senha incorreta") {
 //         console.error("Erro inesperado:", error);
 //         toast.error("Ocorreu um erro inesperado. Tente novamente.");
@@ -151,7 +151,7 @@
 //       setIsVerifyingPassword(false);
 //     }
 //   };
-// 
+//
 //   const updateEmail = async () => {
 //     const { error } = await supabase.auth.updateUser(
 //       { email: newEmail },
@@ -159,21 +159,21 @@
 //         emailRedirectTo: `${window.location.origin}/auth/email-change-confirmed`,
 //       },
 //     );
-// 
+//
 //     if (error) {
 //       console.error("Erro ao solicitar alteração de email:", error.message);
-// 
+//
 //       if (error.message.includes("already been registered")) {
 //         toast.error("Este email já está registrado em outra conta.");
 //       } else {
 //         toast.error(`Erro: ${error.message}`);
 //       }
-// 
+//
 //       setShowPasswordModal(false);
 //       setPendingAction(null);
 //       return;
 //     }
-// 
+//
 //     setEmailToConfirm(newEmail);
 //     setShowConfirmationModal(true);
 //     setShowPasswordModal(false);
@@ -181,12 +181,12 @@
 //     setNewEmail("");
 //     toast.success("Link de confirmação enviado! Verifique seu novo email.");
 //   };
-// 
+//
 //   const updatePassword = async () => {
 //     const { error } = await supabase.auth.updateUser({
 //       password: newPassword,
 //     });
-// 
+//
 //     if (error) {
 //       console.error("Erro ao alterar senha:", error.message);
 //       if (
@@ -202,24 +202,24 @@
 //       setPendingAction(null);
 //       return;
 //     }
-// 
+//
 //     setShowPasswordModal(false);
 //     setPendingAction(null);
 //     setNewPassword("");
 //     setConfirmNewPassword("");
 //     toast.success("Senha alterada com sucesso!");
 //   };
-// 
+//
 //   const handleClosePasswordModal = () => {
 //     setShowPasswordModal(false);
 //     setPasswordError(null);
 //     setPendingAction(null);
 //   };
-// 
+//
 //   const handleCloseConfirmationModal = () => {
 //     setShowConfirmationModal(false);
 //     setEmailToConfirm("");
-// 
+//
 //     const refreshCurrentEmail = async () => {
 //       const {
 //         data: { user },
@@ -230,12 +230,12 @@
 //     };
 //     refreshCurrentEmail();
 //   };
-// 
+//
 //   const passwordModalDescription =
 //     pendingAction === "password"
 //       ? "Digite sua senha atual para confirmar a alteração da senha"
 //       : `Digite sua senha para confirmar a alteração do email de ${currentEmail} para ${newEmail}`;
-// 
+//
 //   return (
 //     <>
 //       <div className="w-full max-w-180 mx-auto md:px-16 mt-2 mb-18 flex flex-col gap-8">
@@ -248,7 +248,7 @@
 //               <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
 //             </div>
 //           </CardHeader>
-// 
+//
 //           <CardContent>
 //             <form onSubmit={handleEmailChange} className="flex flex-col gap-6">
 //               <FieldGroup className="gap-3">
@@ -267,7 +267,7 @@
 //                     Seu email atual cadastrado
 //                   </p>
 //                 </Field>
-// 
+//
 //                 <Field>
 //                   <FieldLabel htmlFor="settings-security-new-email">
 //                     Novo email
@@ -285,7 +285,7 @@
 //                   </p>
 //                 </Field>
 //               </FieldGroup>
-// 
+//
 //               <Button
 //                 type="submit"
 //                 disabled={isCheckingEmail || isVerifyingPassword || !newEmail}
@@ -296,7 +296,7 @@
 //             </form>
 //           </CardContent>
 //         </Card>
-// 
+//
 //         <Card className="bg-transparent border-none">
 //           <CardContent>
 //             <form
@@ -335,7 +335,7 @@
 //                     Use pelo menos 6 caracteres
 //                   </p>
 //                 </Field>
-// 
+//
 //                 <Field>
 //                   <FieldLabel htmlFor="settings-security-confirm-new-password">
 //                     Confirmar nova senha
@@ -367,7 +367,7 @@
 //                   </div>
 //                 </Field>
 //               </FieldGroup>
-// 
+//
 //               <Button
 //                 type="submit"
 //                 disabled={
@@ -381,7 +381,7 @@
 //           </CardContent>
 //         </Card>
 //       </div>
-// 
+//
 //       <PasswordConfirmModal
 //         key={pendingAction ?? "security-action"}
 //         open={showPasswordModal}
@@ -397,7 +397,7 @@
 //         isLoading={isVerifyingPassword}
 //         errorMessage={passwordError}
 //       />
-// 
+//
 //       <EmailChangeConfirmationModal
 //         open={showConfirmationModal}
 //         newEmail={emailToConfirm}

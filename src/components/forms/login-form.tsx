@@ -6,7 +6,7 @@
 // import { useNavigate } from "react-router";
 // import * as z from "zod";
 // import { Eye, EyeOff } from "lucide-react";
-// 
+//
 // import { Button } from "@/components/ui/button";
 // import {
 //   Card,
@@ -22,43 +22,43 @@
 //   FieldLabel,
 // } from "@/components/ui/field";
 // import { Input } from "@/components/ui/input";
-// 
+//
 // const ownerSchema = z.object({
 //   email: z.email("Email inválido"),
 //   password: z.string().min(1, "Digite sua senha"),
 // });
-// 
+//
 // const memberSchema = z.object({
 //   slug: z.string().min(1, "Digite o site da barbearia"),
 //   username: z.string().min(1, "Digite seu nome de usuário"),
 //   password: z.string().min(1, "Digite sua senha"),
 // });
-// 
+//
 // const errorMessages: Record<string, string> = {
 //   "Invalid login credentials": "Usuário ou senha incorretos",
 //   "Email not confirmed": "Email não confirmado",
 //   "Too many requests": "Muitas tentativas, aguarde um momento",
 // };
-// 
+//
 // export function LoginForm() {
 //   const navigate = useNavigate();
 //   const [isLoading, setIsLoading] = useState(false);
 //   const [mode, setMode] = useState<"owner" | "member">("owner");
 //   const [showOwnerPassword, setShowOwnerPassword] = useState(false);
 //   const [showMemberPassword, setShowMemberPassword] = useState(false);
-// 
+//
 //   const DOMAIN = import.meta.env.VITE_DOMAIN;
-// 
+//
 //   const ownerForm = useForm<z.infer<typeof ownerSchema>>({
 //     resolver: zodResolver(ownerSchema),
 //     defaultValues: { email: "", password: "" },
 //   });
-// 
+//
 //   const memberForm = useForm<z.infer<typeof memberSchema>>({
 //     resolver: zodResolver(memberSchema),
 //     defaultValues: { slug: "", username: "", password: "" },
 //   });
-// 
+//
 //   async function onOwnerSubmit(data: z.infer<typeof ownerSchema>) {
 //     if (isLoading) return;
 //     setIsLoading(true);
@@ -85,14 +85,14 @@
 //               }),
 //             },
 //           );
-// 
+//
 //           const payload = (await response.json()) as {
 //             error?: string;
 //             email?: string;
 //             userId?: string;
 //             changeToken?: string;
 //           };
-// 
+//
 //           if (
 //             !response.ok ||
 //             !payload.email ||
@@ -105,13 +105,13 @@
 //             });
 //             return;
 //           }
-// 
+//
 //           const pendingSignup = {
 //             email: payload.email,
 //             userId: payload.userId,
 //             changeToken: payload.changeToken,
 //           };
-// 
+//
 //           sessionStorage.setItem(
 //             "pending-signup",
 //             JSON.stringify(pendingSignup),
@@ -129,7 +129,7 @@
 //       setIsLoading(false);
 //     }
 //   }
-// 
+//
 //   async function onMemberSubmit(data: z.infer<typeof memberSchema>) {
 //     if (isLoading) return;
 //     setIsLoading(true);
@@ -141,37 +141,37 @@
 //           p_slug: data.slug.toLowerCase().trim(),
 //         },
 //       );
-// 
+//
 //       if (lookupError) {
 //         toast.error("Erro ao verificar usuário");
 //         return;
 //       }
-// 
+//
 //       if (!internalEmail) {
 //         memberForm.setError("slug", {
 //           message: "Barbearia não encontrada ou usuário não pertence a ela",
 //         });
 //         return;
 //       }
-// 
+//
 //       const { error } = await supabase.auth.signInWithPassword({
 //         email: internalEmail,
 //         password: data.password,
 //       });
-// 
+//
 //       if (error) {
 //         memberForm.setError("password", {
 //           message: errorMessages[error.message] ?? "Senha incorreta",
 //         });
 //         return;
 //       }
-// 
+//
 //       navigate("/painel");
 //     } finally {
 //       setIsLoading(false);
 //     }
 //   }
-// 
+//
 //   return (
 //     <div className="w-full max-w-lg lg:max-w-285 lg:flex lg:items-center justify-center lg:h-screen lg:w-[50vw] lg:bg-card text-card-foreground lg:border-l border-zinc-300 dark:border-none">
 //       <Card className="w-full max-w-lg lg:border-none lg:rounded-none lg:shadow-none">
@@ -206,7 +206,7 @@
 //               Colaborador
 //             </button>
 //           </div>
-// 
+//
 //           {mode === "owner" ? (
 //             <div key="owner-mode">
 //               <form
@@ -269,7 +269,7 @@
 //                   />
 //                 </FieldGroup>
 //               </form>
-// 
+//
 //               <CardFooter className="flex-col gap-2 mt-6">
 //                 <Button
 //                   type="submit"
@@ -279,7 +279,7 @@
 //                 >
 //                   {isLoading ? "Entrando..." : "Entrar"}
 //                 </Button>
-// 
+//
 //                 <Button
 //                   variant="link"
 //                   onClick={() => navigate("/cadastro")}
@@ -313,13 +313,13 @@
 //                           <FieldLabel htmlFor="login-slug">
 //                             Site da barbearia
 //                           </FieldLabel>
-// 
+//
 //                           <div className="relative">
 //                             {/* prefixo dentro do input */}
 //                             <span className="h-full w-37 flex items-center pl-3 rounded-l-lg absolute text-muted-foreground text-sm pointer-events-none">
 //                               {DOMAIN}
 //                             </span>
-// 
+//
 //                             <Input
 //                               {...field}
 //                               id="login-slug"
@@ -335,7 +335,7 @@
 //                               }}
 //                             />
 //                           </div>
-// 
+//
 //                           {fieldState.invalid && (
 //                             <FieldError errors={[fieldState.error]} />
 //                           )}
@@ -402,7 +402,7 @@
 //                   />
 //                 </FieldGroup>
 //               </form>
-// 
+//
 //               <CardFooter className="flex-col gap-2 mt-6">
 //                 <Button
 //                   type="submit"

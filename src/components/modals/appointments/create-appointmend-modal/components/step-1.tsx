@@ -15,9 +15,9 @@
 //   Users,
 // } from "lucide-react";
 // import { Field, INPUT_CLS } from "./field";
-// 
+//
 // type CustomerMode = "existing" | "new" | null;
-// 
+//
 // interface SelectedCustomer {
 //   id: string;
 //   name: string;
@@ -25,14 +25,14 @@
 //   isNew?: boolean;
 //   source?: "customers" | "customers_auth";
 // }
-// 
+//
 // type ExistingCustomerOption = {
 //   id: string;
 //   name: string;
 //   phone: string;
 //   source: "customers" | "customers_auth";
 // };
-// 
+//
 // export function Step1Customer({
 //   onSelect,
 // }: {
@@ -52,42 +52,42 @@
 //     [],
 //   );
 //   const [authCustomersLoading, setAuthCustomersLoading] = useState(false);
-// 
+//
 //   useEffect(() => {
 //     if (!barbershopId) return;
-// 
+//
 //     let active = true;
-// 
+//
 //     async function loadCustomersAuthWithAppointments() {
 //       setAuthCustomersLoading(true);
-// 
+//
 //       const { data: appointmentRows } = await supabase
 //         .from("appointments")
 //         .select("customer_id")
 //         .eq("barbershop_id", barbershopId)
 //         .not("customer_id", "is", null);
-// 
+//
 //       const authIds = Array.from(
 //         new Set(
 //           (appointmentRows ?? []).map(row => row.customer_id).filter(Boolean),
 //         ),
 //       );
-// 
+//
 //       if (authIds.length === 0) {
 //         if (!active) return;
 //         setAuthCustomers([]);
 //         setAuthCustomersLoading(false);
 //         return;
 //       }
-// 
+//
 //       const { data: authRows } = await supabase
 //         .from("customers")
 //         .select("id, name, phone")
 //         .in("id", authIds)
 //         .eq("auth", true);
-// 
+//
 //       if (!active) return;
-// 
+//
 //       setAuthCustomers(
 //         (authRows ?? []).map(row => ({
 //           id: row.id,
@@ -98,20 +98,20 @@
 //       );
 //       setAuthCustomersLoading(false);
 //     }
-// 
+//
 //     void loadCustomersAuthWithAppointments();
-// 
+//
 //     return () => {
 //       active = false;
 //     };
 //   }, [barbershopId]);
-// 
+//
 //   const normalizeStr = (value: string) =>
 //     value
 //       .normalize("NFD")
 //       .replace(/[\u0300-\u036f]/g, "")
 //       .toLowerCase();
-// 
+//
 //   const existingCustomers = useMemo<ExistingCustomerOption[]>(() => {
 //     const localCustomers = customers.map(customer => ({
 //       id: customer.id,
@@ -119,53 +119,53 @@
 //       phone: customer.phone ?? "",
 //       source: "customers" as const,
 //     }));
-// 
+//
 //     const merged = new Map<string, ExistingCustomerOption>();
-// 
+//
 //     for (const customer of [...localCustomers, ...authCustomers]) {
 //       const key = `${customer.source}:${customer.id}`;
 //       merged.set(key, customer);
 //     }
-// 
+//
 //     return Array.from(merged.values());
 //   }, [customers, authCustomers]);
-// 
+//
 //   const searchDigits = search.replace(/\D/g, "");
-// 
+//
 //   const filtered = existingCustomers.filter(customer => {
 //     if (!search.trim()) return true;
-// 
+//
 //     const nameMatch = normalizeStr(customer.name).includes(
 //       normalizeStr(search),
 //     );
 //     const phoneMatch =
 //       searchDigits.length > 0 &&
 //       customer.phone.replace(/\D/g, "").includes(searchDigits);
-// 
+//
 //     return nameMatch || phoneMatch;
 //   });
-// 
+//
 //   async function handleCreateCustomer(event: React.FormEvent) {
 //     event.preventDefault();
 //     if (!newName.trim() || !newPhone.trim() || !barbershop?.id) return;
-// 
+//
 //     setSubmitting(true);
 //     setError(null);
 //     setPhoneError(null);
-// 
+//
 //     const digits = newPhone.replace(/\D/g, "");
 //     if (digits.length < 10) {
 //       setPhoneError("Telefone invalido. Digite DDD + numero.");
 //       setSubmitting(false);
 //       return;
 //     }
-// 
+//
 //     const result = await createCustomer({
 //       barbershopId: barbershop.id,
 //       name: newName.trim(),
 //       phone: digits,
 //     });
-// 
+//
 //     if (result.status === "conflict") {
 //       setPhoneError(
 //         `Telefone já cadastrado para "${result.existing.name}". Busque pelo cliente existente.`,
@@ -173,13 +173,13 @@
 //       setSubmitting(false);
 //       return;
 //     }
-// 
+//
 //     if (result.status === "error") {
 //       setError("Erro ao criar cliente. Tente novamente.");
 //       setSubmitting(false);
 //       return;
 //     }
-// 
+//
 //     onSelect({
 //       id: result.customer.id,
 //       name: result.customer.name,
@@ -189,7 +189,7 @@
 //     });
 //     setSubmitting(false);
 //   }
-// 
+//
 //   //CONSOLE PARA DEBUG
 //   // console.log("compoenente step 1 ", {
 //   //   customers,
@@ -198,7 +198,7 @@
 //   //   authCustomersLoading,
 //   //   submitting,
 //   // });
-// 
+//
 //   if (mode === null) {
 //     return (
 //       <div className="flex flex-col gap-4 px-4 py-6">
@@ -240,7 +240,7 @@
 //       </div>
 //     );
 //   }
-// 
+//
 //   if (mode === "existing") {
 //     return (
 //       <div className="flex flex-col gap-4 px-4 py-5">
@@ -251,7 +251,7 @@
 //           <ChevronLeft className="h-3.5 w-3.5" />
 //           Voltar
 //         </button>
-// 
+//
 //         <div className="relative">
 //           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
 //           <input
@@ -263,7 +263,7 @@
 //             autoFocus
 //           />
 //         </div>
-// 
+//
 //         <div className="flex flex-col overflow-y-auto rounded-md border border-border divide-y divide-border">
 //           {loading || authCustomersLoading ? (
 //             <p className="py-8 text-center text-sm text-muted-foreground">
@@ -316,7 +316,7 @@
 //       </div>
 //     );
 //   }
-// 
+//
 //   return (
 //     <div className="flex flex-col gap-4 px-6 py-5">
 //       <button
@@ -337,7 +337,7 @@
 //             autoFocus
 //           />
 //         </Field>
-// 
+//
 //         <Field
 //           label="Telefone / WhatsApp"
 //           icon={<Phone className="h-3.5 w-3.5" />}
@@ -355,13 +355,13 @@
 //             maxLength={15}
 //           />
 //         </Field>
-// 
+//
 //         {error && (
 //           <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
 //             {error}
 //           </p>
 //         )}
-// 
+//
 //         <Button
 //           disabled={!newName.trim() || !newPhone.trim() || submitting}
 //           className="w-full cursor-pointer"

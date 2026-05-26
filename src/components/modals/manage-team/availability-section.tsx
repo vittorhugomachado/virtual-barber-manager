@@ -18,14 +18,14 @@
 //   TIME_OPTIONS,
 //   errorKey,
 // } from "../../../utils/validate-availability.constants";
-// 
+//
 // interface AvailabilitySectionProps {
 //   availability: DayAvailability[];
 //   onChange: (next: DayAvailability[]) => void;
 //   errors: Record<string, string>;
 //   onClearError?: (key: string) => void;
 // }
-// 
+//
 // export function AvailabilitySection({
 //   availability,
 //   onChange,
@@ -35,7 +35,7 @@
 //   const [open, setOpen] = useState(() =>
 //     availability.some(d => d.use_custom_hours || d.is_day_off),
 //   );
-// 
+//
 //   function updateDay(dayOfWeek: number, patch: Partial<DayAvailability>) {
 //     onChange(
 //       availability.map(d =>
@@ -43,7 +43,7 @@
 //       ),
 //     );
 //   }
-// 
+//
 //   function updatePeriod(
 //     dayOfWeek: number,
 //     periodIdx: number,
@@ -63,7 +63,7 @@
 //     );
 //     onClearError?.(errorKey(dayOfWeek, periodIdx, field));
 //   }
-// 
+//
 //   function addPeriod(dayOfWeek: number) {
 //     onChange(
 //       availability.map(d => {
@@ -75,7 +75,7 @@
 //       }),
 //     );
 //   }
-// 
+//
 //   function removePeriod(dayOfWeek: number, periodIdx: number) {
 //     onChange(
 //       availability.map(d => {
@@ -87,7 +87,7 @@
 //       }),
 //     );
 //   }
-// 
+//
 //   return (
 //     <div className="flex flex-col gap-2">
 //       {/* Botão collapsible */}
@@ -103,7 +103,7 @@
 //           <ChevronDown className="h-4 w-4 text-muted-foreground" />
 //         )}
 //       </button>
-// 
+//
 //       {/* Conteúdo expansível */}
 //       {open && (
 //         <div className="flex flex-col gap-2">
@@ -154,7 +154,7 @@
 //                   </div>
 //                 </div>
 //               </div>
-// 
+//
 //               {/* Horário integral */}
 //               {!day.is_day_off && !day.use_custom_hours && (
 //                 <p className="text-xs text-muted-foreground pl-1 flex gap-2 items-center">
@@ -162,7 +162,7 @@
 //                   Horário integral da barbearia
 //                 </p>
 //               )}
-// 
+//
 //               {/* Folga */}
 //               {day.is_day_off && (
 //                 <p className="text-xs text-muted-foreground pl-1 flex gap-2 items-center">
@@ -170,7 +170,7 @@
 //                   Folga
 //                 </p>
 //               )}
-// 
+//
 //               {/* Períodos personalizados */}
 //               {!day.is_day_off && day.use_custom_hours && (
 //                 <div className="flex flex-col items-center gap-2">
@@ -220,11 +220,11 @@
 //                           </p>
 //                         )}
 //                       </div>
-// 
+//
 //                       <span className="text-sm text-muted-foreground shrink-0 mb-auto mt-2">
 //                         até
 //                       </span>
-// 
+//
 //                       {/* Fim */}
 //                       <div className="flex-1 flex flex-col gap-1">
 //                         <Select
@@ -256,7 +256,7 @@
 //                           </p>
 //                         )}
 //                       </div>
-// 
+//
 //                       {/* Remover período */}
 //                       {day.periods.length > 1 && (
 //                         <Button
@@ -271,7 +271,7 @@
 //                       )}
 //                     </div>
 //                   ))}
-// 
+//
 //                   {/* Adicionar período */}
 //                   <Button
 //                     type="button"

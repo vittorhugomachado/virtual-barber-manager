@@ -1,7 +1,7 @@
 ﻿// import { useEffect, useState } from "react";
 // import { supabase } from "@/lib/supabase/supabase";
 // import { useBarbershopStore } from "@/store/barbershop.store";
-// 
+//
 // export interface ReportsKpis {
 //   total: number;
 //   completed: number;
@@ -14,30 +14,30 @@
 //   workedHours: number;
 //   uniqueCustomers: number;
 // }
-// 
+//
 // export interface HourlyReportData {
 //   hour: string;
 //   concluido: number;
 //   agendado: number;
 //   cancelado: number;
 // }
-// 
+//
 // export interface BarberReportData {
 //   name: string;
 //   total: number;
 //   completed: number;
 // }
-// 
+//
 // export interface ServiceReportData {
 //   name: string;
 //   total: number;
 // }
-// 
+//
 // export interface WeekdayReportData {
 //   day: string;
 //   total: number;
 // }
-// 
+//
 // export interface ReportsData {
 //   kpis: ReportsKpis;
 //   hourlyData: HourlyReportData[];
@@ -46,9 +46,9 @@
 //   weekdayData: WeekdayReportData[];
 //   loading: boolean;
 // }
-// 
+//
 // const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-// 
+//
 // const EMPTY_KPIS: ReportsKpis = {
 //   total: 0,
 //   completed: 0,
@@ -61,7 +61,7 @@
 //   workedHours: 0,
 //   uniqueCustomers: 0,
 // };
-// 
+//
 // export function useReports(
 //   from: string,
 //   to: string,
@@ -74,22 +74,22 @@
 //   const [barbersData, setBarbersData] = useState<BarberReportData[]>([]);
 //   const [servicesData, setServicesData] = useState<ServiceReportData[]>([]);
 //   const [weekdayData, setWeekdayData] = useState<WeekdayReportData[]>([]);
-// 
+//
 //   useEffect(() => {
 //     if (!barbershop?.id || !from || !to) return;
-// 
+//
 //     const barbershopId = barbershop.id;
 //     let cancelled = false;
-// 
+//
 //     const rangeStart = `${from}T00:00:00Z`;
 //     const rangeEnd = `${to}T23:59:59Z`;
-// 
+//
 //     async function loadReports() {
 //       await Promise.resolve();
-// 
+//
 //       if (cancelled) return;
 //       setLoading(true);
-// 
+//
 //       let aptsQuery = supabase
 //         .from("appointments")
 //         .select(
@@ -98,14 +98,14 @@
 //         .eq("barbershop_id", barbershopId)
 //         .gte("starts_at", rangeStart)
 //         .lte("starts_at", rangeEnd);
-// 
+//
 //       if (barberId) {
 //         aptsQuery = aptsQuery.eq("barber_id", barberId);
 //       }
-// 
+//
 //       const [aptsRes, customersRes] = await Promise.all([
 //         aptsQuery,
-// 
+//
 //         supabase
 //           .from("customers")
 //           .select("id", { count: "exact", head: true })
@@ -113,9 +113,9 @@
 //           .gte("created_at", rangeStart)
 //           .lte("created_at", rangeEnd),
 //       ]);
-// 
+//
 //       if (cancelled) return;
-// 
+//
 //       if (aptsRes.error || customersRes.error) {
 //         console.error("useReports error:", aptsRes.error ?? customersRes.error);
 //         setKpis(EMPTY_KPIS);
@@ -126,7 +126,7 @@
 //         setLoading(false);
 //         return;
 //       }
-// 
+//
 //       type Apt = {
 //         starts_at: string;
 //         status: string;
@@ -136,10 +136,10 @@
 //         service_price: number | string | null;
 //         service_duration: number | string | null;
 //       };
-// 
+//
 //       const apts = (aptsRes.data ?? []) as unknown as Apt[];
 //       const completedApts = apts.filter(a => a.status === "completed");
-// 
+//
 //       const total = apts.length;
 //       const completed = completedApts.length;
 //       const cancelledCount = apts.filter(
@@ -160,7 +160,7 @@
 //         0,
 //       );
 //       const uniqueCustomers = new Set(apts.map(a => a.customer_id)).size;
-// 
+//
 //       // Hourly aggregate (hour of day across the period)
 //       const hourBuckets = Array.from({ length: 24 }, () => ({
 //         concluido: 0,
@@ -181,7 +181,7 @@
 //         hour: `${String(h).padStart(2, "0")}:00`,
 //         ...b,
 //       }));
-// 
+//
 //       // Barbers (all appointments)
 //       const barberMap = new Map<
 //         string,
@@ -204,7 +204,7 @@
 //       const barbers = Array.from(barberMap.values()).sort(
 //         (a, b) => b.total - a.total,
 //       );
-// 
+//
 //       // Services (completed only)
 //       const serviceMap = new Map<string, { name: string; total: number }>();
 //       for (const apt of completedApts) {
@@ -220,7 +220,7 @@
 //       const services = Array.from(serviceMap.values())
 //         .sort((a, b) => b.total - a.total)
 //         .slice(0, 8);
-// 
+//
 //       // Weekday (non-cancelled)
 //       const weekCounts = new Array(7).fill(0);
 //       for (const apt of apts) {
@@ -235,7 +235,7 @@
 //         day: WEEKDAYS[i],
 //         total,
 //       }));
-// 
+//
 //       setKpis({
 //         total,
 //         completed,
@@ -254,14 +254,14 @@
 //       setWeekdayData(weekday);
 //       setLoading(false);
 //     }
-// 
+//
 //     void loadReports();
-// 
+//
 //     return () => {
 //       cancelled = true;
 //     };
 //   }, [barbershop?.id, from, to, barberId]);
-// 
+//
 //   return {
 //     kpis,
 //     hourlyData,

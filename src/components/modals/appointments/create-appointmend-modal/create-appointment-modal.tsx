@@ -13,15 +13,15 @@
 // import { Step4BarberTime } from "./components/step-4";
 // import { ConfirmStep } from "./components/confirm-step";
 // import { StepIndicator } from "./components/step-indicator";
-// 
+//
 // type Step = 1 | 2 | 3 | 4;
-// 
+//
 // interface CreateAppointmentModalProps {
 //   open: boolean;
 //   onClose: () => void;
 //   onSuccess?: () => void;
 // }
-// 
+//
 // export function CreateAppointmentModal({
 //   open,
 //   onClose,
@@ -29,10 +29,10 @@
 // }: CreateAppointmentModalProps) {
 //   const { barbershop } = useBarbershopStore();
 //   const { services } = useServices();
-// 
+//
 //   const [step, setStep] = useState<Step>(1);
 //   const [showConfirm, setShowConfirm] = useState(false);
-// 
+//
 //   const [customer, setCustomer] = useState<SelectedCustomer | null>(null);
 //   const [serviceIds, setServiceIds] = useState<string[]>([]);
 //   const [date, setDate] = useState<string | null>(null);
@@ -40,10 +40,10 @@
 //   const [serviceSelections, setServiceSelections] = useState<
 //     ServiceSelection[]
 //   >([]);
-// 
+//
 //   const [submitting, setSubmitting] = useState(false);
 //   const [submitError, setSubmitError] = useState<string | null>(null);
-// 
+//
 //   function reset() {
 //     setStep(1);
 //     setShowConfirm(false);
@@ -55,23 +55,23 @@
 //     setSubmitting(false);
 //     setSubmitError(null);
 //   }
-// 
+//
 //   function handleClose() {
 //     reset();
 //     onClose();
 //   }
-// 
+//
 //   useEffect(() => {
 //     if (!open) reset();
 //   }, [open]);
-// 
+//
 //   async function handleConfirm() {
 //     if (!customer || serviceSelections.length === 0 || !date || !barbershop)
 //       return;
-// 
+//
 //     setSubmitting(true);
 //     setSubmitError(null);
-// 
+//
 //     try {
 //       const isManualCustomer = customer.source === "customers";
 //       const inserts = serviceSelections.map(sel => {
@@ -90,12 +90,12 @@
 //           status: "scheduled",
 //         };
 //       });
-// 
+//
 //       const { error: err } = await supabase
 //         .from("appointments")
 //         .insert(inserts);
 //       if (err) throw err;
-// 
+//
 //       onSuccess?.();
 //       handleClose();
 //     } catch (err: unknown) {
@@ -123,9 +123,9 @@
 //       setSubmitting(false);
 //     }
 //   }
-// 
+//
 //   if (!open) return null;
-// 
+//
 //   //CONSOLE PARA DEBUG
 //   // console.log("componente pai:", {
 //   //   step,
@@ -138,11 +138,11 @@
 //   //   submitting,
 //   //   submitError,
 //   // });
-// 
+//
 //   return (
 //     <div className="fixed inset-0 z-50 flex items-center justify-center">
 //       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-// 
+//
 //       <div className="relative z-10 w-full max-w-xl mx-4 rounded-xl border bg-background shadow-2xl flex flex-col overflow-hidden max-h-[92vh]">
 //         {/* Header */}
 //         <div className="flex items-center justify-between px-6 py-4 shrink-0">
@@ -156,9 +156,9 @@
 //             <X className="h-4 w-4" />
 //           </button>
 //         </div>
-// 
+//
 //         {!showConfirm && <StepIndicator current={step} />}
-// 
+//
 //         <div className="overflow-y-auto">
 //           {!showConfirm && step === 1 && (
 //             <Step1Customer
@@ -168,7 +168,7 @@
 //               }}
 //             />
 //           )}
-// 
+//
 //           {!showConfirm && step === 2 && (
 //             <Step2Service
 //               onBack={() => setStep(1)}
@@ -178,7 +178,7 @@
 //               }}
 //             />
 //           )}
-// 
+//
 //           {!showConfirm && step === 3 && (
 //             <Step3Date
 //               onBack={() => setStep(2)}
@@ -189,7 +189,7 @@
 //               }}
 //             />
 //           )}
-// 
+//
 //           {!showConfirm &&
 //             step === 4 &&
 //             serviceIds.length > 0 &&
@@ -210,7 +210,7 @@
 //                 }}
 //               />
 //             )}
-// 
+//
 //           {showConfirm && customer && serviceSelections.length > 0 && date && (
 //             <ConfirmStep
 //               customer={customer}

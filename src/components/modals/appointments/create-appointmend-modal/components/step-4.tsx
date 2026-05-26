@@ -18,7 +18,7 @@
 //   Trash2,
 //   User,
 // } from "lucide-react";
-// 
+//
 // interface OpeningHourRow {
 //   day_of_week: number;
 //   opens_at: string;
@@ -26,7 +26,7 @@
 //   is_open: boolean;
 //   period_order: number;
 // }
-// 
+//
 // interface BarberAvailabilityRow {
 //   day_of_week: number;
 //   is_day_off: boolean;
@@ -35,21 +35,21 @@
 //   ends_at: string | null;
 //   period_order: number;
 // }
-// 
+//
 // interface AppointmentRow {
 //   starts_at: string;
 //   ends_at: string;
 //   status: string;
 // }
-// 
+//
 // type SlotCache = Record<string, TimeSlot[]>;
 // type LoadingCache = Record<string, boolean>;
-// 
+//
 // function timeToMinutes(time: string) {
 //   const [hours, minutes] = time.slice(0, 5).split(":").map(Number);
 //   return hours * 60 + minutes;
 // }
-// 
+//
 // function minutesToTime(totalMinutes: number) {
 //   const hours = Math.floor(totalMinutes / 60)
 //     .toString()
@@ -57,17 +57,17 @@
 //   const minutes = (totalMinutes % 60).toString().padStart(2, "0");
 //   return `${hours}:${minutes}`;
 // }
-// 
+//
 // function addDays(date: Date, days: number) {
 //   const next = new Date(date);
 //   next.setDate(next.getDate() + days);
 //   return next;
 // }
-// 
+//
 // function toDateKey(date: Date) {
 //   return date.toLocaleDateString("en-CA");
 // }
-// 
+//
 // function formatDateLabel(date: Date) {
 //   return date.toLocaleDateString("pt-BR", {
 //     weekday: "long",
@@ -75,7 +75,7 @@
 //     month: "long",
 //   });
 // }
-// 
+//
 // function getShopPeriods(
 //   dayOfWeek: number,
 //   openingHours: OpeningHourRow[],
@@ -88,7 +88,7 @@
 //       closesAt: item.closes_at.slice(0, 5),
 //     }));
 // }
-// 
+//
 // function getBarberRestriction(
 //   dayOfWeek: number,
 //   barberAvailability: BarberAvailabilityRow[],
@@ -99,43 +99,43 @@
 //   const forDay = barberAvailability
 //     .filter(item => item.day_of_week === dayOfWeek)
 //     .sort((a, b) => a.period_order - b.period_order);
-// 
+//
 //   if (forDay.some(item => item.is_day_off)) {
 //     return { isDayOff: true, customPeriods: null };
 //   }
-// 
+//
 //   const customPeriods = forDay
 //     .filter(item => item.use_custom_hours && item.starts_at && item.ends_at)
 //     .map(item => ({
 //       opensAt: item.starts_at!.slice(0, 5),
 //       closesAt: item.ends_at!.slice(0, 5),
 //     }));
-// 
+//
 //   return {
 //     isDayOff: false,
 //     customPeriods: customPeriods.length > 0 ? customPeriods : null,
 //   };
 // }
-// 
+//
 // function buildSlots(
 //   periods: { opensAt: string; closesAt: string }[],
 //   durationMin: number,
 // ) {
 //   const slots: string[] = [];
-// 
+//
 //   for (const period of periods) {
 //     let current = timeToMinutes(period.opensAt);
 //     const closesAt = timeToMinutes(period.closesAt);
-// 
+//
 //     while (current + durationMin <= closesAt) {
 //       slots.push(minutesToTime(current));
 //       current += 30;
 //     }
 //   }
-// 
+//
 //   return Array.from(new Set(slots));
 // }
-// 
+//
 // function isActiveStatus(status: string) {
 //   return ![
 //     "cancelled_by_customer",
@@ -143,15 +143,15 @@
 //     "no_show",
 //   ].includes(status);
 // }
-// 
+//
 // function groupSlotsByPeriod(slots: TimeSlot[]) {
 //   const manha: TimeSlot[] = [];
 //   const tarde: TimeSlot[] = [];
 //   const noite: TimeSlot[] = [];
-// 
+//
 //   for (const slot of slots) {
 //     const minutes = timeToMinutes(slot.time);
-// 
+//
 //     if (minutes < 13 * 60) {
 //       manha.push(slot);
 //     } else if (minutes < 18 * 60) {
@@ -160,10 +160,10 @@
 //       noite.push(slot);
 //     }
 //   }
-// 
+//
 //   return { manha, tarde, noite };
 // }
-// 
+//
 // function SlotGroup({
 //   title,
 //   slots,
@@ -174,9 +174,9 @@
 //   onSelect: (time: string) => void;
 // }) {
 //   if (slots.length === 0) return null;
-// 
+//
 //   const hasAvailable = slots.some(slot => slot.available);
-// 
+//
 //   return (
 //     <div className="flex flex-col gap-2">
 //       <div className="flex items-center gap-2">
@@ -206,7 +206,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 // function BarberCard({
 //   barber,
 //   durationMin,
@@ -226,14 +226,14 @@
 // }) {
 //   const { manha, tarde, noite } = groupSlotsByPeriod(slots);
 //   const dayOff = !loading && slots.length === 0;
-// 
+//
 //   //CONSOLE PARA DEBUG
 //   // console.log("compoenente barberCard do step 4 ", {
 //   //   barber,
 //   //   durationMin,
 //   //   slots,
 //   // });
-// 
+//
 //   return (
 //     <div
 //       className={`overflow-hidden rounded-xl border-2 transition-all ${
@@ -263,7 +263,7 @@
 //             )}
 //           </div>
 //         </div>
-// 
+//
 //         <div className="flex shrink-0 items-center gap-2">
 //           {durationMin && (
 //             <p className="hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
@@ -278,7 +278,7 @@
 //           )}
 //         </div>
 //       </button>
-// 
+//
 //       {expanded && (
 //         <div className="flex flex-col gap-4 border-t border-border px-4 pb-4 pt-2">
 //           {loading ? (
@@ -302,7 +302,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 // function ServiceSection({
 //   index,
 //   service,
@@ -348,7 +348,7 @@
 //   const selectedBarber = selection
 //     ? barbers.find(barber => barber.id === selection.barberId)
 //     : null;
-// 
+//
 //   //CONSOLE PARA DEBUG
 //   // console.log("compoenente serviceSelection step 4 ", {
 //   //   service,
@@ -356,7 +356,7 @@
 //   //   visibleBarbers,
 //   //   selectedBarber,
 //   // });
-// 
+//
 //   return (
 //     <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
 //       <div className="flex items-center justify-between">
@@ -375,7 +375,7 @@
 //             </p>
 //           </div>
 //         </div>
-// 
+//
 //         <div className="flex shrink-0 items-center gap-2">
 //           {selection && (
 //             <button
@@ -396,7 +396,7 @@
 //           </button>
 //         </div>
 //       </div>
-// 
+//
 //       {selection ? (
 //         <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
 //           <Check className="h-4 w-4 shrink-0 text-primary" />
@@ -427,7 +427,7 @@
 //     </div>
 //   );
 // }
-// 
+//
 // export function Step4BarberTime({
 //   serviceIds,
 //   date,
@@ -447,7 +447,7 @@
 //   const { openingHours } = useOpeningHours();
 //   const { barbers } = useBarbers();
 //   const { services } = useServices();
-// 
+//
 //   const [currentDate, setCurrentDate] = useState(date);
 //   const [currentDateObj, setCurrentDateObj] = useState(dateObj);
 //   const [activeServiceIds, setActiveServiceIds] = useState(serviceIds);
@@ -463,41 +463,41 @@
 //   const [selections, setSelections] = useState<
 //     Record<string, { barberId: string; time: string } | null>
 //   >({});
-// 
+//
 //   useEffect(() => {
 //     if (activeServiceIds.length === 0) return;
-// 
+//
 //     let active = true;
-// 
+//
 //     async function loadEligibleBarbers() {
 //       const { data } = await supabase
 //         .from("barber_services")
 //         .select("barber_id, service_id, barbers!inner(id, is_active)")
 //         .in("service_id", activeServiceIds)
 //         .eq("barbers.is_active", true);
-// 
+//
 //       if (!active) return;
-// 
+//
 //       const nextMap: Record<string, string[]> = {};
-// 
+//
 //       for (const row of data ?? []) {
 //         if (!nextMap[row.service_id]) {
 //           nextMap[row.service_id] = [];
 //         }
-// 
+//
 //         nextMap[row.service_id].push(row.barber_id);
 //       }
-// 
+//
 //       setEligibleBarberIds(nextMap);
 //     }
-// 
+//
 //     void loadEligibleBarbers();
-// 
+//
 //     return () => {
 //       active = false;
 //     };
 //   }, [activeServiceIds]);
-// 
+//
 //   const isShopOpen = useMemo(
 //     () =>
 //       openingHours.some(
@@ -505,24 +505,24 @@
 //       ),
 //     [currentDateObj, openingHours],
 //   );
-// 
+//
 //   async function loadBarberSlots(
 //     serviceId: string,
 //     barberId: string,
 //     dateKey: string,
 //   ) {
 //     if (!barbershop?.id) return;
-// 
+//
 //     const service = services.find(item => item.id === serviceId);
 //     if (!service) return;
-// 
+//
 //     const cacheKey = `${serviceId}:${barberId}:${dateKey}`;
 //     setBarbershopSlotsLoading(prev => ({ ...prev, [cacheKey]: true }));
-// 
+//
 //     const durationMin = service.duration_min ?? 30;
 //     const dayOfWeek = new Date(`${dateKey}T12:00:00`).getDay();
 //     const nextDateKey = toDateKey(addDays(new Date(`${dateKey}T12:00:00`), 1));
-// 
+//
 //     const [
 //       { data: shopHours },
 //       { data: barberAvailability },
@@ -547,49 +547,49 @@
 //         .gte("starts_at", `${dateKey}T00:00:00`)
 //         .lt("starts_at", `${nextDateKey}T00:00:00`),
 //     ]);
-// 
+//
 //     // Base: períodos de funcionamento da barbearia
 //     const shopPeriods = getShopPeriods(
 //       dayOfWeek,
 //       (shopHours as OpeningHourRow[] | null) ?? [],
 //     );
-// 
+//
 //     // Restrição do barbeiro: folga ou horário personalizado
 //     const barberRestriction = getBarberRestriction(
 //       dayOfWeek,
 //       (barberAvailability as BarberAvailabilityRow[] | null) ?? [],
 //     );
-// 
+//
 //     // Sem horário de funcionamento → sem slots
 //     if (shopPeriods.length === 0) {
 //       setBarbershopSlots(prev => ({ ...prev, [cacheKey]: [] }));
 //       setBarbershopSlotsLoading(prev => ({ ...prev, [cacheKey]: false }));
 //       return;
 //     }
-// 
+//
 //     // Slots sempre baseados no horário da barbearia
 //     const allSlots = buildSlots(shopPeriods, durationMin);
 //     const activeAppointments = (
 //       (appointments as AppointmentRow[] | null) ?? []
 //     ).filter(a => isActiveStatus(a.status));
-// 
+//
 //     const isToday = dateKey === toDateKey(new Date());
 //     const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
-// 
+//
 //     // Períodos em que o barbeiro está disponível (null = disponível o dia todo)
 //     const barberActivePeriods: { opensAt: string; closesAt: string }[] | null =
 //       barberRestriction.isDayOff
 //         ? [] // folga: nenhum período disponível
 //         : (barberRestriction.customPeriods ?? null);
-// 
+//
 //     const slots: TimeSlot[] = allSlots.map(time => {
 //       const slotStart = timeToMinutes(time);
 //       const slotEnd = slotStart + durationMin;
-// 
+//
 //       if (isToday && slotStart <= nowMinutes) {
 //         return { time, available: false };
 //       }
-// 
+//
 //       // Fora do horário do barbeiro → indisponível
 //       if (barberActivePeriods !== null) {
 //         const withinBarber = barberActivePeriods.some(
@@ -599,62 +599,62 @@
 //         );
 //         if (!withinBarber) return { time, available: false };
 //       }
-// 
+//
 //       const overlapsAppointment = activeAppointments.some(a => {
 //         const aStart = timeToMinutes(a.starts_at.slice(11, 16));
 //         const aEnd = timeToMinutes(a.ends_at.slice(11, 16));
 //         return slotStart < aEnd && slotEnd > aStart;
 //       });
-// 
+//
 //       return { time, available: !overlapsAppointment };
 //     });
-// 
+//
 //     setBarbershopSlots(prev => ({ ...prev, [cacheKey]: slots }));
 //     setBarbershopSlotsLoading(prev => ({ ...prev, [cacheKey]: false }));
 //   }
-// 
+//
 //   function computeSlots(serviceId: string, barberId: string) {
 //     const cacheKey = `${serviceId}:${barberId}:${currentDate}`;
 //     const rawSlots = barbershopSlots[cacheKey] ?? [];
 //     const service = services.find(item => item.id === serviceId);
 //     const durationMin = service?.duration_min ?? 30;
-// 
+//
 //     return rawSlots.map(slot => {
 //       if (!slot.available) return slot;
-// 
+//
 //       const slotStart = timeToMinutes(slot.time);
 //       const slotEnd = slotStart + durationMin;
-// 
+//
 //       const hasConflictWithSelection = Object.entries(selections).some(
 //         ([otherServiceId, selection]) => {
 //           if (!selection || otherServiceId === serviceId) return false;
 //           if (selection.barberId !== barberId) return false;
-// 
+//
 //           const otherService = services.find(
 //             item => item.id === otherServiceId,
 //           );
 //           const otherDuration = otherService?.duration_min ?? 30;
 //           const otherStart = timeToMinutes(selection.time);
 //           const otherEnd = otherStart + otherDuration;
-// 
+//
 //           return slotStart < otherEnd && slotEnd > otherStart;
 //         },
 //       );
-// 
+//
 //       return { ...slot, available: !hasConflictWithSelection };
 //     });
 //   }
-// 
+//
 //   function handleToggleBarber(serviceId: string, barberId: string) {
 //     const isClosing = expandedBarbers[serviceId] === barberId;
-// 
+//
 //     setExpandedBarbers(previous => ({
 //       ...previous,
 //       [serviceId]: isClosing ? null : barberId,
 //     }));
-// 
+//
 //     if (isClosing) return;
-// 
+//
 //     const cacheKey = `${serviceId}:${barberId}:${currentDate}`;
 //     if (
 //       barbershopSlots[cacheKey] === undefined &&
@@ -663,7 +663,7 @@
 //       void loadBarberSlots(serviceId, barberId, currentDate);
 //     }
 //   }
-// 
+//
 //   function handleSelectTime(serviceId: string, barberId: string, time: string) {
 //     setSelections(previous => ({
 //       ...previous,
@@ -674,14 +674,14 @@
 //       [serviceId]: null,
 //     }));
 //   }
-// 
+//
 //   function handleClearSelection(serviceId: string) {
 //     setSelections(previous => ({
 //       ...previous,
 //       [serviceId]: null,
 //     }));
 //   }
-// 
+//
 //   function removeService(serviceId: string) {
 //     setActiveServiceIds(previous =>
 //       previous.filter(item => item !== serviceId),
@@ -697,11 +697,11 @@
 //       return next;
 //     });
 //   }
-// 
+//
 //   function changeDate(delta: number) {
 //     const nextDateObj = addDays(currentDateObj, delta);
 //     const nextDate = toDateKey(nextDateObj);
-// 
+//
 //     setCurrentDate(nextDate);
 //     setCurrentDateObj(nextDateObj);
 //     setExpandedBarbers({});
@@ -710,14 +710,14 @@
 //     setBarbershopSlotsLoading({});
 //     onDateChange(nextDate, nextDateObj);
 //   }
-// 
+//
 //   const today = new Date();
 //   today.setHours(0, 0, 0, 0);
 //   const isPrevDisabled = currentDateObj <= today;
 //   const allSelected =
 //     activeServiceIds.length > 0 &&
 //     activeServiceIds.every(serviceId => selections[serviceId] != null);
-// 
+//
 //   //CONSOLE PARA DEBUG
 //   // console.log("Step4BarberTime:", {
 //   //   // props recebidas
@@ -742,7 +742,7 @@
 //   //   isShopOpen,
 //   //   allSelected,
 //   // });
-// 
+//
 //   return (
 //     <div className="flex flex-col gap-4 px-4 py-5">
 //       <button
@@ -752,7 +752,7 @@
 //         <ChevronLeft className="h-3.5 w-3.5" />
 //         Voltar
 //       </button>
-// 
+//
 //       <div className="flex items-center justify-between px-1">
 //         <button
 //           onClick={() => changeDate(-1)}
@@ -761,11 +761,11 @@
 //         >
 //           <ChevronLeft className="h-4 w-4" />
 //         </button>
-// 
+//
 //         <p className="text-sm font-semibold capitalize">
 //           {formatDateLabel(currentDateObj)}
 //         </p>
-// 
+//
 //         <button
 //           onClick={() => changeDate(1)}
 //           className="rounded-lg pl-1.5 transition-colors hover:bg-muted cursor-pointer"
@@ -773,7 +773,7 @@
 //           <ChevronRight className="h-4 w-4" />
 //         </button>
 //       </div>
-// 
+//
 //       {!isShopOpen ? (
 //         <div className="flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground">
 //           <AlertCircle className="h-8 w-8 opacity-30" />
@@ -785,7 +785,7 @@
 //           {activeServiceIds.map((serviceId, index) => {
 //             const service = services.find(item => item.id === serviceId);
 //             if (!service) return null;
-// 
+//
 //             return (
 //               <ServiceSection
 //                 key={serviceId}
@@ -815,11 +815,11 @@
 //           })}
 //         </div>
 //       )}
-// 
+//
 //       <Button
 //         onClick={() => {
 //           if (!allSelected) return;
-// 
+//
 //           onSelect(
 //             activeServiceIds.map(serviceId => ({
 //               serviceId,

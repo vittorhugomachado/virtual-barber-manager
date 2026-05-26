@@ -20,29 +20,29 @@
 // import type { Service } from "@/types/services";
 // import { CreateServiceModal } from "../modals/manage-services/create-service-modal";
 // import { UpdateServiceModal } from "../modals/manage-services/update-service-modal";
-// 
+//
 // export function ServicesMain() {
 //   const { barbershop } = useBarbershopStore();
 //   const { services, setServices, loading } = useServices();
 //   const [plansOpen, setPlansOpen] = useState(false);
 //   const [createOpen, setCreateOpen] = useState(false);
 //   const [editService, setEditService] = useState<Service | null>(null);
-// 
+//
 //   const plan = barbershop?.plan ?? "iniciante";
 //   const limit = planServiceLimits[plan];
 //   const activeCount = services.filter(s => s.is_active).length;
 //   const canAddMore = activeCount < limit;
-// 
+//
 //   function notifyDashboardRefresh() {
 //     window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT));
 //   }
-// 
+//
 //   async function toggleActive(id: string) {
 //     const target = services.find(s => s.id === id);
 //     if (!target) return;
-// 
+//
 //     const newStatus = !target.is_active;
-// 
+//
 //     if (newStatus && activeCount >= limit && limit !== Infinity) {
 //       const firstActive = services.find(s => s.is_active);
 //       if (firstActive) {
@@ -61,7 +61,7 @@
 //       }
 //       return;
 //     }
-// 
+//
 //     const success = await toggleActiveService(id, newStatus);
 //     if (success) {
 //       setServices(prev =>
@@ -70,9 +70,9 @@
 //       notifyDashboardRefresh();
 //     }
 //   }
-// 
+//
 //   if (loading) return <ServicesSkeleton />;
-// 
+//
 //   return (
 //     <main className="w-full max-w-325 flex flex-col gap-6 px-6 md:px-12 pb-12 mx-auto mt-8">
 //       {/* Header */}
@@ -122,7 +122,7 @@
 //           </Button>
 //         )}
 //       </div>
-// 
+//
 //       {/* Grid */}
 //       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 //         {services.map(service => (
@@ -138,7 +138,7 @@
 //               >
 //                 {service.is_active ? "Ativo" : "Inativo"}
 //               </Badge>
-// 
+//
 //               <div
 //                 className={`${!service.is_active && "opacity-30"} flex flex-col gap-3 h-full`}
 //               >
@@ -156,7 +156,7 @@
 //                     </div>
 //                   )}
 //                 </div>
-// 
+//
 //                 {/* Dados */}
 //                 <div className="flex flex-col flex-1 justify-between px-4 pb-0">
 //                   <div className="flex flex-col gap-1">
@@ -183,7 +183,7 @@
 //                       )}
 //                     </div>
 //                   </div>
-// 
+//
 //                   <Button
 //                     size="sm"
 //                     variant="outline"
@@ -198,7 +198,7 @@
 //             </CardContent>
 //           </Card>
 //         ))}
-// 
+//
 //         {/* Card adicionar */}
 //         {canAddMore ? (
 //           <Card
@@ -233,7 +233,7 @@
 //           </Card>
 //         )}
 //       </div>
-// 
+//
 //       <PlansModal open={plansOpen} onClose={() => setPlansOpen(false)} />
 //       <CreateServiceModal
 //         open={createOpen}

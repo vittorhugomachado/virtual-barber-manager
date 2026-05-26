@@ -23,7 +23,7 @@
 // import { maskPhone } from "@/utils/masked-input-phone";
 // import type { Customer } from "@/types/customer";
 // import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
-// 
+//
 // interface CustomerConflictModalProps {
 //   open: boolean;
 //   customer: Customer | null;
@@ -31,7 +31,7 @@
 //   onEdit: (customer: Customer) => void;
 //   onDelete: (customer: Customer) => void;
 // }
-// 
+//
 // export function CustomerConflictModal({
 //   open,
 //   customer,
@@ -48,9 +48,9 @@
 //       customerField,
 //       open ? (customer?.id ?? null) : null,
 //     );
-// 
+//
 //   if (!customer) return null;
-// 
+//
 //   return (
 //     <Dialog open={open} onOpenChange={o => !o && onClose()}>
 //       <DialogContent className="max-w-md w-[calc(100%-2rem)]">
@@ -64,7 +64,7 @@
 //           <p className="text-sm text-muted-foreground">
 //             Já existe um cliente com esse número de celular:
 //           </p>
-// 
+//
 //           <div className="flex flex-col gap-1 p-4 rounded-lg border">
 //             <span className="font-semibold">{customer.name}</span>
 //             <span className="text-sm text-muted-foreground inline-flex items-center gap-1">
@@ -72,12 +72,12 @@
 //               {customer.phone ? maskPhone(customer.phone) : "Sem telefone"}
 //             </span>
 //           </div>
-// 
+//
 //           <p className="text-sm text-muted-foreground">
 //             Deseja editar o cliente existente ou excluí-lo?
 //           </p>
 //         </div>
-// 
+//
 //         <DialogFooter className="flex-row flex-wrap items-center justify-center gap-2 sm:justify-between">
 //           <AlertDialog>
 //             <AlertDialogTrigger asChild>
@@ -131,7 +131,7 @@
 //               </AlertDialogFooter>
 //             </AlertDialogContent>
 //           </AlertDialog>
-// 
+//
 //           <div className="flex flex-2 gap-2 justify-end">
 //             <Button
 //               type="button"

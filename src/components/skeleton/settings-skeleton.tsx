@@ -1,7 +1,7 @@
 ﻿// import { Card, CardContent, CardHeader } from "@/components/ui/card";
 // import { Skeleton } from "@/components/ui/skeleton";
 // import { Separator } from "@/components/ui/separator";
-// 
+//
 // export function SettingsSkeleton() {
 //   return (
 //     <div className="flex w-full h-screen bg-background overflow-hidden">
@@ -16,7 +16,7 @@
 //                   <Skeleton className="h-8 w-28" />
 //                 </div>
 //               </div>
-// 
+//
 //               <div className="flex flex-col gap-4">
 //                 <div className="flex flex-col gap-2">
 //                   <Skeleton className="h-4 w-36" />
@@ -37,9 +37,9 @@
 //               </div>
 //             </CardContent>
 //           </Card>
-// 
+//
 //           <Separator />
-// 
+//
 //           <Card className="bg-transparent border-none">
 //             <CardHeader>
 //               <Skeleton className="h-7 w-44" />
@@ -55,7 +55,7 @@
 //               </div>
 //             </CardContent>
 //           </Card>
-// 
+//
 //           <Skeleton className="h-9 w-full max-w-xs mx-auto" />
 //         </div>
 //       </main>

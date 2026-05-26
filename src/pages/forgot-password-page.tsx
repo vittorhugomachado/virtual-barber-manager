@@ -22,11 +22,11 @@
 // import { toast } from "sonner";
 // import { useState } from "react";
 // import * as z from "zod";
-// 
+//
 // const forgotPasswordSchema = z.object({
 //   email: z.email("Email inválido"),
 // });
-// 
+//
 // export function ForgotPasswordPage() {
 //   return (
 //     <main className="w-full min-h-screen bg-zinc-100 dark:bg-transparent flex items-center justify-center px-4 lg:justify-between lg:px-0">
@@ -42,48 +42,48 @@
 //     </main>
 //   );
 // }
-// 
+//
 // function ForgotPasswordForm() {
 //   const navigate = useNavigate();
 //   const [isLoading, setIsLoading] = useState(false);
-// 
+//
 //   const form = useForm<z.infer<typeof forgotPasswordSchema>>({
 //     resolver: zodResolver(forgotPasswordSchema),
 //     defaultValues: { email: "" },
 //   });
-// 
+//
 //   async function onSubmit(data: z.infer<typeof forgotPasswordSchema>) {
 //     if (isLoading) return;
-// 
+//
 //     setIsLoading(true);
-// 
+//
 //     try {
 //       const email = data.email.trim().toLowerCase();
 //       const emailExists = await checkEmailExists(email);
-// 
+//
 //       if (!emailExists) {
 //         form.setError("email", { message: "Email não encontrado" });
 //         return;
 //       }
-// 
+//
 //       const { error } = await supabase.auth.resetPasswordForEmail(email, {
 //         redirectTo: `${window.location.origin}/criar-nova-senha`,
 //       });
-// 
+//
 //       if (error) {
 //         toast.error("Erro ao enviar link de recuperação", {
 //           description: error.message,
 //         });
 //         return;
 //       }
-// 
+//
 //       toast.success("Link de recuperação enviado! Verifique seu email.");
 //       form.reset();
 //     } finally {
 //       setIsLoading(false);
 //     }
 //   }
-// 
+//
 //   return (
 //     <div className="w-full max-w-lg lg:max-w-285 lg:flex lg:items-center justify-center lg:h-screen lg:w-[50vw] lg:bg-card text-card-foreground lg:border-l border-zinc-300 dark:border-none">
 //       <Card className="w-full max-w-lg lg:border-none lg:rounded-none lg:shadow-none">
@@ -131,7 +131,7 @@
 //           >
 //             {isLoading ? "Enviando..." : "Recuperar senha"}
 //           </Button>
-// 
+//
 //           <Button
 //             type="button"
 //             variant="link"

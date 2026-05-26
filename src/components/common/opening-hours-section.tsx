@@ -15,15 +15,15 @@
 // import { DAY_LABELS } from "@/types/opening-hours";
 // import type { OpeningHours } from "@/types/opening-hours";
 // import { AlertTriangle, Loader2, Plus, Trash2 } from "lucide-react";
-// 
+//
 // type PeriodEntry = Omit<OpeningHours, "id">;
-// 
+//
 // type DayConfig = {
 //   day_of_week: number;
 //   is_open: boolean;
 //   periods: { opens_at: string; closes_at: string }[];
 // };
-// 
+//
 // const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
 //   const h = Math.floor(i / 2)
 //     .toString()
@@ -31,19 +31,19 @@
 //   const m = i % 2 === 0 ? "00" : "30";
 //   return `${h}:${m}`;
 // });
-// 
+//
 // const DEFAULT_DAYS: DayConfig[] = Array.from({ length: 7 }, (_, i) => ({
 //   day_of_week: i,
 //   is_open: i !== 0,
 //   periods: [{ opens_at: "08:00", closes_at: "18:00" }],
 // }));
-// 
+//
 // function toDayConfigs(hours: OpeningHours[]): DayConfig[] {
 //   return Array.from({ length: 7 }, (_, i) => {
 //     const dayHours = hours
 //       .filter(h => h.day_of_week === i)
 //       .sort((a, b) => a.period_order - b.period_order);
-// 
+//
 //     if (dayHours.length === 0) {
 //       return {
 //         day_of_week: i,
@@ -51,7 +51,7 @@
 //         periods: [{ opens_at: "08:00", closes_at: "18:00" }],
 //       };
 //     }
-// 
+//
 //     return {
 //       day_of_week: i,
 //       is_open: dayHours[0].is_open,
@@ -62,7 +62,7 @@
 //     };
 //   });
 // }
-// 
+//
 // function toPeriodEntries(
 //   days: DayConfig[],
 //   barbershopId: string,
@@ -78,7 +78,7 @@
 //     })),
 //   );
 // }
-// 
+//
 // export function OpeningHoursSection({ onSaved }: { onSaved?: () => void }) {
 //   const { barbershop } = useBarbershopStore();
 //   const { openingHours, loading } = useOpeningHours();
@@ -86,7 +86,7 @@
 //   const [days, setDays] = useState<DayConfig[]>(DEFAULT_DAYS);
 //   const [saving, setSaving] = useState(false);
 //   const [errors, setErrors] = useState<Record<string, string>>({});
-// 
+//
 //   useEffect(() => {
 //     if (!loading) {
 //       Promise.resolve().then(() => {
@@ -96,11 +96,11 @@
 //       });
 //     }
 //   }, [openingHours, loading]);
-// 
+//
 //   function errorKey(dayIndex: number, periodIdx: number, field: string) {
 //     return `${dayIndex}-${periodIdx}-${field}`;
 //   }
-// 
+//
 //   function toggleDay(dayIndex: number, value: boolean) {
 //     setDays(prev =>
 //       prev.map(d =>
@@ -108,7 +108,7 @@
 //       ),
 //     );
 //   }
-// 
+//
 //   function updatePeriod(
 //     dayIndex: number,
 //     periodIdx: number,
@@ -130,7 +130,7 @@
 //       return e;
 //     });
 //   }
-// 
+//
 //   function addPeriod(dayIndex: number) {
 //     setDays(prev =>
 //       prev.map(d => {
@@ -142,7 +142,7 @@
 //       }),
 //     );
 //   }
-// 
+//
 //   function removePeriod(dayIndex: number, periodIdx: number) {
 //     setDays(prev =>
 //       prev.map(d => {
@@ -151,23 +151,23 @@
 //       }),
 //     );
 //   }
-// 
+//
 //   function validateDays(days: DayConfig[]): boolean {
 //     const newErrors: Record<string, string> = {};
-// 
+//
 //     for (const day of days) {
 //       if (!day.is_open) continue;
-// 
+//
 //       for (let i = 0; i < day.periods.length; i++) {
 //         const period = day.periods[i];
-// 
+//
 //         if (period.closes_at <= period.opens_at) {
 //           newErrors[errorKey(day.day_of_week, i, "opens_at")] =
 //             "Abertura deve ser menor que o fechamento.";
 //           newErrors[errorKey(day.day_of_week, i, "closes_at")] =
 //             "Fechamento deve ser maior que a abertura.";
 //         }
-// 
+//
 //         if (i > 0) {
 //           const prev = day.periods[i - 1];
 //           if (period.opens_at <= prev.closes_at) {
@@ -179,35 +179,35 @@
 //         }
 //       }
 //     }
-// 
+//
 //     setErrors(newErrors);
 //     return Object.keys(newErrors).length === 0;
 //   }
-// 
+//
 //   async function handleSave() {
 //     if (!barbershop?.id) return;
-// 
+//
 //     const valid = validateDays(days);
 //     if (!valid) {
 //       toast.error("Corrija os horários destacados em vermelho.");
 //       return;
 //     }
-// 
+//
 //     setSaving(true);
 //     const entries = toPeriodEntries(days, barbershop.id);
 //     const ok = await upsertOpeningHours(barbershop.id, entries);
 //     setSaving(false);
-// 
+//
 //     if (!ok) {
 //       toast.error("Erro ao salvar horários.");
 //       return;
 //     }
-// 
+//
 //     toast.success("Horários salvos!");
 //     setInitialDays(days);
 //     onSaved?.();
 //   }
-// 
+//
 //   if (loading) {
 //     return (
 //       <div className="flex items-center justify-center py-10">
@@ -215,10 +215,10 @@
 //       </div>
 //     );
 //   }
-// 
+//
 //   const isDirty = JSON.stringify(days) !== JSON.stringify(initialDays);
 //   const hasNoOpenDays = !loading && days.every(d => !d.is_open);
-// 
+//
 //   return (
 //     <section className="w-full max-w-180 px-3 md:px-16 mx-auto flex flex-col gap-6 mb-18">
 //       <div className="flex flex-col gap-1 px-3">
@@ -231,7 +231,7 @@
 //           adicionar múltiplos períodos por dia.
 //         </p>
 //       </div>
-// 
+//
 //       {hasNoOpenDays && (
 //         <div className="mt-2 text-sm w-full flex justify-center items-center gap-2 rounded-full bg-yellow-500/10 text-yellow-500 px-6 py-2">
 //           <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -241,7 +241,7 @@
 //           </span>
 //         </div>
 //       )}
-// 
+//
 //       <div className="flex flex-col gap-3">
 //         {days.map(day => (
 //           <div
@@ -296,11 +296,11 @@
 //                           </p>
 //                         )}
 //                       </div>
-// 
+//
 //                       <span className="text-sm text-muted-foreground shrink-0 mb-auto mt-2">
 //                         até
 //                       </span>
-// 
+//
 //                       <div className="flex-1 flex flex-col gap-1">
 //                         <Select
 //                           value={period.closes_at}
@@ -333,7 +333,7 @@
 //                           </p>
 //                         )}
 //                       </div>
-// 
+//
 //                       {day.periods.length > 1 && (
 //                         <Button
 //                           type="button"
@@ -347,7 +347,7 @@
 //                       )}
 //                     </div>
 //                   ))}
-// 
+//
 //                   <Button
 //                     type="button"
 //                     variant="ghost"
@@ -369,7 +369,7 @@
 //           </div>
 //         ))}
 //       </div>
-// 
+//
 //       <Button
 //         onClick={handleSave}
 //         disabled={saving || !isDirty}

@@ -105,7 +105,7 @@ Tabelas principais:
 O banco salva datas em UTC. O frontend interpreta e exibe horarios no fuso:
 
 ```ts
-America/Sao_Paulo
+America / Sao_Paulo;
 ```
 
 O helper central fica em:

@@ -68,6 +68,7 @@ export function SignupForm() {
     const signupChangeToken = crypto.randomUUID();
 
     try {
+      // verifica celular duplicado
       const { data: existingPhone } = await supabase.rpc("check_phone_exists", {
         p_phone: rawPhone,
       });
@@ -77,11 +78,22 @@ export function SignupForm() {
         return;
       }
 
+      // verifica email duplicado
+      const { data: existingEmail } = await supabase.rpc("check_email_exists", {
+        p_email: data.email,
+      });
+
+      if (existingEmail) {
+        form.setError("email", { message: "Este email já está cadastrado" });
+        return;
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}`,
+          emailRedirectTo:
+            import.meta.env.VITE_DOMAIN ?? window.location.origin,
           data: {
             role: "barbershop",
             signup_change_token: signupChangeToken,
@@ -90,24 +102,22 @@ export function SignupForm() {
       });
 
       if (authError) {
-        if (authError.message.includes("User already registered")) {
-          form.setError("email", { message: "Este email já está cadastrado" });
-        } else {
-          const mensagem =
-            Object.entries(mensagens).find(([key]) =>
-              authError.message.includes(key),
-            )?.[1] ?? "Erro ao criar conta";
-          toast.error(mensagem);
-        }
+        const mensagem =
+          Object.entries(mensagens).find(([key]) =>
+            authError.message.includes(key),
+          )?.[1] ?? "Erro ao criar conta";
+        toast.error(mensagem);
         return;
       }
 
-      if (authData.user?.identities?.length === 0) {
-        form.setError("email", { message: "Este email já está cadastrado" });
+      if (!authData.user) {
+        toast.error("Erro ao criar conta", {
+          description: "Tente novamente em instantes.",
+        });
         return;
       }
 
-      const userId = authData.user!.id;
+      const userId = authData.user.id;
 
       const { error: rpcError } = await supabase.rpc("register_barbershop", {
         p_user_id: userId,
@@ -129,6 +139,10 @@ export function SignupForm() {
         ) {
           form.setError("barbershopName", {
             message: "Nome deve ter no máximo 30 caracteres",
+          });
+        } else if (rpcError.message.includes("unauthorized")) {
+          toast.error("Sessão expirada", {
+            description: "Tente criar sua conta novamente.",
           });
         } else {
           toast.error("Erro ao criar conta", { description: rpcError.message });

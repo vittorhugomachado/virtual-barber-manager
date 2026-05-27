@@ -65,7 +65,7 @@ export function CreateCustomerModal({
     const result = await createCustomer({
       barbershopId: barbershop.id,
       name: data.name,
-      phone: data.phone,
+      phone: `55${data.phone.replace(/\D/g, "")}`,
     });
 
     if (result.status === "conflict") {

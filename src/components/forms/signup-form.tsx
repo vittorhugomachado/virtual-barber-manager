@@ -85,7 +85,7 @@ export function SignupForm() {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}`,
+          emailRedirectTo: `${window.location.origin}/email-confirmado`,
           data: {
             role: "barbershop",
             signup_change_token: signupChangeToken,

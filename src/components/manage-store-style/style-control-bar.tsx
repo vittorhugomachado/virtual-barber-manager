@@ -1,8 +1,8 @@
-﻿// import { useState } from "react";
+// import { useState } from "react";
 // import { ColorField } from "./color-field";
 // import { Button } from "../ui/button";
 // import { Spinner } from "../ui/spinner";
-// import type { StoreStyle } from "@/types/store-style";
+// import type { FontOption, StoreStyle } from "@/types/store-style";
 // import { BarbershopGallery } from "../common/barbershop-gallery";
 // import {
 //   Dialog,
@@ -21,7 +21,19 @@
 //   AlertDialogHeader,
 //   AlertDialogTitle,
 // } from "../ui/alert-dialog";
-//
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "../ui/select";
+// import { Label } from "../ui/label";
+
+// const FONT_OPTIONS: { value: FontOption; label: string }[] = [
+//   { value: "inter", label: "Inter" },
+// ];
+
 // export function StyleControlBar({
 //   style,
 //   isLoading,
@@ -47,23 +59,23 @@
 //   const [galleryHasChanges, setGalleryHasChanges] = useState(false);
 //   const [discardWarningOpen, setDiscardWarningOpen] = useState(false);
 //   const [galleryKey, setGalleryKey] = useState(0);
-//
+
 //   function handleGalleryOpenChange(open: boolean) {
 //     if (!open && galleryHasChanges) {
 //       setDiscardWarningOpen(true);
 //       return;
 //     }
-//
+
 //     setGalleryOpen(open);
 //   }
-//
+
 //   function discardGalleryChanges() {
 //     setGalleryHasChanges(false);
 //     setDiscardWarningOpen(false);
 //     setGalleryOpen(false);
 //     setGalleryKey(current => current + 1);
 //   }
-//
+
 //   return (
 //     <>
 //       <div className="fixed right-2 bottom-4 md:top-1/2 md:-translate-y-1/2 z-20 w-fit h-fit flex flex-col items-center gap-2">
@@ -95,13 +107,31 @@
 //               value={style.text_button_color}
 //               onChange={value => onChange("text_button_color", value)}
 //             />
-//
 //             <ColorField
 //               label="Fundo"
 //               value={style.background_color}
 //               onChange={value => onChange("background_color", value)}
 //             />
-//
+
+//             <div className="min-w-0 flex-1 w-full px-2 flex flex-col items-center space-y-1">
+//               <Label className="text-xs text-neutral-500">Fonte do título</Label>
+//               <Select
+//                 value={style.title_font}
+//                 onValueChange={value => onChange("title_font", value as FontOption)}
+//               >
+//                 <SelectTrigger className="w-full bg-neutral-900 border-neutral-700 text-neutral-50">
+//                   <SelectValue />
+//                 </SelectTrigger>
+//                 <SelectContent>
+//                   {FONT_OPTIONS.map(option => (
+//                     <SelectItem key={option.value} value={option.value}>
+//                       {option.label}
+//                     </SelectItem>
+//                   ))}
+//                 </SelectContent>
+//               </Select>
+//             </div>
+
 //             <Button
 //               type="button"
 //               className="h-10 w-[95%] mx-0.5 scale-90 shrink-0 rounded-md md:mb-1 absolute bottom-1 md:bottom-0"
@@ -119,7 +149,7 @@
 //           {isOpen ? "✕" : "Editar cores"}
 //         </button>
 //       </div>
-//
+
 //       <Dialog open={galleryOpen} onOpenChange={handleGalleryOpenChange}>
 //         <DialogContent
 //           className="max-h-[92vh] mb-12 mt-2 overflow-y-auto sm:max-w-5xl"
@@ -150,7 +180,7 @@
 //           />
 //         </DialogContent>
 //       </Dialog>
-//
+
 //       <AlertDialog
 //         open={discardWarningOpen}
 //         onOpenChange={setDiscardWarningOpen}

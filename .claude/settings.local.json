@@ -28,7 +28,8 @@
       "Bash(python *)",
       "Bash(npx tsc *)",
       "Bash(Get-Content *)",
-      "Bash(Select-String \"lucide\")"
+      "Bash(Select-String \"lucide\")",
+      "Bash(npm install *)"
     ]
   }
 }

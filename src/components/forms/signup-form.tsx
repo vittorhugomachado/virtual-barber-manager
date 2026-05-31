@@ -20,9 +20,10 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { maskPhone } from "@/utils/mask-phone";
 import { Eye, EyeOff } from "lucide-react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
 const formSchema = z.object({
   name: z.string().min(1, "Digite seu nome"),
@@ -48,6 +49,8 @@ export function SignupForm() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,8 +65,12 @@ export function SignupForm() {
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     if (isLoading) return;
+    if (!captchaToken) {
+      toast.error("Confirme que você não é um robô.");
+      return;
+    }
     setIsLoading(true);
-
+    console.log(captchaToken);
     const rawPhone = data.phone.replace(/\D/g, "");
     const signupChangeToken = crypto.randomUUID();
 
@@ -92,15 +99,21 @@ export function SignupForm() {
         email: data.email,
         password: data.password,
         options: {
+          captchaToken: captchaToken!,
           emailRedirectTo: `${window.location.origin}/confirmar-email`,
           data: {
             role: "barbershop",
+            name: data.name,
+            phone: rawPhone,
+            barbershop_name: data.barbershopName,
             signup_change_token: signupChangeToken,
           },
         },
       });
 
       if (authError) {
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
         const mensagem =
           Object.entries(mensagens).find(([key]) =>
             authError.message.includes(key),
@@ -117,37 +130,6 @@ export function SignupForm() {
       }
 
       const userId = authData.user.id;
-
-      const { error: rpcError } = await supabase.rpc("register_barbershop", {
-        p_user_id: userId,
-        p_name: data.name,
-        p_phone: rawPhone,
-        p_barbershop_name: data.barbershopName,
-        p_email: data.email,
-      });
-
-      if (rpcError) {
-        await supabase.auth.signOut();
-        if (rpcError.message.includes("phone_already_exists")) {
-          form.setError("phone", {
-            message: "Este celular já está cadastrado",
-          });
-        } else if (
-          rpcError.message.includes("barbershops_name_max_length") ||
-          rpcError.message.includes("name_max_length")
-        ) {
-          form.setError("barbershopName", {
-            message: "Nome deve ter no máximo 30 caracteres",
-          });
-        } else if (rpcError.message.includes("unauthorized")) {
-          toast.error("Sessão expirada", {
-            description: "Tente criar sua conta novamente.",
-          });
-        } else {
-          toast.error("Erro ao criar conta", { description: rpcError.message });
-        }
-        return;
-      }
 
       toast.success("Conta criada com sucesso!");
       const pendingSignup = {
@@ -301,6 +283,17 @@ export function SignupForm() {
               </div>
             </div>
           </form>
+
+          <div className="flex justify-center mt-4">
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+              onSuccess={setCaptchaToken}
+              onExpire={() => setCaptchaToken(null)}
+              onError={() => setCaptchaToken(null)}
+              options={{ theme: "auto", language: "pt-br" }}
+            />
+          </div>
         </CardContent>
         <CardFooter className="flex-col gap-2">
           <Button type="submit" form="signup-form" disabled={isLoading}>

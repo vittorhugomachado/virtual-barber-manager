@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { CircleCheck, CircleX } from "lucide-react";
 import { Logo } from "@/components/common/logo";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
 type ResendState =
   | "idle"
@@ -22,6 +23,8 @@ export function ConfirmSignupPage() {
   const [email, setEmail] = useState("");
   const [resendState, setResendState] = useState<ResendState>("idle");
   const [resendError, setResendError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const navigate = useNavigate();
 
@@ -47,6 +50,11 @@ export function ConfirmSignupPage() {
   async function handleResend() {
     if (!email) {
       toast.error("Informe seu email.");
+      return;
+    }
+
+    if (!captchaToken) {
+      toast.error("Confirme que você não é um robô.");
       return;
     }
 
@@ -79,13 +87,24 @@ export function ConfirmSignupPage() {
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
-      options: { emailRedirectTo: `${window.location.origin}/confirmar-email` },
+      options: {
+        captchaToken: captchaToken!,
+        emailRedirectTo: `${window.location.origin}/confirmar-email`,
+      },
     });
+
+    turnstileRef.current?.reset();
+    setCaptchaToken(null);
 
     if (error) {
       setResendState("idle");
       if (error.message.includes("security purposes")) {
-        setResendError("Aguarde alguns segundos antes de tentar novamente.");
+        const seconds = error.message.match(/after (\d+) seconds/)?.[1];
+        setResendError(
+          seconds
+            ? `Aguarde ${seconds} segundos antes de tentar novamente.`
+            : "Aguarde alguns segundos antes de tentar novamente.",
+        );
       } else {
         toast.error("Erro ao reenviar.", { description: error.message });
       }
@@ -156,6 +175,16 @@ export function ConfirmSignupPage() {
                     Este email não está cadastrado.
                   </p>
                 )}
+
+                <Turnstile
+                  ref={turnstileRef}
+                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                  onSuccess={setCaptchaToken}
+                  onExpire={() => setCaptchaToken(null)}
+                  onError={() => setCaptchaToken(null)}
+                  options={{ theme: "auto", language: "pt-br" }}
+                  className="mt-4"
+                />
 
                 <Button
                   type="button"

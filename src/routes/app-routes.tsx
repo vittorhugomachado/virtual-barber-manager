@@ -20,9 +20,9 @@ const SignupPage = lazy(() =>
     default: module.SignupPage,
   })),
 );
-const ConfirmationLinkEmailExpired = lazy(() =>
-  import("@/pages/confirmed-email-error-page").then(module => ({
-    default: module.ConfirmationLinkEmailExpired,
+const ConfirmSignupPage = lazy(() =>
+  import("@/pages/confirm-signup").then(module => ({
+    default: module.ConfirmSignupPage,
   })),
 );
 // const EmailChangeConfirmedPage = lazy(() =>
@@ -154,7 +154,7 @@ export function AppRoutes() {
         path="/confirmar-email"
         element={
           <PublicPageLoader>
-            <ConfirmationLinkEmailExpired />
+            <ConfirmSignupPage />
           </PublicPageLoader>
         }
       />

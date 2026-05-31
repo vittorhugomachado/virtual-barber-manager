@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router";
-import { CircleX, Mail } from "lucide-react";
+import { CircleCheck, CircleX } from "lucide-react";
 import { Logo } from "@/components/common/logo";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
@@ -15,12 +15,13 @@ type ResendState =
   | "already_confirmed"
   | "sent";
 
-export function ConfirmationLinkEmailExpired() {
+export function ConfirmSignupPage() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
   );
   const [email, setEmail] = useState("");
   const [resendState, setResendState] = useState<ResendState>("idle");
+  const [resendError, setResendError] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -49,6 +50,7 @@ export function ConfirmationLinkEmailExpired() {
       return;
     }
 
+    setResendError(null);
     setResendState("sending");
 
     const { data: userStatus, error: checkError } = await supabase.rpc(
@@ -82,7 +84,11 @@ export function ConfirmationLinkEmailExpired() {
 
     if (error) {
       setResendState("idle");
-      toast.error("Erro ao reenviar.", { description: error.message });
+      if (error.message.includes("security purposes")) {
+        setResendError("Aguarde alguns segundos antes de tentar novamente.");
+      } else {
+        toast.error("Erro ao reenviar.", { description: error.message });
+      }
       return;
     }
 
@@ -93,50 +99,48 @@ export function ConfirmationLinkEmailExpired() {
     return null;
   }
 
-  if (resendState === "sent") {
-    return (
-      <main className="w-screen min-h-screen bg-zinc-100 dark:bg-transparent flex flex-col items-center justify-center px-4 lg:px-0 overflow-x-hidden">
-        <Logo style="w-55 md:w-60 mb-8" />
-
-        <div className="flex flex-col items-center justify-center max-w-md w-full mx-4 lg:mx-0">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-8 text-center w-full">
-            <Mail className="w-8 h-8 text-blue-500 mx-auto mb-4" />
-
-            <h1 className="text-2xl font-bold mb-2">Email enviado</h1>
-
-            <p className="text-muted-foreground">
-              É só verificar sua caixa de entrada.
-            </p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="w-screen min-h-screen bg-zinc-100 dark:bg-transparent flex flex-col items-center justify-center px-4 lg:px-0 overflow-x-hidden">
       <Logo style="w-55 md:w-60 mb-8" />
 
       <div className="flex flex-col items-center justify-center max-w-md w-full mx-4 lg:mx-0">
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-8 text-center w-full">
-          <CircleX className="w-8 h-8 text-red-600 mx-auto mb-4" />
+          {resendState === "sent" || resendState === "already_confirmed" ? (
+            <>
+              <CircleCheck className="w-8 h-8 text-green-500 mx-auto mb-4" />
 
-          <h1 className="text-2xl font-bold mb-2">Link expirado ou já usado</h1>
+              <h1 className="text-2xl font-bold mb-2">
+                {resendState === "sent"
+                  ? "Email enviado"
+                  : "Email já confirmado"}
+              </h1>
 
-          <p className="text-muted-foreground mb-6">
-            O link que você acessou já expirou ou foi usado. Solicite um novo
-            abaixo.
-          </p>
+              <p className="text-muted-foreground">
+                {resendState === "sent"
+                  ? "É só verificar sua caixa de entrada."
+                  : "Seu email já foi confirmado. Você já pode entrar na conta."}
+              </p>
 
-          <div className="flex flex-col items-center">
-            {resendState === "already_confirmed" ? (
-              <>
-                <p className="text-sm text-center text-green-600">
-                  Seu email já foi confirmado. Você já pode entrar na conta.
-                </p>
-              </>
-            ) : (
-              <>
+              {resendState === "already_confirmed" && (
+                <Button className="mt-4" onClick={() => navigate("/entrar")}>
+                  Entrar
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <CircleX className="w-8 h-8 text-red-600 mx-auto mb-4" />
+
+              <h1 className="text-2xl font-bold mb-2">
+                Link expirado ou já usado
+              </h1>
+
+              <p className="text-muted-foreground mb-6">
+                O link que você acessou já expirou ou foi usado. Solicite um
+                novo abaixo.
+              </p>
+
+              <div className="flex flex-col items-center">
                 <Input
                   type="email"
                   placeholder="Seu email"
@@ -155,7 +159,7 @@ export function ConfirmationLinkEmailExpired() {
 
                 <Button
                   type="button"
-                  className="w-full mt-5 mb-2"
+                  className="w-full mt-5"
                   disabled={resendState === "sending"}
                   onClick={handleResend}
                 >
@@ -165,16 +169,20 @@ export function ConfirmationLinkEmailExpired() {
                     "Solicitar novo link"
                   )}
                 </Button>
-              </>
-            )}
 
-            <Button variant="link" onClick={() => navigate("/entrar")}>
-              Entrar
-            </Button>
-            <Button variant="link" onClick={() => navigate("/cadastro")}>
-              Já tenho conta
-            </Button>
-          </div>
+                {resendError && (
+                  <p className="text-sm text-red-500 mt-2">{resendError}</p>
+                )}
+
+                <Button variant="link" onClick={() => navigate("/entrar")}>
+                  Entrar
+                </Button>
+                <Button variant="link" onClick={() => navigate("/cadastro")}>
+                  Criar conta
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </main>

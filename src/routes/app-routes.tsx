@@ -30,16 +30,16 @@ const ConfirmSignupPage = lazy(() =>
 //     default: module.EmailChangeConfirmedPage,
 //   })),
 // );
-// const LoginPage = lazy(() =>
-//   import("@/pages/login-page").then(module => ({
-//     default: module.LoginPage,
-//   })),
-// );
-// const SignupPendingPage = lazy(() =>
-//   import("@/pages/signup-pending-page").then(module => ({
-//     default: module.SignupPendingPage,
-//   })),
-// );
+const LoginPage = lazy(() =>
+  import("@/pages/login-page").then(module => ({
+    default: module.LoginPage,
+  })),
+);
+const SignupPendingPage = lazy(() =>
+  import("@/pages/signup-pending-page").then(module => ({
+    default: module.SignupPendingPage,
+  })),
+);
 // const ForgotPasswordPage = lazy(() =>
 //   import("@/pages/forgot-password-page").then(module => ({
 //     default: module.ForgotPasswordPage,
@@ -140,7 +140,7 @@ export function AppRoutes() {
   return (
     <Routes>
       {/* Rotas públicas */}
-      {/* <Route
+      <Route
         path="/entrar"
         element={
           <PublicRoute>
@@ -149,7 +149,7 @@ export function AppRoutes() {
             </PublicPageLoader>
           </PublicRoute>
         }
-      /> */}
+      />
       <Route
         path="/confirmar-email"
         element={
@@ -169,7 +169,7 @@ export function AppRoutes() {
         }
       />
       {/* Rota usada no login em email ainda não confirmado */}
-      {/* <Route
+      <Route
         path="/cadastro-pendente/:email"
         element={
           <PublicRoute>
@@ -178,7 +178,7 @@ export function AppRoutes() {
             </PublicPageLoader>
           </PublicRoute>
         }
-      /> */}
+      />
       {/* Rotas de recuperação e atualização de senha */}
       {/* <Route
         path="/esqueci-minha-senha"

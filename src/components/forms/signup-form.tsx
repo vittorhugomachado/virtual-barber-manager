@@ -71,7 +71,6 @@ export function SignupForm() {
       return;
     }
     setIsLoading(true);
-    console.log(captchaToken);
     const rawPhone = data.phone.replace(/\D/g, "");
     const signupChangeToken = crypto.randomUUID();
 
@@ -100,7 +99,7 @@ export function SignupForm() {
         email: data.email,
         password: data.password,
         options: {
-          captchaToken: captchaToken!,
+          captchaToken,
           emailRedirectTo: `${window.location.origin}/confirmar-email`,
           data: {
             role: "barbershop",

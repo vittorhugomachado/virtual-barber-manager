@@ -1,5 +1,3 @@
-﻿/* eslint-disable @typescript-eslint/no-unused-vars */
-import { Navigate } from "react-router";
 // import { useAuth } from "@/hooks/use-auth";
 // import { Spinner } from "@/components/ui/spinner";
 

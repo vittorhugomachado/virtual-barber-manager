@@ -254,7 +254,7 @@ export function LoginForm() {
                 <Button
                   type="submit"
                   form="login-form-owner"
-                  disabled={isLoading}
+                  disabled={isLoading || !captchaToken || captchaFailed}
                   className="w-full max-w-36 rounded-full"
                 >
                   {isLoading ? "Entrando..." : "Entrar"}
@@ -384,7 +384,7 @@ export function LoginForm() {
                 <Button
                   type="submit"
                   form="login-form-member"
-                  disabled={isLoading}
+                  disabled={isLoading || !captchaToken || captchaFailed}
                   className="w-full max-w-36"
                 >
                   {isLoading ? "Entrando..." : "Entrar"}

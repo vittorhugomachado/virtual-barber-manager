@@ -26,7 +26,8 @@
       "Bash(pip show *)",
       "Bash(pip install *)",
       "Bash(python *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(Get-Content *)"
     ]
   }
 }

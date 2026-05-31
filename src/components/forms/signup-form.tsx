@@ -92,8 +92,7 @@ export function SignupForm() {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo:
-            import.meta.env.VITE_DOMAIN ?? window.location.origin,
+          emailRedirectTo: `${window.location.origin}/confirmar-email`,
           data: {
             role: "barbershop",
             signup_change_token: signupChangeToken,
@@ -304,12 +303,7 @@ export function SignupForm() {
           </form>
         </CardContent>
         <CardFooter className="flex-col gap-2">
-          <Button
-            type="submit"
-            form="signup-form"
-            disabled={isLoading}
-            className="w-full max-w-xs rounded-full"
-          >
+          <Button type="submit" form="signup-form" disabled={isLoading}>
             {isLoading ? "Criando conta..." : "Criar conta"}
           </Button>
           <Button variant="link" onClick={() => navigate("/entrar")}>

@@ -20,6 +20,11 @@ const SignupPage = lazy(() =>
     default: module.SignupPage,
   })),
 );
+const SignupConfirmedErrorPage = lazy(() =>
+  import("@/pages/signup-confirmed-error-page").then(module => ({
+    default: module.SignupConfirmedErrorPage,
+  })),
+);
 // const EmailChangeConfirmedPage = lazy(() =>
 //   import("@/pages/confirmation-email-page").then(module => ({
 //     default: module.EmailChangeConfirmedPage,
@@ -145,6 +150,14 @@ export function AppRoutes() {
           </PublicRoute>
         }
       /> */}
+      <Route
+        path="/confirmar-email"
+        element={
+          <PublicPageLoader>
+            <SignupConfirmedErrorPage />
+          </PublicPageLoader>
+        }
+      />
       <Route
         path="/cadastro"
         element={

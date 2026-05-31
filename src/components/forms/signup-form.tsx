@@ -50,6 +50,7 @@ export function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaFailed, setCaptchaFailed] = useState(false);
   const turnstileRef = useRef<TurnstileInstance>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -284,15 +285,37 @@ export function SignupForm() {
             </div>
           </form>
 
-          <div className="flex justify-center mt-4">
-            <Turnstile
-              ref={turnstileRef}
-              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-              onSuccess={setCaptchaToken}
-              onExpire={() => setCaptchaToken(null)}
-              onError={() => setCaptchaToken(null)}
-              options={{ theme: "auto", language: "pt-br" }}
-            />
+          <div className="flex flex-col items-center mt-4">
+            {captchaFailed ? (
+              <div className="text-center">
+                <p className="text-sm text-red-500 mb-2">
+                  Verificação de segurança indisponível.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={() => window.location.reload()}
+                >
+                  Recarregar página
+                </Button>
+              </div>
+            ) : (
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                onSuccess={token => {
+                  setCaptchaToken(token);
+                  setCaptchaFailed(false);
+                }}
+                onExpire={() => setCaptchaToken(null)}
+                onError={() => {
+                  setCaptchaToken(null);
+                  setCaptchaFailed(true);
+                }}
+                options={{ theme: "auto", language: "pt-br" }}
+              />
+            )}
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-2">

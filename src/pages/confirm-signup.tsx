@@ -53,11 +53,6 @@ export function ConfirmSignupPage() {
       return;
     }
 
-    if (!captchaToken) {
-      toast.error("Confirme que você não é um robô.");
-      return;
-    }
-
     setResendError(null);
     setResendState("sending");
 
@@ -88,7 +83,7 @@ export function ConfirmSignupPage() {
       type: "signup",
       email,
       options: {
-        captchaToken: captchaToken!,
+        captchaToken: captchaToken ?? undefined,
         emailRedirectTo: `${window.location.origin}/confirmar-email`,
       },
     });
@@ -105,6 +100,10 @@ export function ConfirmSignupPage() {
             ? `Aguarde ${seconds} segundos antes de tentar novamente.`
             : "Aguarde alguns segundos antes de tentar novamente.",
         );
+      } else if (error.message.includes("captcha")) {
+        setResendError(
+          "Erro de verificação de segurança. Recarregue a página e tente novamente.",
+        );
       } else {
         toast.error("Erro ao reenviar.", { description: error.message });
       }
@@ -115,11 +114,24 @@ export function ConfirmSignupPage() {
   }
 
   if (status === "loading" || status === "success") {
-    return null;
+    return (
+      <div className="w-screen h-screen flex items-center justify-center">
+        <Spinner className="size-10" />
+      </div>
+    );
   }
 
   return (
     <main className="w-screen min-h-screen bg-zinc-100 dark:bg-transparent flex flex-col items-center justify-center px-4 lg:px-0 overflow-x-hidden">
+      <Turnstile
+        ref={turnstileRef}
+        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+        onSuccess={setCaptchaToken}
+        onExpire={() => setCaptchaToken(null)}
+        onError={() => setCaptchaToken(null)}
+        options={{ size: "invisible" }}
+        style={{ display: "none" }}
+      />
       <Logo style="w-55 md:w-60 mb-8" />
 
       <div className="flex flex-col items-center justify-center max-w-md w-full mx-4 lg:mx-0">
@@ -175,16 +187,6 @@ export function ConfirmSignupPage() {
                     Este email não está cadastrado.
                   </p>
                 )}
-
-                <Turnstile
-                  ref={turnstileRef}
-                  siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-                  onSuccess={setCaptchaToken}
-                  onExpire={() => setCaptchaToken(null)}
-                  onError={() => setCaptchaToken(null)}
-                  options={{ theme: "auto", language: "pt-br" }}
-                  className="mt-4"
-                />
 
                 <Button
                   type="button"

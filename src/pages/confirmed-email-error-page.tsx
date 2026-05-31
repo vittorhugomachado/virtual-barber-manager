@@ -15,7 +15,7 @@ type ResendState =
   | "already_confirmed"
   | "sent";
 
-export function SignupConfirmedErrorPage() {
+export function ConfirmationLinkEmailExpired() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
   );
@@ -128,7 +128,7 @@ export function SignupConfirmedErrorPage() {
             abaixo.
           </p>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col items-center">
             {resendState === "already_confirmed" ? (
               <>
                 <p className="text-sm text-center text-green-600">
@@ -155,7 +155,7 @@ export function SignupConfirmedErrorPage() {
 
                 <Button
                   type="button"
-                  className="w-full"
+                  className="w-full mt-5 mb-2"
                   disabled={resendState === "sending"}
                   onClick={handleResend}
                 >
@@ -168,12 +168,12 @@ export function SignupConfirmedErrorPage() {
               </>
             )}
 
-            <a href="/entrar" className="text-sm block w-fit mx-auto">
+            <Button variant="link" onClick={() => navigate("/entrar")}>
               Entrar
-            </a>
-            <a href="/cadastro" className="text-sm block w-fit mx-auto">
-              Criar conta
-            </a>
+            </Button>
+            <Button variant="link" onClick={() => navigate("/cadastro")}>
+              Já tenho conta
+            </Button>
           </div>
         </div>
       </div>

@@ -27,7 +27,8 @@
       "Bash(pip install *)",
       "Bash(python *)",
       "Bash(npx tsc *)",
-      "Bash(Get-Content *)"
+      "Bash(Get-Content *)",
+      "Bash(Select-String \"lucide\")"
     ]
   }
 }

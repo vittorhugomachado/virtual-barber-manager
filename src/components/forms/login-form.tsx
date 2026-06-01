@@ -153,8 +153,8 @@ export function LoginForm() {
   }
 
   return (
-    <div className="w-full max-w-lg lg:max-w-285 lg:flex lg:items-center justify-center lg:h-screen lg:w-[50vw] lg:bg-card text-card-foreground lg:border-l border-zinc-300 dark:border-none">
-      <Card className="w-full max-w-lg lg:border-none lg:rounded-none lg:shadow-none">
+    <div className="w-full max-w-lg lg:max-w-285 lg:flex lg:items-center justify-center lg:min-h-190 lg:w-[50vw] lg:bg-card text-card-foreground lg:border-l border-zinc-300 dark:border-none">
+      <Card className="w-full max-w-lg lg:border-none lg:rounded-none lg:shadow-none pt-8">
         <CardHeader>
           <CardTitle className="lg:text-3xl lg:-translate-y-20">
             Entrar na Virtual
@@ -421,7 +421,7 @@ export function LoginForm() {
                 setCaptchaToken(null);
                 setCaptchaFailed(true);
               }}
-              options={{ theme: "auto", language: "pt-br" }}
+              options={{ language: "pt-br" }}
             />
           )}
         </div>

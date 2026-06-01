@@ -10,11 +10,11 @@ import { PublicRoute } from "./public-route";
 import { Spinner } from "@/components/ui/spinner";
 // import { ReportsSkeleton } from "@/components/skeleton/reports-skeleton";
 
-// const DashboardPage = lazy(() =>
-//   import("@/pages/dashboard-page").then(module => ({
-//     default: module.DashboardPage,
-//   })),
-// );
+const DashboardPage = lazy(() =>
+  import("@/pages/dashboard-page").then(module => ({
+    default: module.DashboardPage,
+  })),
+);
 const SignupPage = lazy(() =>
   import("@/pages/signup-page").then(module => ({
     default: module.SignupPage,
@@ -207,6 +207,15 @@ export function AppRoutes() {
           </PublicPageLoader>
         }
       /> */}
+      {/* Rota provisória de diagnóstico das credenciais */}
+      <Route
+        path="/painel"
+        element={
+          <PublicPageLoader>
+            <DashboardPage />
+          </PublicPageLoader>
+        }
+      />
       {/* Rotas protegidas com sidebar */}
       {/* <Route element={<ProtectedRouteWithSkeleton />}>
         <Route

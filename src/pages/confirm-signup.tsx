@@ -43,7 +43,7 @@ export function ConfirmSignupPage() {
 
   useEffect(() => {
     if (status === "success") {
-      navigate("/");
+      navigate("/painel");
     }
   }, [status, navigate]);
 

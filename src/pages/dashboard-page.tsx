@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { supabase } from "@/lib/supabase/supabase";
 import { useCredential } from "@/store/user-credential.store";
 
 // import { BarbershopDashboardMain } from "@/components/main/dashboard-main";
@@ -19,6 +22,20 @@ import { useCredential } from "@/store/user-credential.store";
  */
 export function DashboardPage() {
   const credential = useCredential();
+  const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      // onAuthStateChange no store reseta a credencial para "unauthenticated".
+      await supabase.auth.signOut();
+      navigate("/entrar");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  }
 
   const rows: { label: string; value: string | null }[] = [
     { label: "status", value: credential.status },
@@ -66,6 +83,15 @@ export function DashboardPage() {
             {JSON.stringify(credential.barbershop, null, 2)}
           </pre>
         </details>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="mt-6 w-full rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isLoggingOut ? "Saindo..." : "Sair (logout)"}
+        </button>
       </div>
     </main>
   );

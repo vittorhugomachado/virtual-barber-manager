@@ -1,7 +1,18 @@
-﻿import { Logo } from "@/components/common/logo";
+﻿import { useEffect } from "react";
+import { useNavigate } from "react-router";
+import { Logo } from "@/components/common/logo";
 import { SignupForm } from "@/components/forms/signup-form";
+import { useCredential } from "@/store/user-credential.store";
 
 export function SignupPage() {
+  const navigate = useNavigate();
+  const status = useCredential(state => state.status);
+
+  // Usuário já autenticado não fica na tela de cadastro.
+  useEffect(() => {
+    if (status === "authenticated") navigate("/painel", { replace: true });
+  }, [status, navigate]);
+
   return (
     <main className="w-screen min-h-screen bg-zinc-100 dark:bg-transparent flex items-center justify-center px-4 lg:justify-between lg:px-0 overflow-x-hidden">
       <Logo style="w-55 md:w-80 absolute lg:fixed top-8 lg:left-8" />

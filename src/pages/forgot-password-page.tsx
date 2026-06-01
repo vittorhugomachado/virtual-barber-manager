@@ -20,7 +20,8 @@
 // import { Controller, useForm } from "react-hook-form";
 // import { useNavigate } from "react-router";
 // import { toast } from "sonner";
-// import { useState } from "react";
+// import { useEffect, useState } from "react";
+// import { useCredential } from "@/store/user-credential.store";
 // import * as z from "zod";
 //
 // const forgotPasswordSchema = z.object({
@@ -28,6 +29,14 @@
 // });
 //
 // export function ForgotPasswordPage() {
+//   const navigate = useNavigate();
+//   const status = useCredential(state => state.status);
+//
+//   // Usuário já autenticado não fica na tela de recuperação de senha.
+//   useEffect(() => {
+//     if (status === "authenticated") navigate("/painel", { replace: true });
+//   }, [status, navigate]);
+//
 //   return (
 //     <main className="w-full min-h-screen bg-zinc-100 dark:bg-transparent flex items-center justify-center px-4 lg:justify-between lg:px-0">
 //       <Logo style="w-55 md:w-80 absolute top-8 lg:left-8" />

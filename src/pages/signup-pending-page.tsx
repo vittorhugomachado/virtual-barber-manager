@@ -7,11 +7,18 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import { useCredential } from "@/store/user-credential.store";
 
 export function SignupPendingPage() {
   const navigate = useNavigate();
+  const status = useCredential(state => state.status);
   const { email: emailParam } = useParams<{ email: string }>();
   const email = emailParam ? decodeURIComponent(emailParam) : "";
+
+  // Usuário já autenticado não fica na tela de confirmação pendente.
+  useEffect(() => {
+    if (status === "authenticated") navigate("/painel", { replace: true });
+  }, [status, navigate]);
 
   const [isResending, setIsResending] = useState(false);
   const [isChecking, setIsChecking] = useState(false);

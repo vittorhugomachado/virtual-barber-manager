@@ -5,6 +5,7 @@
 // import { CheckCircle2, CircleX } from "lucide-react";
 // import { Logo } from "@/components/common/logo";
 // import { formatPhone } from "@/utils/format-phone";
+// import { useCredential } from "@/store/user-credential.store";
 //
 // export function EmailChangeConfirmedPage() {
 //   const [status, setStatus] = useState<"loading" | "success" | "error">(
@@ -15,6 +16,13 @@
 //   const phone = formatPhone(SUPPORT_PHONE);
 //
 //   const navigate = useNavigate();
+//   const credentialStatus = useCredential(state => state.status);
+//
+//   // Usuário já autenticado não fica nesta tela.
+//   useEffect(() => {
+//     if (credentialStatus === "authenticated")
+//       navigate("/painel", { replace: true });
+//   }, [credentialStatus, navigate]);
 //
 //   useEffect(() => {
 //     async function checkSession() {

@@ -29,7 +29,8 @@
       "Bash(npx tsc *)",
       "Bash(Get-Content *)",
       "Bash(Select-String \"lucide\")",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Skill(update-config)"
     ]
   }
 }

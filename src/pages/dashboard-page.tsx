@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "@/lib/supabase/supabase";
 import { useCredential } from "@/store/user-credential.store";
+import {
+  createMember,
+  type CreatedMember,
+  type MemberRole,
+} from "@/lib/supabase/members/create-member";
 
 // import { BarbershopDashboardMain } from "@/components/main/dashboard-main";
 // import { HeaderPage } from "@/components/common/header-page";
@@ -25,6 +30,14 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // --- Teste provisório: criação de membro via Edge Function ---
+  const [memberName, setMemberName] = useState("Membro Teste");
+  const [memberPassword, setMemberPassword] = useState("senha12345");
+  const [memberRole, setMemberRole] = useState<MemberRole>("reader");
+  const [isCreating, setIsCreating] = useState(false);
+  const [createResult, setCreateResult] = useState<CreatedMember | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+
   async function handleLogout() {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
@@ -34,6 +47,26 @@ export function DashboardPage() {
       navigate("/entrar");
     } finally {
       setIsLoggingOut(false);
+    }
+  }
+
+  async function handleCreateMember() {
+    if (isCreating || !credential.barbershopId) return;
+    setIsCreating(true);
+    setCreateResult(null);
+    setCreateError(null);
+    try {
+      const member = await createMember({
+        name: memberName,
+        password: memberPassword,
+        role: memberRole,
+        barbershopId: credential.barbershopId,
+      });
+      setCreateResult(member);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Erro desconhecido");
+    } finally {
+      setIsCreating(false);
     }
   }
 
@@ -83,6 +116,63 @@ export function DashboardPage() {
             {JSON.stringify(credential.barbershop, null, 2)}
           </pre>
         </details>
+
+        {/* --- Teste provisório: criar membro --- */}
+        <div className="mt-6 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
+          <h2 className="text-sm font-semibold mb-3">
+            Testar criação de membro (Edge Function)
+          </h2>
+
+          {credential.accessLevel !== "owner" ? (
+            <p className="text-sm text-zinc-500">
+              Só o owner pode criar membros. (accessLevel atual:{" "}
+              {credential.accessLevel ?? "null"})
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <input
+                value={memberName}
+                onChange={e => setMemberName(e.target.value)}
+                placeholder="Nome do membro"
+                className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm"
+              />
+              <input
+                value={memberPassword}
+                onChange={e => setMemberPassword(e.target.value)}
+                placeholder="Senha (8-72)"
+                className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm"
+              />
+              <select
+                value={memberRole}
+                onChange={e => setMemberRole(e.target.value as MemberRole)}
+                className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm"
+              >
+                <option value="reader">reader</option>
+                <option value="admin">admin</option>
+              </select>
+
+              <button
+                type="button"
+                onClick={handleCreateMember}
+                disabled={isCreating}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
+              >
+                {isCreating ? "Criando..." : "Criar membro"}
+              </button>
+
+              {createError && (
+                <p className="text-sm text-red-500 break-all">
+                  ❌ {createError}
+                </p>
+              )}
+              {createResult && (
+                <pre className="rounded-md bg-green-50 dark:bg-green-950/30 p-3 text-xs overflow-auto">
+                  ✅ {JSON.stringify(createResult, null, 2)}
+                </pre>
+              )}
+            </div>
+          )}
+        </div>
 
         <button
           type="button"

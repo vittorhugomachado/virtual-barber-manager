@@ -140,6 +140,14 @@ export function SignupForm() {
 
       sessionStorage.setItem("pending-signup", JSON.stringify(pendingSignup));
       navigate("/entrar", { state: pendingSignup });
+    } catch (error) {
+      // ✅ Adicione este bloco para capturar erros inesperados
+      console.error("Erro no cadastro:", error);
+      toast.error("Erro ao criar conta", {
+        description: "Ocorreu um erro inesperado. Tente novamente.",
+      });
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
     } finally {
       setIsLoading(false);
     }

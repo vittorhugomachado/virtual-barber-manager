@@ -1,8 +1,10 @@
 import { Logo } from "@/components/common/logo";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabase/supabase";
-import { Mail } from "lucide-react";
+import { correctPendingEmail } from "@/lib/supabase/auth/correct-pending-email";
+import { Mail, Pencil } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
@@ -25,6 +27,111 @@ export function SignupPendingPage() {
   const [cooldown, setCooldown] = useState(0);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance>(null);
+
+  // Dados do cadastro pendente (gravados no signup). userId + changeToken são
+  // o que autoriza corrigir o email sem sessão. Mantidos em state para suportar
+  // mais de uma correção (o token é rotacionado a cada troca).
+  const [pendingAuth, setPendingAuth] = useState<{
+    userId: string;
+    changeToken: string;
+  } | null>(() => {
+    try {
+      const raw = sessionStorage.getItem("pending-signup");
+      if (!raw) return null;
+      const p = JSON.parse(raw) as {
+        userId?: string;
+        changeToken?: string;
+      };
+      return p?.userId && p?.changeToken
+        ? { userId: p.userId, changeToken: p.changeToken }
+        : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // "Corrigir email": só disponível para cadastro recém-criado (tem token).
+  const canCorrectEmail = Boolean(pendingAuth);
+  const [isCorrecting, setIsCorrecting] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
+
+  // Corrige o email errado: troca via Edge Function e reenvia o link ao novo.
+  async function handleCorrectEmail() {
+    if (!pendingAuth || isSavingEmail) return;
+
+    const target = newEmail.trim().toLowerCase();
+    if (!target) {
+      toast.error("Digite o novo email.");
+      return;
+    }
+    if (target === email.toLowerCase()) {
+      toast.error("O novo email é igual ao atual.");
+      return;
+    }
+
+    setIsSavingEmail(true);
+    try {
+      const { newChangeToken } = await correctPendingEmail({
+        userId: pendingAuth.userId,
+        changeToken: pendingAuth.changeToken,
+        newEmail: target,
+      });
+
+      // Persiste o novo email + token rotacionado.
+      sessionStorage.setItem(
+        "pending-signup",
+        JSON.stringify({
+          email: target,
+          userId: pendingAuth.userId,
+          changeToken: newChangeToken,
+        }),
+      );
+      setPendingAuth({
+        userId: pendingAuth.userId,
+        changeToken: newChangeToken,
+      });
+
+      // Dispara o link de confirmação para o novo endereço (captcha do front).
+      const { error: resendErr } = await supabase.auth.resend({
+        type: "signup",
+        email: target,
+        options: {
+          captchaToken: captchaToken ?? undefined,
+          emailRedirectTo: `${window.location.origin}/confirmar-email`,
+        },
+      });
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
+
+      if (resendErr) {
+        toast.success("Email corrigido!", {
+          description:
+            'Clique em "Reenviar email de confirmação" para receber o link.',
+        });
+      } else {
+        toast.success("Email corrigido!", {
+          description: `Enviamos um novo link para ${target}.`,
+        });
+        setCooldown(60);
+      }
+
+      setIsCorrecting(false);
+      setNewEmail("");
+
+      // Atualiza a URL para refletir o novo email.
+      navigate(`/cadastro-pendente/${encodeURIComponent(target)}`, {
+        replace: true,
+        state: { email: target },
+      });
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao corrigir email.",
+      );
+    } finally {
+      setIsSavingEmail(false);
+    }
+  }
 
   // Sem email na URL não há o que fazer aqui.
   useEffect(() => {
@@ -137,39 +244,85 @@ export function SignupPendingPage() {
             Seu email ainda não foi confirmado. Enviamos um link de ativação
             para:
           </p>
-          <p className="font-medium text-foreground mb-4 break-all">{email}</p>
+          <p className="font-medium text-foreground mb-2 break-all">{email}</p>
 
-          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 mb-6">
-            <p className="text-sm text-muted-foreground">
-              ⚠️ Verifique também a caixa de spam ou lixo eletrônico.
-            </p>
-          </div>
+          {canCorrectEmail &&
+            (isCorrecting ? (
+              <div className="flex flex-col gap-2 mb-4 text-left">
+                <Input
+                  type="email"
+                  placeholder="Digite o email correto"
+                  value={newEmail}
+                  onChange={e => setNewEmail(e.target.value)}
+                  disabled={isSavingEmail}
+                />
+                <div className="flex flex-col items-center gap-2 mt-2">
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={handleCorrectEmail}
+                    disabled={isSavingEmail}
+                  >
+                    {isSavingEmail ? <Spinner /> : "Salvar e reenviar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsCorrecting(false);
+                      setNewEmail("");
+                    }}
+                    disabled={isSavingEmail}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsCorrecting(true)}
+                  className="mb-4 inline-flex items-center gap-1 text-sm text-[#0458EE] hover:underline mx-auto cursor-pointer"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Digitou o email errado? Corrigir
+                </button>
+                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-muted-foreground">
+                    ⚠️ Verifique também a caixa de spam ou lixo eletrônico.
+                  </p>
+                </div>
 
+                <div className="flex flex-col items-center gap-3">
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={handleResend}
+                    disabled={isResending || cooldown > 0}
+                  >
+                    {isResending ? (
+                      <Spinner />
+                    ) : cooldown > 0 ? (
+                      `Reenviar em ${cooldown}s`
+                    ) : (
+                      "Reenviar email de confirmação"
+                    )}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={handleCheckConfirmed}
+                    disabled={isChecking}
+                  >
+                    {isChecking ? <Spinner /> : "Já confirmei meu email"}
+                  </Button>
+                </div>
+              </>
+            ))}
           <div className="flex flex-col items-center gap-3">
-            <Button
-              type="button"
-              variant="default"
-              onClick={handleResend}
-              disabled={isResending || cooldown > 0}
-            >
-              {isResending ? (
-                <Spinner />
-              ) : cooldown > 0 ? (
-                `Reenviar em ${cooldown}s`
-              ) : (
-                "Reenviar email de confirmação"
-              )}
-            </Button>
-
-            <Button
-              type="button"
-              variant="link"
-              onClick={handleCheckConfirmed}
-              disabled={isChecking}
-            >
-              {isChecking ? <Spinner /> : "Já confirmei meu email"}
-            </Button>
-
             <Button
               type="button"
               variant="link"

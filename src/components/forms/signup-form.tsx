@@ -139,7 +139,9 @@ export function SignupForm() {
       };
 
       sessionStorage.setItem("pending-signup", JSON.stringify(pendingSignup));
-      navigate("/entrar", { state: pendingSignup });
+      navigate(`/cadastro-pendente/${encodeURIComponent(data.email)}`, {
+        state: pendingSignup,
+      });
     } catch (error) {
       // ✅ Adicione este bloco para capturar erros inesperados
       console.error("Erro no cadastro:", error);

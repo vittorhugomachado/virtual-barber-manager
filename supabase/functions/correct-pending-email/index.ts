@@ -128,13 +128,23 @@ Deno.serve(async (req: Request) => {
     if (emailExists) return fail("email_already_exists");
 
     // 6. Atualiza email + rotaciona o token -----------------------------------
+    //
+    // ATOMICIDADE: GoTrue (auth.users) e Postgres (barbershops) são sistemas
+    // distintos — não há transação que cubra os dois. Garantimos "tudo ou nada"
+    // por COMPENSAÇÃO (saga):
+    //   - A troca no auth vem PRIMEIRO. É onde o email duplicado é detectado
+    //     (falha mais provável); se falhar, barbershops nunca é tocado.
+    //   - Se o auth ok mas o barbershops falhar (caso raro), REVERTEMOS o auth
+    //     ao estado anterior, deixando o cadastro exatamente como estava.
+    const previousEmail = user.email;
+    const previousMetadata = user.user_metadata ?? {};
     const newChangeToken = crypto.randomUUID();
 
     const { error: updateErr } = await admin.auth.admin.updateUserById(userId, {
       email: newEmail,
       email_confirm: false,
       user_metadata: {
-        ...(user.user_metadata ?? {}),
+        ...previousMetadata,
         signup_change_token: newChangeToken,
       },
     });
@@ -142,6 +152,7 @@ Deno.serve(async (req: Request) => {
       // auth.users tem unique constraint no email — é a checagem AUTORITATIVA
       // de disponibilidade e pega até cadastros pendentes que o pré-filtro
       // acima não vê. Mapeia o conflito para o código de email já em uso.
+      // Nada foi alterado ainda, então é seguro só retornar.
       const code = (updateErr as { code?: string }).code ?? "";
       const msg = updateErr.message?.toLowerCase() ?? "";
       const isDuplicate =
@@ -153,9 +164,42 @@ Deno.serve(async (req: Request) => {
       return fail(isDuplicate ? "email_already_exists" : "failed_to_update");
     }
 
+    // Mantém o email de CONTATO da barbearia em sincronia com o de login.
+    // O cadastro cria barbershops.email a partir do email do auth.users.
+    // (Nota: se a barbearia ainda não existe, o update casa 0 linhas e NÃO é
+    //  erro — shopErr fica null, então não há o que compensar.)
+    const { error: shopErr } = await admin
+      .from("barbershops")
+      .update({ email: newEmail })
+      .eq("owner_id", userId);
+
+    if (shopErr) {
+      // COMPENSAÇÃO: desfaz a troca no auth para não deixar estado inconsistente
+      // (auth com email novo e barbershops com o antigo). Volta ao original.
+      const { error: revertErr } = await admin.auth.admin.updateUserById(
+        userId,
+        {
+          email: previousEmail,
+          email_confirm: false,
+          user_metadata: previousMetadata,
+        },
+      );
+      if (revertErr) {
+        // Reversão falhou: é o único caso em que o estado fica divergente.
+        // Logamos como crítico para reconciliação manual.
+        console.error(
+          "CRÍTICO: barbershops.email falhou E o revert do auth também falhou.",
+          { userId, shopErr, revertErr },
+        );
+      }
+      return fail("failed_to_update");
+    }
+
     // O envio do email de confirmação fica no front (resend com captcha).
     return json({ newChangeToken }, 200);
-  } catch (error) {
-    return json({ error: "internal_error", error }, 500);
+  } catch (err) {
+    // NUNCA vazar detalhes internos na resposta. Loga no servidor, devolve genérico.
+    console.error("correct-pending-email erro inesperado:", err);
+    return json({ error: "internal_error" }, 500);
   }
 });

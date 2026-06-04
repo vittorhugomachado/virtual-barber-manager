@@ -16,7 +16,7 @@ type ResendState =
   | "already_confirmed"
   | "sent";
 
-export function ConfirmSignupPage() {
+export function ConfirmSignupPageByEmailLink() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
   );

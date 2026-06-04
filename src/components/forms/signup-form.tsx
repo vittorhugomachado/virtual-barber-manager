@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useRef, useState } from "react";
 import { maskPhone } from "@/utils/mask-phone";
+import { setResendCooldown } from "@/lib/supabase/auth/resend-cooldown";
 import { Eye, EyeOff } from "lucide-react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
@@ -139,6 +140,10 @@ export function SignupForm() {
       };
 
       sessionStorage.setItem("pending-signup", JSON.stringify(pendingSignup));
+      // O signUp acima já disparou um email de confirmação — marca o cooldown
+      // para a página de pendência não permitir um reenvio/correção que cairia
+      // no rate-limit do GoTrue e falharia em silêncio.
+      setResendCooldown(60);
       navigate(`/cadastro-pendente/${encodeURIComponent(data.email)}`, {
         state: pendingSignup,
       });

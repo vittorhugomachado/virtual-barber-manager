@@ -4,6 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabase/supabase";
 import { correctPendingEmail } from "@/lib/supabase/auth/correct-pending-email";
+import {
+  getResendCooldownRemaining,
+  setResendCooldown,
+} from "@/lib/supabase/auth/resend-cooldown";
 import { Mail, Pencil } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
@@ -24,7 +28,8 @@ export function SignupPendingPage() {
 
   const [isResending, setIsResending] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+  // Inicializa do localStorage para o cooldown sobreviver a refresh.
+  const [cooldown, setCooldown] = useState(() => getResendCooldownRemaining());
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -56,9 +61,39 @@ export function SignupPendingPage() {
   const [newEmail, setNewEmail] = useState("");
   const [isSavingEmail, setIsSavingEmail] = useState(false);
 
+  // Garante um token de captcha VÁLIDO sob demanda. O Turnstile invisível pode
+  // estar com token expirado (~5 min) ou já consumido (uso único) — nesses casos
+  // o state está null e o resend iria sem captcha, batendo 400 no GoTrue.
+  // getResponsePromise resolve um token novo; com timeout para não travar a UI.
+  async function getFreshCaptchaToken(): Promise<string | undefined> {
+    if (captchaToken) return captchaToken;
+    const instance = turnstileRef.current;
+    if (!instance) return undefined;
+    try {
+      const token = await Promise.race([
+        instance.getResponsePromise(),
+        new Promise<undefined>(resolve =>
+          setTimeout(() => resolve(undefined), 8000),
+        ),
+      ]);
+      return token ?? undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
   // Corrige o email errado: troca via Edge Function e reenvia o link ao novo.
   async function handleCorrectEmail() {
     if (!pendingAuth || isSavingEmail) return;
+
+    // Durante o cooldown o reenvio cairia no rate-limit do GoTrue e falharia em
+    // silêncio (email não sai, mas parece que saiu). Bloqueia a correção até lá.
+    if (cooldown > 0) {
+      toast.info(`Aguarde ${cooldown}s para corrigir e reenviar.`, {
+        description: "O link anterior ainda é válido — confira o spam também.",
+      });
+      return;
+    }
 
     const target = newEmail.trim().toLowerCase();
     if (!target) {
@@ -93,11 +128,12 @@ export function SignupPendingPage() {
       });
 
       // Dispara o link de confirmação para o novo endereço (captcha do front).
+      const correctionToken = await getFreshCaptchaToken();
       const { error: resendErr } = await supabase.auth.resend({
         type: "signup",
         email: target,
         options: {
-          captchaToken: captchaToken ?? undefined,
+          captchaToken: correctionToken,
           emailRedirectTo: `${window.location.origin}/confirmar-email`,
         },
       });
@@ -105,15 +141,24 @@ export function SignupPendingPage() {
       setCaptchaToken(null);
 
       if (resendErr) {
-        toast.success("Email corrigido!", {
-          description:
-            'Clique em "Reenviar email de confirmação" para receber o link.',
+        // Email JÁ foi trocado com sucesso, mas o envio falhou. Não mascara como
+        // sucesso total: avisa e, se for rate-limit, ativa o cooldown persistido.
+        if (resendErr.message.includes("security purposes")) {
+          const seconds = Number(
+            resendErr.message.match(/after (\d+) seconds/)?.[1] ?? 60,
+          );
+          setCooldown(seconds);
+          setResendCooldown(seconds);
+        }
+        toast.warning("Email corrigido, mas o link não foi enviado.", {
+          description: `Aguarde o contador e clique em "Reenviar" para receber o link em ${target}.`,
         });
       } else {
         toast.success("Email corrigido!", {
           description: `Enviamos um novo link para ${target}.`,
         });
         setCooldown(60);
+        setResendCooldown(60);
       }
 
       setIsCorrecting(false);
@@ -138,14 +183,30 @@ export function SignupPendingPage() {
     if (!email) navigate("/entrar");
   }, [email, navigate]);
 
-  // Contador regressivo do cooldown de reenvio.
+  // Contador do cooldown. NÃO decrementa um número — recalcula o tempo restante
+  // a partir do timestamp persistido (relógio real) a cada tick. Assim o tempo
+  // corre mesmo com a aba em segundo plano (onde setInterval é estrangulado) ou
+  // ao trocar de aba/janela. Também resincroniza ao voltar o foco/visibilidade.
   useEffect(() => {
-    if (cooldown <= 0) return;
-    const id = setInterval(() => {
-      setCooldown(s => (s <= 1 ? 0 : s - 1));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [cooldown]);
+    function sync() {
+      setCooldown(prev => {
+        const next = getResendCooldownRemaining();
+        return next === prev ? prev : next; // evita re-render sem mudança
+      });
+    }
+    sync();
+    const id = setInterval(sync, 1000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") sync();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", sync);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", sync);
+    };
+  }, []);
 
   // Reenvio é SEMPRE manual (clique do usuário), para não colidir com o e-mail
   // que o cadastro acabou de disparar e cair no rate-limit do Supabase.
@@ -153,11 +214,12 @@ export function SignupPendingPage() {
     if (!email || isResending || cooldown > 0) return;
     setIsResending(true);
 
+    const freshToken = await getFreshCaptchaToken();
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
       options: {
-        captchaToken: captchaToken ?? undefined,
+        captchaToken: freshToken,
         emailRedirectTo: `${window.location.origin}/confirmar-email`,
       },
     });
@@ -172,6 +234,7 @@ export function SignupPendingPage() {
           error.message.match(/after (\d+) seconds/)?.[1] ?? 60,
         );
         setCooldown(seconds);
+        setResendCooldown(seconds);
         toast.info(`Aguarde ${seconds}s para reenviar.`, {
           description:
             "O link anterior ainda é válido — confira sua caixa de entrada e o spam.",
@@ -187,6 +250,7 @@ export function SignupPendingPage() {
     }
 
     setCooldown(60);
+    setResendCooldown(60);
     toast.success("Email reenviado!", {
       description: "Confira sua caixa de entrada ou o spam.",
     });
@@ -261,9 +325,15 @@ export function SignupPendingPage() {
                     type="button"
                     variant="default"
                     onClick={handleCorrectEmail}
-                    disabled={isSavingEmail}
+                    disabled={isSavingEmail || cooldown > 0}
                   >
-                    {isSavingEmail ? <Spinner /> : "Salvar e reenviar"}
+                    {isSavingEmail ? (
+                      <Spinner />
+                    ) : cooldown > 0 ? (
+                      `Aguarde ${cooldown}s`
+                    ) : (
+                      "Salvar e reenviar"
+                    )}
                   </Button>
                   <Button
                     type="button"
@@ -283,11 +353,23 @@ export function SignupPendingPage() {
               <>
                 <button
                   type="button"
-                  onClick={() => setIsCorrecting(true)}
-                  className="mb-4 inline-flex items-center gap-1 text-sm text-[#0458EE] hover:underline mx-auto cursor-pointer"
+                  onClick={() => {
+                    if (cooldown > 0) {
+                      toast.info(`Aguarde ${cooldown}s para corrigir.`, {
+                        description:
+                          "O link anterior ainda é válido — confira o spam.",
+                      });
+                      return;
+                    }
+                    setIsCorrecting(true);
+                  }}
+                  disabled={cooldown > 0}
+                  className="mb-4 inline-flex items-center gap-1 text-sm text-[#0458EE] hover:underline mx-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
                 >
                   <Pencil className="h-3.5 w-3.5" />
-                  Digitou o email errado? Corrigir
+                  {cooldown > 0
+                    ? `Corrigir email (aguarde ${cooldown}s)`
+                    : "Digitou o email errado? Corrigir"}
                 </button>
                 <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 mb-6">
                   <p className="text-sm text-muted-foreground">

@@ -8,7 +8,8 @@ export interface CorrectPendingEmailParams {
 
 const ERROR_MESSAGES: Record<string, string> = {
   invalid_input: "Dados inválidos. Recarregue a página e tente novamente.",
-  invalid_token: "Não foi possível validar esta solicitação. Refaça o cadastro.",
+  invalid_token:
+    "Não foi possível validar esta solicitação. Refaça o cadastro.",
   invalid_email: "Email inválido.",
   user_not_found: "Cadastro não encontrado.",
   already_confirmed: "Este email já foi confirmado. Faça login.",

@@ -84,14 +84,18 @@ export function LoginForm() {
 
         if (error.message === "Email not confirmed") {
           const normalizedEmail = data.email.trim().toLowerCase();
-          // Login grava só o email (sem token) — por isso a página de pendência
-          // NÃO mostra "Corrigir email" neste fluxo, apenas reenviar/confirmar.
-          // O marcador também serve de guard de acesso à página.
-          const pending = { email: normalizedEmail };
-          sessionStorage.setItem("pending-signup", JSON.stringify(pending));
-          navigate(`/cadastro-pendente/${normalizedEmail}`, {
-            state: pending,
-          });
+          // Grava só o email no sessionStorage (guard de acesso à página).
+          // A senha vai no navigation state (in-memory, some no reload) para que
+          // a página de pendência verifique a identidade automaticamente, sem
+          // pedir a senha de novo ao usuário.
+          sessionStorage.setItem(
+            "pending-signup",
+            JSON.stringify({ email: normalizedEmail }),
+          );
+          navigate(
+            `/cadastro-pendente/${encodeURIComponent(normalizedEmail)}`,
+            { state: { email: normalizedEmail, password: data.password } },
+          );
           return;
         }
         toast.error(errorMessages[error.message] ?? "Erro ao fazer login");

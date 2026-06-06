@@ -5,18 +5,23 @@ import { Spinner } from "@/components/ui/spinner";
 import { supabase } from "@/lib/supabase/supabase";
 import { correctPendingEmail } from "@/lib/supabase/auth/correct-pending-email";
 import {
+  AlreadyConfirmedError,
+  getPendingChangeToken,
+} from "@/lib/supabase/auth/get-pending-change-token";
+import {
   getResendCooldownRemaining,
   setResendCooldown,
 } from "@/lib/supabase/auth/resend-cooldown";
-import { Mail, Pencil } from "lucide-react";
+import { Eye, EyeOff, Mail, Pencil } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { useCredential } from "@/store/user-credential.store";
 
 export function SignupPendingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const status = useCredential(state => state.status);
   const { email: emailParam } = useParams<{ email: string }>();
   const email = emailParam ? decodeURIComponent(emailParam) : "";
@@ -55,11 +60,92 @@ export function SignupPendingPage() {
     }
   });
 
-  // "Corrigir email": só disponível para cadastro recém-criado (tem token).
+  // "Corrigir email": disponível imediatamente após cadastro (tem token no
+  // sessionStorage) ou após verificar identidade no fluxo de login.
   const canCorrectEmail = Boolean(pendingAuth);
   const [isCorrecting, setIsCorrecting] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [isSavingEmail, setIsSavingEmail] = useState(false);
+
+  // Verificação de identidade: o login form passa a senha via navigation state
+  // (in-memory, some no reload). A página usa isso para verificar automaticamente
+  // em background, sem pedir a senha de novo. Se falhar, oferece formulário manual.
+  const navPassword =
+    (location.state as { password?: string } | null)?.password ?? null;
+  const [isAutoVerifying, setIsAutoVerifying] = useState(
+    // Só inicia em auto-verificação se viemos do login (tem senha no state)
+    // e ainda não temos o token.
+    () => Boolean(navPassword) && !pendingAuth,
+  );
+  const [isVerifyingIdentity, setIsVerifyingIdentity] = useState(false);
+  const [verifyPassword, setVerifyPassword] = useState("");
+  const [showVerifyPassword, setShowVerifyPassword] = useState(false);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
+
+  // Núcleo da verificação: aceita a senha como parâmetro para servir tanto o
+  // fluxo automático (senha vinda do login) quanto o manual (campo de senha).
+  async function verifyIdentityWith(password: string) {
+    const freshToken = await getFreshCaptchaToken();
+    const { userId, changeToken } = await getPendingChangeToken({
+      email,
+      password,
+      captchaToken: freshToken,
+    });
+
+    const updatedPending = { email, userId, changeToken };
+    sessionStorage.setItem("pending-signup", JSON.stringify(updatedPending));
+    setPendingAuth({ userId, changeToken });
+
+    turnstileRef.current?.reset();
+    setCaptchaToken(null);
+  }
+
+  // Auto-verificação no mount: usa a senha do navigation state sem pedir ao
+  // usuário. Se falhar silenciosamente, o formulário manual fica disponível.
+  useEffect(() => {
+    if (!navPassword || pendingAuth || !email) return;
+
+    // Limpa a senha do history state imediatamente — uso único.
+    window.history.replaceState(
+      { ...window.history.state, usr: { email } },
+      "",
+    );
+
+    setIsAutoVerifying(true);
+    verifyIdentityWith(navPassword)
+      .catch(() => {
+        // Falha silenciosa: o link "Corrigir email" manual aparece no lugar.
+      })
+      .finally(() => setIsAutoVerifying(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intencionalmente sem deps: roda apenas no mount
+
+  // Verificação manual (fallback se a auto-verificação falhou).
+  async function handleVerifyIdentity() {
+    if (!email || !verifyPassword || isVerifyingPassword) return;
+    setIsVerifyingPassword(true);
+    try {
+      await verifyIdentityWith(verifyPassword);
+      setIsVerifyingIdentity(false);
+      setVerifyPassword("");
+      setIsCorrecting(true);
+    } catch (err) {
+      turnstileRef.current?.reset();
+      setCaptchaToken(null);
+      if (err instanceof AlreadyConfirmedError) {
+        toast.success("Email já confirmado!", {
+          description: "Você pode fazer login normalmente.",
+        });
+        navigate("/entrar");
+        return;
+      }
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao verificar identidade.",
+      );
+    } finally {
+      setIsVerifyingPassword(false);
+    }
+  }
 
   // Garante um token de captcha VÁLIDO sob demanda. O Turnstile invisível pode
   // estar com token expirado (~5 min) ou já consumido (uso único) — nesses casos
@@ -324,6 +410,8 @@ export function SignupPendingPage() {
           </p>
           <p className="font-medium text-foreground mb-2 break-all">{email}</p>
 
+          {/* Fluxo de correção de email — disponível após cadastro (token no
+              sessionStorage) ou após verificar identidade no fluxo de login. */}
           {canCorrectEmail &&
             (isCorrecting ? (
               <div className="flex flex-col gap-2 mb-4 text-left">
@@ -386,8 +474,80 @@ export function SignupPendingPage() {
               </button>
             ))}
 
-          {/* Aviso de spam + ações SEMPRE aparecem (independe de ter token). */}
-          {!isCorrecting && (
+          {/* Verificação de identidade: fluxo de login.
+              Durante a auto-verificação não renderiza nada (acontece em silêncio).
+              Se falhar, exibe o link manual que pede a senha como fallback. */}
+          {!canCorrectEmail &&
+            !isAutoVerifying &&
+            (isVerifyingIdentity ? (
+              <div className="flex flex-col gap-2 mb-4 text-left">
+                <p className="text-sm text-muted-foreground text-center">
+                  Para corrigir o email, confirme sua senha.
+                </p>
+                <div className="relative">
+                  <Input
+                    type={showVerifyPassword ? "text" : "password"}
+                    placeholder="Sua senha"
+                    value={verifyPassword}
+                    onChange={e => setVerifyPassword(e.target.value)}
+                    disabled={isVerifyingPassword}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") handleVerifyIdentity();
+                    }}
+                    className="pr-9"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowVerifyPassword(v => !v)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    tabIndex={-1}
+                    disabled={isVerifyingPassword}
+                  >
+                    {showVerifyPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                <div className="flex flex-col items-center gap-2 mt-2">
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={handleVerifyIdentity}
+                    disabled={isVerifyingPassword || !verifyPassword}
+                  >
+                    {isVerifyingPassword ? <Spinner /> : "Confirmar"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsVerifyingIdentity(false);
+                      setVerifyPassword("");
+                      setShowVerifyPassword(false);
+                    }}
+                    disabled={isVerifyingPassword}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsVerifyingIdentity(true)}
+                className="mb-4 inline-flex items-center gap-1 text-sm text-[#0458EE] hover:underline mx-auto cursor-pointer"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Digitou o email errado? Corrigir
+              </button>
+            ))}
+
+          {/* Aviso de spam + ações ficam ocultos só durante correção ou verificação
+              manual. A auto-verificação em background não esconde esses controles. */}
+          {!isCorrecting && !isVerifyingIdentity && (
             <>
               <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 mb-6">
                 <p className="text-sm text-muted-foreground">

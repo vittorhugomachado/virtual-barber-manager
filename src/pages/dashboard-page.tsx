@@ -31,7 +31,7 @@ export function DashboardPage() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // --- Teste provisório: criação de membro via Edge Function ---
-  const [memberName, setMemberName] = useState("Membro Teste");
+  const [memberUsername, setMemberUsername] = useState("joao-silva");
   const [memberPassword, setMemberPassword] = useState("senha12345");
   const [memberRole, setMemberRole] = useState<MemberRole>("reader");
   const [isCreating, setIsCreating] = useState(false);
@@ -57,14 +57,17 @@ export function DashboardPage() {
     setCreateError(null);
     try {
       const member = await createMember({
-        name: memberName,
+        username: memberUsername,
         password: memberPassword,
         role: memberRole,
         barbershopId: credential.barbershopId,
       });
       setCreateResult(member);
+
+      console.log("Membro criado com sucesso:", member);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Erro desconhecido");
+      console.log("Membro criado com sucesso:", err);
     } finally {
       setIsCreating(false);
     }
@@ -131,9 +134,13 @@ export function DashboardPage() {
           ) : (
             <div className="flex flex-col gap-2">
               <input
-                value={memberName}
-                onChange={e => setMemberName(e.target.value)}
-                placeholder="Nome do membro"
+                value={memberUsername}
+                onChange={e =>
+                  setMemberUsername(
+                    e.target.value.toLowerCase().replace(/[^a-z0-9._-]/g, ""),
+                  )
+                }
+                placeholder="Username (ex: joao-silva)"
                 className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm"
               />
               <input

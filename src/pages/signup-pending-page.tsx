@@ -178,9 +178,23 @@ export function SignupPendingPage() {
     }
   }
 
-  // Sem email na URL não há o que fazer aqui.
+  // Guard de acesso: só entra quem chegou via LOGIN ou CADASTRO. Ambos gravam
+  // um "pending-signup" em sessionStorage com este email. Acesso direto à URL
+  // (sem esse marcador) é barrado, redirecionando ao login.
   useEffect(() => {
-    if (!email) navigate("/entrar");
+    if (!email) {
+      navigate("/entrar", { replace: true });
+      return;
+    }
+    try {
+      const raw = sessionStorage.getItem("pending-signup");
+      const prev = raw ? (JSON.parse(raw) as { email?: string }) : null;
+      if (!prev?.email || prev.email.toLowerCase() !== email.toLowerCase()) {
+        navigate("/entrar", { replace: true });
+      }
+    } catch {
+      navigate("/entrar", { replace: true });
+    }
   }, [email, navigate]);
 
   // Contador do cooldown. NÃO decrementa um número — recalcula o tempo restante
@@ -350,69 +364,72 @@ export function SignupPendingPage() {
                 </div>
               </div>
             ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (cooldown > 0) {
-                      toast.info(`Aguarde ${cooldown}s para corrigir.`, {
-                        description:
-                          "O link anterior ainda é válido — confira o spam.",
-                      });
-                      return;
-                    }
-                    setIsCorrecting(true);
-                  }}
-                  disabled={cooldown > 0}
-                  className="mb-4 inline-flex items-center gap-1 text-sm text-[#0458EE] hover:underline mx-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  {cooldown > 0
-                    ? `Corrigir email (aguarde ${cooldown}s)`
-                    : "Digitou o email errado? Corrigir"}
-                </button>
-                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-muted-foreground">
-                    ⚠️ Verifique também a caixa de spam ou lixo eletrônico.
-                  </p>
-                </div>
-
-                <div className="flex flex-col items-center gap-3">
-                  <Button
-                    type="button"
-                    variant="default"
-                    onClick={handleResend}
-                    disabled={isResending || cooldown > 0}
-                  >
-                    {isResending ? (
-                      <Spinner />
-                    ) : cooldown > 0 ? (
-                      `Reenviar em ${cooldown}s`
-                    ) : (
-                      "Reenviar email de confirmação"
-                    )}
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="link"
-                    onClick={handleCheckConfirmed}
-                    disabled={isChecking}
-                  >
-                    {isChecking ? <Spinner /> : "Já confirmei meu email"}
-                  </Button>
-                </div>
-              </>
+              <button
+                type="button"
+                onClick={() => {
+                  if (cooldown > 0) {
+                    toast.info(`Aguarde ${cooldown}s para corrigir.`, {
+                      description:
+                        "O link anterior ainda é válido — confira o spam.",
+                    });
+                    return;
+                  }
+                  setIsCorrecting(true);
+                }}
+                disabled={cooldown > 0}
+                className="mb-4 inline-flex items-center gap-1 text-sm text-[#0458EE] hover:underline mx-auto cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                {cooldown > 0
+                  ? `Corrigir email (aguarde ${cooldown}s)`
+                  : "Digitou o email errado? Corrigir"}
+              </button>
             ))}
-          <div className="flex flex-col items-center gap-3">
-            <Button
-              type="button"
-              variant="link"
-              onClick={() => navigate("/entrar")}
-            >
-              Voltar para o login
-            </Button>
-          </div>
+
+          {/* Aviso de spam + ações SEMPRE aparecem (independe de ter token). */}
+          {!isCorrecting && (
+            <>
+              <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4 mb-6">
+                <p className="text-sm text-muted-foreground">
+                  ⚠️ Verifique também a caixa de spam ou lixo eletrônico.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center gap-3">
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={handleResend}
+                  disabled={isResending || cooldown > 0}
+                >
+                  {isResending ? (
+                    <Spinner />
+                  ) : cooldown > 0 ? (
+                    `Reenviar em ${cooldown}s`
+                  ) : (
+                    "Reenviar email de confirmação"
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={handleCheckConfirmed}
+                  disabled={isChecking}
+                >
+                  {isChecking ? <Spinner /> : "Já confirmei meu email"}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => navigate("/entrar")}
+                >
+                  Voltar para o login
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </main>

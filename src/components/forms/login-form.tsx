@@ -84,12 +84,13 @@ export function LoginForm() {
 
         if (error.message === "Email not confirmed") {
           const normalizedEmail = data.email.trim().toLowerCase();
-          sessionStorage.setItem(
-            "pending-signup",
-            JSON.stringify({ email: normalizedEmail }),
-          );
+          // Login grava só o email (sem token) — por isso a página de pendência
+          // NÃO mostra "Corrigir email" neste fluxo, apenas reenviar/confirmar.
+          // O marcador também serve de guard de acesso à página.
+          const pending = { email: normalizedEmail };
+          sessionStorage.setItem("pending-signup", JSON.stringify(pending));
           navigate(`/cadastro-pendente/${normalizedEmail}`, {
-            state: { email: normalizedEmail },
+            state: pending,
           });
           return;
         }

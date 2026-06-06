@@ -273,7 +273,5 @@ export const useCredential = useUserCredential;
 export const getCredential = getUserCredential;
 
 if (import.meta.env.DEV) {
-  useUserCredential.subscribe(state => {
-    console.log("[userCredential]", state);
-  });
+  useUserCredential.subscribe(state => state);
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "@/lib/supabase/supabase";
 import { useCredential } from "@/store/user-credential.store";
@@ -7,6 +7,13 @@ import {
   type CreatedMember,
   type MemberRole,
 } from "@/lib/supabase/members/create-member";
+
+type Member = {
+  id: string;
+  user_id: string;
+  role: "admin" | "reader";
+  username: string;
+};
 
 // import { BarbershopDashboardMain } from "@/components/main/dashboard-main";
 // import { HeaderPage } from "@/components/common/header-page";
@@ -37,6 +44,12 @@ export function DashboardPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [createResult, setCreateResult] = useState<CreatedMember | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // --- Lista de membros ---
+  const [members, setMembers] = useState<Member[] | null>(null);
+  const [membersError, setMembersError] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<Member | null>(null);
 
   async function handleLogout() {
     if (isLoggingOut) return;
@@ -71,6 +84,45 @@ export function DashboardPage() {
     } finally {
       setIsCreating(false);
     }
+  }
+
+  useEffect(() => {
+    if (!credential.barbershopId) return;
+    let mounted = true;
+    setMembers(null);
+    setMembersError(null);
+
+    supabase
+      .from("barbershop_members")
+      .select("id, user_id, role, username")
+      .eq("barbershop_id", credential.barbershopId)
+      .then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          setMembersError(error.message);
+          setMembers([]);
+        } else {
+          setMembers((data as Member[]) ?? []);
+        }
+      });
+
+    return () => { mounted = false; };
+  }, [credential.barbershopId, createResult]);
+
+  async function handleDeleteMember(member: Member) {
+    if (!credential.barbershopId || removingId) return;
+    setRemovingId(member.id);
+    const { error } = await supabase.rpc("delete_member", {
+      p_member_id: member.id,
+      p_barbershop_id: credential.barbershopId,
+    });
+    if (error) {
+      alert(`Erro ao deletar: ${error.message}`);
+    } else {
+      setMembers(prev => (prev ?? []).filter(m => m.id !== member.id));
+    }
+    setRemovingId(null);
+    setConfirmRemove(null);
   }
 
   const rows: { label: string; value: string | null }[] = [
@@ -178,6 +230,71 @@ export function DashboardPage() {
                 </pre>
               )}
             </div>
+          )}
+        </div>
+
+        {/* --- Lista de membros + exclusão --- */}
+        <div className="mt-6 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
+          <h2 className="text-sm font-semibold mb-3">
+            Membros da barbearia
+          </h2>
+
+          {members === null && !membersError && (
+            <p className="text-sm text-zinc-500">Carregando...</p>
+          )}
+
+          {membersError && (
+            <p className="text-sm text-red-500">Erro: {membersError}</p>
+          )}
+
+          {members !== null && members.length === 0 && (
+            <p className="text-sm text-zinc-500">Nenhum membro ainda.</p>
+          )}
+
+          {members !== null && members.length > 0 && (
+            <ul className="flex flex-col gap-2">
+              {members.map(member => (
+                <li
+                  key={member.id}
+                  className="flex items-center justify-between rounded-md border border-zinc-100 dark:border-zinc-800 px-3 py-2"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium">@{member.username}</span>
+                    <span className="text-xs text-zinc-500">{member.role}</span>
+                  </div>
+
+                  {confirmRemove?.id === member.id ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-zinc-500">Confirmar?</span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteMember(member)}
+                        disabled={removingId === member.id}
+                        className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                      >
+                        {removingId === member.id ? "Removendo..." : "Sim"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmRemove(null)}
+                        className="rounded-md border border-zinc-300 dark:border-zinc-700 px-2 py-1 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                      >
+                        Não
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmRemove(member)}
+                      disabled={!!removingId}
+                      className="rounded-md border border-red-300 dark:border-red-800 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-60"
+                    >
+                      Deletar
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
 

@@ -96,9 +96,10 @@ Deno.serve(async (req: Request) => {
     const callerId = userData.user.id;
 
     // 3. Body + validação ------------------------------------------------------
-    const body = (await req.json().catch(() => null)) as
-      | Record<string, unknown>
-      | null;
+    const body = (await req.json().catch(() => null)) as Record<
+      string,
+      unknown
+    > | null;
     if (!body) return json({ error: "internal_error" }, 400);
 
     const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -133,27 +134,21 @@ Deno.serve(async (req: Request) => {
     if (countErr) return json({ error: "internal_error" }, 500);
     if ((count ?? 0) >= MAX_MEMBERS) return fail("member_limit_reached");
 
-    // 6. Username único por barbearia ------------------------------------------
-    let base = slugifyUsername(name);
-    if (base.length < 2) base = "membro";
-    base = base.slice(0, 30);
+    // 6. Username derivado do nome — DEVE ser único por barbearia.
+    //    Não geramos variações: se já existe um membro com esse nome/username
+    //    nesta barbearia, rejeitamos (o front mostra "nome já existe").
+    let username = slugifyUsername(name);
+    if (username.length < 2) username = "membro";
+    username = username.slice(0, 30);
 
-    const { data: rows, error: rowsErr } = await admin
+    const { data: existing, error: existingErr } = await admin
       .from("barbershop_members")
-      .select("username")
+      .select("id")
       .eq("barbershop_id", barbershopId)
-      .ilike("username", `${base}%`);
-    if (rowsErr) return json({ error: "internal_error" }, 500);
-
-    const used = new Set((rows ?? []).map((r) => r.username as string));
-    let username = base;
-    let n = 1;
-    while (used.has(username)) {
-      const suffix = String(n);
-      username = `${base.slice(0, 30 - suffix.length)}${suffix}`;
-      n += 1;
-      if (n > 9999) return fail("username_already_exists");
-    }
+      .eq("username", username)
+      .maybeSingle();
+    if (existingErr) return json({ error: "internal_error" }, 500);
+    if (existing) return fail("name_already_exists");
 
     // 7. Email sintético — DEVE casar com get_member_auth_email:
     //    username || '@' || barbershop_id || '.member'
@@ -209,7 +204,7 @@ Deno.serve(async (req: Request) => {
       await admin.from("profiles").delete().eq("id", userId);
       await admin.auth.admin.deleteUser(userId).catch(() => {});
       // 23505 = unique_violation (corrida no username ou no user_id)
-      if (memberErr?.code === "23505") return fail("username_already_exists");
+      if (memberErr?.code === "23505") return fail("name_already_exists");
       return fail("failed_to_create_member");
     }
 

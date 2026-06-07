@@ -57,7 +57,7 @@ export function DashboardPage() {
     setCreateError(null);
     try {
       const member = await createMember({
-        username: memberUsername,
+        name: memberUsername,
         password: memberPassword,
         role: memberRole,
         barbershopId: credential.barbershopId,

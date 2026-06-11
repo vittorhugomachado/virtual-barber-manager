@@ -36,13 +36,13 @@ const formSchema = z.object({
     .min(1, "Digite o nome da barbearia")
     .max(30, "Nome deve ter no máximo 30 caracteres"),
   email: z.email("Email inválido"),
-  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+  password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
 });
 
 const mensagens: Record<string, string> = {
   "User already registered": "Este email já está cadastrado",
-  "Password should be at least 6 characters":
-    "Senha deve ter no mínimo 6 caracteres",
+  "Password should be at least 8 characters":
+    "Senha deve ter no mínimo 8 caracteres",
   "email rate limit exceeded": "Muitas tentativas, aguarde alguns minutos",
 };
 
@@ -271,7 +271,7 @@ export function SignupForm() {
                             id="signup-form-password"
                             type={showPassword ? "text" : "password"}
                             aria-invalid={fieldState.invalid}
-                            placeholder="mínimo 6 caracteres"
+                            placeholder="mínimo 8 caracteres"
                             autoComplete="off"
                             className="pr-9"
                           />
@@ -333,7 +333,11 @@ export function SignupForm() {
           </div>
         </CardContent>
         <CardFooter className="flex-col gap-2">
-          <Button type="submit" form="signup-form" disabled={isLoading}>
+          <Button
+            type="submit"
+            form="signup-form"
+            disabled={isLoading || !captchaToken || captchaFailed}
+          >
             {isLoading ? "Criando conta..." : "Criar conta"}
           </Button>
           <Button variant="link" onClick={() => navigate("/entrar")}>

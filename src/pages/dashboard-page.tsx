@@ -106,7 +106,9 @@ export function DashboardPage() {
         }
       });
 
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [credential.barbershopId, createResult]);
 
   async function handleDeleteMember(member: Member) {
@@ -235,9 +237,7 @@ export function DashboardPage() {
 
         {/* --- Lista de membros + exclusão --- */}
         <div className="mt-6 rounded-lg border border-zinc-200 dark:border-zinc-800 p-4">
-          <h2 className="text-sm font-semibold mb-3">
-            Membros da barbearia
-          </h2>
+          <h2 className="text-sm font-semibold mb-3">Membros da barbearia</h2>
 
           {members === null && !membersError && (
             <p className="text-sm text-zinc-500">Carregando...</p>
@@ -259,7 +259,9 @@ export function DashboardPage() {
                   className="flex items-center justify-between rounded-md border border-zinc-100 dark:border-zinc-800 px-3 py-2"
                 >
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium">@{member.username}</span>
+                    <span className="text-sm font-medium">
+                      @{member.username}
+                    </span>
                     <span className="text-xs text-zinc-500">{member.role}</span>
                   </div>
 

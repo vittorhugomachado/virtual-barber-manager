@@ -24,9 +24,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   invalid_password: "A senha deve ter entre 8 e 72 caracteres.",
   invalid_barbershop_id: "Barbearia não encontrada.",
   not_barbershop_owner: "Apenas o proprietário pode adicionar membros.",
-  name_already_exists:
-    "Já existe um membro com este nome nesta barbearia.",
+  name_already_exists: "Já existe um membro com este nome nesta barbearia.",
   member_limit_reached: "Limite de membros do plano atingido.",
+  subscription_inactive:
+    "Assinatura inativa. Regularize o pagamento para adicionar membros.",
   failed_to_create_auth_user: "Erro ao criar usuário. Tente novamente.",
   failed_to_create_member: "Erro ao criar membro. Tente novamente.",
   internal_error: "Erro interno. Tente novamente mais tarde.",

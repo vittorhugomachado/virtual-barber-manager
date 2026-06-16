@@ -60,7 +60,7 @@
   - [ ] Reativar o `ProtectedRoute`.
 - [x] **M2 — Comparação de token constant-time** no webhook (hoje `receivedToken !== expectedToken` → timing side-channel).
 - [ ] SÓ MONITORAR, NÃO EXECUTAR **M3 — Allowlist de IP do Asaas** no webhook (defesa em profundidade). (docs #3)
-- [ ] **M4 — Validar `cpf_cnpj`** (11 dígitos CPF / 14 CNPJ) antes de chamar o Asaas. (docs #4)
+- [x] **M4 — Validar `cpf_cnpj`** (11 dígitos CPF / 14 CNPJ) antes de chamar o Asaas. (docs #4)
 - [ ] **M5 — Rate limit no `create-subscription`** por `userId` (abuso + custo de criar customers no Asaas). (docs #5)
 
 ---

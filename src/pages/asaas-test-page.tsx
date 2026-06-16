@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase/supabase";
 import { cn } from "@/lib/utils";
+import { isValidCpfCnpj } from "@/utils/validate-cpf-cnpj";
 
 type PlanCycle = "MONTHLY" | "SEMIANNUALLY" | "YEARLY";
 type BillingType = "PIX" | "BOLETO" | "CREDIT_CARD";
@@ -185,6 +186,10 @@ export function AsaasTestPage() {
       setError("Informe o CPF ou CNPJ.");
       return;
     }
+    if (!isValidCpfCnpj(cpfCnpj)) {
+      setError("CPF ou CNPJ invalido.");
+      return;
+    }
 
     setSubmitting(true);
     setResult(null);
@@ -354,7 +359,9 @@ export function AsaasTestPage() {
                     id="cpf-cnpj"
                     placeholder="000.000.000-00"
                     value={cpfCnpj}
-                    onChange={e => setCpfCnpj(e.target.value)}
+                    onChange={e =>
+                      setCpfCnpj(e.target.value.replace(/\D/g, "").slice(0, 14))
+                    }
                   />
                 </div>
 

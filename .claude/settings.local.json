@@ -30,7 +30,11 @@
       "Bash(Get-Content *)",
       "Bash(Select-String \"lucide\")",
       "Bash(npm install *)",
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "Read(//c/Users/Vitor Hugo/OneDrive/Desktop/virtual-barber-front-end/**)",
+      "Bash(dir /s /b \"C:\\\\Users\\\\Vitor Hugo\\\\OneDrive\\\\Desktop\\\\virtual-barber-front-end\\\\*create-subscription*\")",
+      "WebFetch(domain:docs.asaas.com)",
+      "WebSearch"
     ]
   }
 }

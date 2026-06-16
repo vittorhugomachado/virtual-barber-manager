@@ -15,6 +15,11 @@ const DashboardPage = lazy(() =>
     default: module.DashboardPage,
   })),
 );
+const AsaasTestPage = lazy(() =>
+  import("@/pages/asaas-test-page").then(module => ({
+    default: module.AsaasTestPage,
+  })),
+);
 const SignupPage = lazy(() =>
   import("@/pages/signup-page").then(module => ({
     default: module.SignupPage,
@@ -213,6 +218,14 @@ export function AppRoutes() {
         element={
           <PublicPageLoader>
             <DashboardPage />
+          </PublicPageLoader>
+        }
+      />
+      <Route
+        path="/teste-asaas"
+        element={
+          <PublicPageLoader>
+            <AsaasTestPage />
           </PublicPageLoader>
         }
       />

@@ -61,20 +61,20 @@
 - [x] **M2 — Comparação de token constant-time** no webhook (hoje `receivedToken !== expectedToken` → timing side-channel).
 - [ ] SÓ MONITORAR, NÃO EXECUTAR **M3 — Allowlist de IP do Asaas** no webhook (defesa em profundidade). (docs #3)
 - [x] **M4 — Validar `cpf_cnpj`** (11 dígitos CPF / 14 CNPJ) antes de chamar o Asaas. (docs #4)
-- [ ] **M5 — Rate limit no `create-subscription`** por `userId` (abuso + custo de criar customers no Asaas). (docs #5)
+- [x] **M5 — Rate limit no `create-subscription`** por `userId` (abuso + custo de criar customers no Asaas). (docs #5)
 
 ---
 
 ## 🔵 Escala — o que muda entre 10 e 10k
 
-- [ ] **S1 — Confirmar índices.**
-  - [ ] Índice **único** em `subscriptions.asaas_subscription_id` (o webhook faz `.eq(...)`).
-  - [ ] Conferir únicos em `payments.asaas_payment_id` e `webhook_events.asaas_event_id`.
+- [x] **S1 — Confirmar índices.**
+  - [x] Índice **único** em `subscriptions.asaas_subscription_id` (o webhook faz `.eq(...)`).
+  - [x] Conferir únicos em `payments.asaas_payment_id` e `webhook_events.asaas_event_id`.
 - [X] **S2 — Sanear `webhook_events`.**
   - [X] Adicionar `received_at timestamptz default now()` (hoje não dá nem para podar por data).
   - [X] Política de retenção/partição + payload enxuto.
-- [ ] **S3 — Remover o loop bloqueante de invoice (~2,1s).**
-  - [ ] Retornar `invoice_url: null` na hora e confiar no webhook `PAYMENT_CREATED` para entregar a URL. (docs #10)
+- [X] **S3 — Remover o loop bloqueante de invoice (~2,1s).**
+  - [X] Retornar `invoice_url: null` na hora e confiar no webhook `PAYMENT_CREATED` para entregar a URL. (docs #10)
 - [X] **S4 — Job de reconciliação.**
   - [X] Job periódico que compara o estado local com o Asaas (lista pagamentos/assinaturas) e corrige a deriva. Rede de segurança para os eventos perdidos (C2).
 
@@ -83,8 +83,8 @@
 ## ✅ Pré-produção — fora da revisão de código, mas obrigatório
 
 - [ ] **Auditar RLS + GRANTs** de todas as tabelas (lembrete do projeto: "403 num GET = falta de GRANT").
-- [ ] **Revisar `_shared/asaas.ts`** — tratamento de erro/timeout e **guarda da API key**.
-- [ ] **Fluxo de cancelamento / reembolso / troca de plano** (hoje o webhook só trata `past_due`).
+- [X] **Revisar `_shared/asaas.ts`** — tratamento de erro/timeout e **guarda da API key**.
+- [ ] NÃO VAI SER FEITO AGORA - REEMBOLSO = ENTRAR EM CONTATO**Fluxo de cancelamento / reembolso / troca de plano** (hoje o webhook só trata `past_due`).
 - [ ] **Observabilidade + alertas** — saber quando um pagamento falha silenciosamente (sem isso, C2/S4 não são seguros).
 - [ ] **Fiscal (nota fiscal) e LGPD** — guarda de CPF/CNPJ e dados de cobrança.
 - [ ] **Sandbox → produção** — trocar credenciais/URL do webhook e **reexecutar todos os testes** no ambiente real.

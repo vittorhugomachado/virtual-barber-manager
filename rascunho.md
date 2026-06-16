@@ -55,11 +55,11 @@
 ## 🟡 Médio — segurança e hardening
 
 - [ ] **M1 — Proteger/remover rotas públicas de teste.**
-  `/teste-asaas` e `/painel` estão públicas (`app-routes.tsx:216-231`) e todo o `ProtectedRoute` está comentado. Hoje **nada** no app está protegido no nível de rota.
-  - [ ] Remover (ou gatear) `/teste-asaas` e `/painel` antes de prod.
+  `/teste-asaas` está pública (`app-routes.tsx:216-231`) e todo o `ProtectedRoute` está comentado. Hoje **nada** no app está protegido no nível de rota.
+  - [x] Remover (ou gatear) `/teste-asaas` antes de prod.
   - [ ] Reativar o `ProtectedRoute`.
-- [ ] **M2 — Comparação de token constant-time** no webhook (hoje `receivedToken !== expectedToken` → timing side-channel).
-- [ ] **M3 — Allowlist de IP do Asaas** no webhook (defesa em profundidade). (docs #3)
+- [x] **M2 — Comparação de token constant-time** no webhook (hoje `receivedToken !== expectedToken` → timing side-channel).
+- [ ] SÓ MONITORAR, NÃO EXECUTAR **M3 — Allowlist de IP do Asaas** no webhook (defesa em profundidade). (docs #3)
 - [ ] **M4 — Validar `cpf_cnpj`** (11 dígitos CPF / 14 CNPJ) antes de chamar o Asaas. (docs #4)
 - [ ] **M5 — Rate limit no `create-subscription`** por `userId` (abuso + custo de criar customers no Asaas). (docs #5)
 

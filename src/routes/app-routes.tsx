@@ -212,7 +212,6 @@ export function AppRoutes() {
           </PublicPageLoader>
         }
       /> */}
-      {/* Rota provisória de diagnóstico das credenciais */}
       <Route
         path="/painel"
         element={
@@ -221,14 +220,22 @@ export function AppRoutes() {
           </PublicPageLoader>
         }
       />
-      <Route
-        path="/teste-asaas"
-        element={
-          <PublicPageLoader>
-            <AsaasTestPage />
-          </PublicPageLoader>
-        }
-      />
+      {/* Rotas de teste/diagnóstico — SÓ em desenvolvimento.
+          import.meta.env.DEV é `false` no build de produção, então estas rotas
+          NÃO existem em prod (404). Evita expor a página de cobrança e o
+          diagnóstico de credenciais publicamente. (M1) */}
+      {import.meta.env.DEV && (
+        <>
+          <Route
+            path="/teste-asaas"
+            element={
+              <PublicPageLoader>
+                <AsaasTestPage />
+              </PublicPageLoader>
+            }
+          />
+        </>
+      )}
       {/* Rotas protegidas com sidebar */}
       {/* <Route element={<ProtectedRouteWithSkeleton />}>
         <Route

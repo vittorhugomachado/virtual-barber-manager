@@ -41,9 +41,9 @@ export function BuyPlanPage() {
   }
 
   return (
-    <>
+    <div className="flex w-full min-h-screen flex-col gap-6">
       <HeaderPage page="Assinar" />
       <BuyPlanMain />
-    </>
+    </div>
   );
 }

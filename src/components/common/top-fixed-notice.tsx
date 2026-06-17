@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +28,31 @@ export function TopFixedNotice({
   className,
 }: TopFixedNoticeProps) {
   const [isVisible, setIsVisible] = useState(true);
+  const noticeRef = useRef<HTMLDivElement>(null);
+
+  // O #root é `flex items-center` (eixo horizontal), então um <div> espaçador
+  // filho viraria um item de largura zero numa LINHA — não empurra nada.
+  // A forma robusta de reservar a altura do banner fixo é dar padding-top no
+  // <body> igual à altura REAL medida do banner. O ResizeObserver mantém
+  // sincronizado (ex.: banner quebra em 2 linhas no mobile). O padding some ao
+  // fechar (X) ou desmontar.
+  useLayoutEffect(() => {
+    const el = noticeRef.current;
+    if (!el) return;
+
+    const update = () => {
+      document.body.style.paddingTop = `${el.offsetHeight}px`;
+    };
+    update();
+
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+      document.body.style.paddingTop = "";
+    };
+  }, [isVisible]);
 
   if (!isVisible) return null;
 
@@ -37,6 +62,7 @@ export function TopFixedNotice({
 
   return (
     <div
+      ref={noticeRef}
       role="status"
       className={cn(
         "fixed flex left-0 right-0 top-0 z-50 px-2 py-1 shadow-sm text-white",

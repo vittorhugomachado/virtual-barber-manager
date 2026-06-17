@@ -1,15 +1,15 @@
 import { X } from "lucide-react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type NoticeColor = "orange" | "green" | "red" | "blue";
 
 interface TopFixedNoticeProps {
-  color?: NoticeColor;
+  color: NoticeColor;
   message: ReactNode;
   textAction?: string;
   onAction?: () => void;
-  onClose?: () => void;
   className?: string;
 }
 
@@ -21,13 +21,20 @@ const colorClasses: Record<NoticeColor, string> = {
 };
 
 export function TopFixedNotice({
-  color = "red",
+  color,
   message,
   textAction,
   onAction,
-  onClose,
   className,
 }: TopFixedNoticeProps) {
+  const [isVisible, setIsVisible] = useState(true);
+
+  if (!isVisible) return null;
+
+  function handleClose() {
+    setIsVisible(false);
+  }
+
   return (
     <div
       role="status"
@@ -53,16 +60,14 @@ export function TopFixedNotice({
             </button>
           )}
         </div>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md absolute right-0 p-1 opacity-70 transition hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-current/30"
-            aria-label="Fechar aviso"
-          >
-            <X className="size-4" />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={handleClose}
+          className="rounded-md absolute right-0 p-1 opacity-70 transition hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-current/30"
+          aria-label="Fechar aviso"
+        >
+          <X className="size-4" />
+        </button>
       </div>
     </div>
   );

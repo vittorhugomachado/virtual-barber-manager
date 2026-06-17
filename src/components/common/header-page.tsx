@@ -21,9 +21,7 @@ export function HeaderPage({ page }: HeaderPageProps) {
   const { logout, isLoading } = useLogout();
 
   const isMember = memberRole === "admin" || memberRole === "reader";
-  const displayName = isMember
-    ? `@${memberUsername}`
-    : (barbershop?.owner_name ?? barbershop?.name ?? "");
+  const displayName = isMember ? `@${memberUsername}` : barbershop?.name;
   const displaySub = isMember
     ? memberRole === "admin"
       ? "Administrador"

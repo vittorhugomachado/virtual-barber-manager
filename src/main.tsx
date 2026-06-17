@@ -6,12 +6,19 @@ import { BrowserRouter } from "react-router";
 import "./index.css";
 import "./store/user-credential.store";
 import { AppRoutes } from "./routes/app-routes";
+import { TopFixedNotice } from "./components/common/top-fixed-notice";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <Toaster />
       <ThemeToggle />
+      <TopFixedNotice
+        color="orange"
+        message={"Período de testes acaba em 6 dias"}
+        textAction={"Renovar agora"}
+        onAction={() => alert("Renovado!")}
+      />
       <AppRoutes />
     </BrowserRouter>
   </StrictMode>,

@@ -20,36 +20,6 @@ import { isValidCpfCnpj } from "@/utils/validate-cpf-cnpj";
 
 type BillingType = "PIX" | "BOLETO" | "CREDIT_CARD";
 
-const fallbackPlans: Plan[] = [
-  {
-    id: "a58887c2-a3c5-49f6-8435-1aa3435e6ad8",
-    code: "pro_monthly",
-    name: "Virtual Barber Pro - Mensal",
-    description: "Pagina personalizada, agendamentos e gestao completa.",
-    price_cents: 3990,
-    asaas_cycle: "MONTHLY",
-    sort_order: 1,
-  },
-  {
-    id: "8ba32aca-f61d-4370-9288-b7cbc4b751d3",
-    code: "pro_semiannual",
-    name: "Virtual Barber Pro - Semestral",
-    description: "Tudo do plano, com 6 meses por um valor reduzido.",
-    price_cents: 21000,
-    asaas_cycle: "SEMIANNUALLY",
-    sort_order: 2,
-  },
-  {
-    id: "408eb1d7-66eb-4a2f-ad9b-0ef2b01b883f",
-    code: "pro_yearly",
-    name: "Virtual Barber Pro - Anual",
-    description: "Tudo do plano, com o melhor preco no ciclo anual.",
-    price_cents: 36000,
-    asaas_cycle: "YEARLY",
-    sort_order: 3,
-  },
-];
-
 const cycleOptions: Array<{
   cycle: PlanCycle;
   label: string;
@@ -94,11 +64,11 @@ type InvokeErrorWithContext = {
 };
 
 export function BuyPlanMain() {
-  const [plans, setPlans] = useState<Plan[]>(fallbackPlans);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedCycle, setSelectedCycle] = useState<PlanCycle>("MONTHLY");
   const [billingType, setBillingType] = useState<BillingType>("PIX");
   const [loadingPlans, setLoadingPlans] = useState(true);
-  const [plansWarning, setPlansWarning] = useState<string | null>(null);
+  const [plansError, setPlansError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
@@ -120,20 +90,19 @@ export function BuyPlanMain() {
 
       if (!mounted) return;
 
-      // Planos
+      // Planos — SEM fallback: ou vem do banco, ou mostra erro honesto.
+      // Nunca mostrar preço hardcoded (poderia divergir do que o Asaas cobra).
       if (plansRes.error) {
-        setPlans(fallbackPlans);
-        setPlansWarning(
-          `Usando planos fixos porque a consulta falhou: ${plansRes.error.message}`,
+        setPlans([]);
+        setPlansError(
+          "Não foi possível carregar os planos. Recarregue a página e tente novamente.",
         );
       } else if (plansRes.data?.length) {
-        setPlans(plansRes.data as Plan[]);
-        setPlansWarning(null);
+        setPlans(plansRes.data);
+        setPlansError(null);
       } else {
-        setPlans(fallbackPlans);
-        setPlansWarning(
-          "Usando planos fixos porque nenhum plano ativo foi encontrado.",
-        );
+        setPlans([]);
+        setPlansError("Nenhum plano disponível no momento.");
       }
       setLoadingPlans(false);
 
@@ -244,50 +213,60 @@ export function BuyPlanMain() {
                   Ciclo do plano
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-3">
-                {cycleOptions.map(option => {
-                  const plan = plans.find(
-                    item => item.asaas_cycle === option.cycle,
-                  );
-                  const active = selectedCycle === option.cycle;
+              <CardContent>
+                {loadingPlans ? (
+                  <p className="text-sm text-zinc-500">Carregando planos…</p>
+                ) : plansError ? (
+                  <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                    {plansError}
+                  </p>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {cycleOptions.map(option => {
+                      const plan = plans.find(
+                        item => item.asaas_cycle === option.cycle,
+                      );
+                      const active = selectedCycle === option.cycle;
 
-                  return (
-                    <button
-                      key={option.cycle}
-                      type="button"
-                      onClick={() => setSelectedCycle(option.cycle)}
-                      className={cn(
-                        "flex min-h-36 flex-col justify-between rounded-lg border bg-white p-4 text-left transition dark:bg-zinc-900",
-                        active
-                          ? "border-blue-600 ring-2 ring-blue-600/20"
-                          : "border-zinc-200 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600",
-                      )}
-                    >
-                      <span className="flex items-start justify-between gap-3">
-                        <span>
-                          <span className="block text-sm font-semibold">
-                            {option.label}
+                      return (
+                        <button
+                          key={option.cycle}
+                          type="button"
+                          onClick={() => setSelectedCycle(option.cycle)}
+                          className={cn(
+                            "flex min-h-36 flex-col justify-between rounded-lg border bg-white p-4 text-left transition dark:bg-zinc-900",
+                            active
+                              ? "border-blue-600 ring-2 ring-blue-600/20"
+                              : "border-zinc-200 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600",
+                          )}
+                        >
+                          <span className="flex items-start justify-between gap-3">
+                            <span>
+                              <span className="block text-sm font-semibold">
+                                {option.label}
+                              </span>
+                              <span className="mt-1 block text-xs text-zinc-500">
+                                {option.hint}
+                              </span>
+                            </span>
+                            {active && (
+                              <CheckCircle2 className="size-5 shrink-0 text-blue-600" />
+                            )}
                           </span>
-                          <span className="mt-1 block text-xs text-zinc-500">
-                            {option.hint}
-                          </span>
-                        </span>
-                        {active && (
-                          <CheckCircle2 className="size-5 shrink-0 text-blue-600" />
-                        )}
-                      </span>
 
-                      <span className="mt-4">
-                        <span className="block text-lg font-semibold">
-                          {plan ? formatMoney(plan.price_cents) : "-"}
-                        </span>
-                        <span className="mt-1 block text-xs text-zinc-500">
-                          {plan?.code ?? "Plano nao carregado"}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
+                          <span className="mt-4">
+                            <span className="block text-lg font-semibold">
+                              {plan ? formatMoney(plan.price_cents) : "-"}
+                            </span>
+                            <span className="mt-1 block text-xs text-zinc-500">
+                              {plan?.code ?? "Plano indisponível"}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -426,11 +405,6 @@ export function BuyPlanMain() {
 
                 {(loadingPlans || loadingShop) && (
                   <p className="text-xs text-zinc-500">Carregando...</p>
-                )}
-                {plansWarning && (
-                  <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
-                    {plansWarning}
-                  </p>
                 )}
               </CardContent>
             </Card>

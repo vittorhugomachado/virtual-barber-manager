@@ -20,6 +20,16 @@ const AsaasTestPage = lazy(() =>
     default: module.AsaasTestPage,
   })),
 );
+const BuyPlanPage = lazy(() =>
+  import("@/pages/buy-plan-page").then(module => ({
+    default: module.BuyPlanPage,
+  })),
+);
+const MySubscriptionPage = lazy(() =>
+  import("@/pages/my-subscription-page").then(module => ({
+    default: module.MySubscriptionPage,
+  })),
+);
 const SignupPage = lazy(() =>
   import("@/pages/signup-page").then(module => ({
     default: module.SignupPage,
@@ -217,6 +227,22 @@ export function AppRoutes() {
         element={
           <PublicPageLoader>
             <DashboardPage />
+          </PublicPageLoader>
+        }
+      />
+      <Route
+        path="/assinar"
+        element={
+          <PublicPageLoader>
+            <BuyPlanPage />
+          </PublicPageLoader>
+        }
+      />
+      <Route
+        path="/minha-assinatura"
+        element={
+          <PublicPageLoader>
+            <MySubscriptionPage />
           </PublicPageLoader>
         }
       />

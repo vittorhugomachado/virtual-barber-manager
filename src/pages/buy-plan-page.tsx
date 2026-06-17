@@ -1,11 +1,11 @@
 import { HeaderPage } from "@/components/common/header-page";
-import { AppointmentsMain } from "@/components/main/appointments-main";
+import { BuyPlanMain } from "@/components/main/buy-plan";
 
-export function AppointmentsPage() {
+export function BuyPlanPage() {
   return (
     <>
       <HeaderPage page="Assinar" />
-      <AppointmentsMain />
+      <BuyPlanMain />
     </>
   );
 }

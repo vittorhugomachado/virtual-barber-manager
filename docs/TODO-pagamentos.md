@@ -151,6 +151,6 @@ Suporta: **pré-pago** (Pix/boleto) **e recorrente** (cartão), e compra de plan
 
 - **Único ponto de mudança de preço:** `plans.price_cents`. `payments` guarda snapshot →
   mudar preço não reescreve histórico nem quem já pagou.
-- **Pré-pago vs recorrente:** mudam só os *eventos* tratados no webhook; o gate, o RLS,
+- **Pré-pago vs recorrente:** mudam só os _eventos_ tratados no webhook; o gate, o RLS,
   a UI e o `payments` permanecem idênticos.
 - **Preço de assinatura de cartão ativa:** não muda sozinho ao editar `plans` — decisão da Fase 0.

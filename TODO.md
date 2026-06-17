@@ -2,7 +2,7 @@
 
 > Revisão de vulnerabilidades/inconsistências do fluxo `create-subscription` + `asaas-webhook`.
 > Meta: **atender 10 ou 10.000 usuários da mesma forma.**
-> Status atual: o *caminho feliz* (assinatura nova, paga na hora, 1 request) funciona.
+> Status atual: o _caminho feliz_ (assinatura nova, paga na hora, 1 request) funciona.
 > Fora disso há furos de **"cliente paga e não recebe acesso"** e de **cobrança injusta**.
 
 **Legenda:** 🔴 bloqueia produção · 🟠 inconsistência de dados/cobrança · 🟡 segurança/hardening · 🔵 escala
@@ -12,8 +12,8 @@
 ## 🔴 Crítico — impedem "funcionar igual para todos"
 
 - [ ] **C1 — Criar o portão de acesso (gate).**
-  O webhook escreve `current_period_end`/`past_due`, mas **nada lê** isso para bloquear.
-  Hoje barbearia `incomplete` ou `past_due` continua inserindo agendamentos/clientes (produto de graça).
+      O webhook escreve `current_period_end`/`past_due`, mas **nada lê** isso para bloquear.
+      Hoje barbearia `incomplete` ou `past_due` continua inserindo agendamentos/clientes (produto de graça).
   - [ ] Função `is_barbershop_active(p_barbershop_id uuid)` — `security definer`, `stable`, `set search_path = ''`; retorna `now() < current_period_end + grace AND status <> 'canceled'`.
   - [ ] Policies **RLS RESTRICTIVE for insert** em `appointments`, `customers`, `barbers`, `services`.
   - [ ] Decisão: gate só no **INSERT** (atrasado = somente-leitura), **não** no SELECT.
@@ -21,14 +21,14 @@
   - Ref.: Fase 3 do `TODO-pagamentos.md`.
 
 - [x] **C2 — Corrigir a idempotência do webhook (perda de evento).**
-  Hoje grava o evento **antes** de processar; em falha (corrida `subscription_not_found` ou erro transitório) responde 200 e o Asaas nunca reenvia. Retry futuro bate no guard `23505` e retorna `{duplicate:true}` sem reprocessar → **efeito perdido permanente**.
+      Hoje grava o evento **antes** de processar; em falha (corrida `subscription_not_found` ou erro transitório) responde 200 e o Asaas nunca reenvia. Retry futuro bate no guard `23505` e retorna `{duplicate:true}` sem reprocessar → **efeito perdido permanente**.
   - [x] Separar "recebido" de "processado": deduplicar por `processed_at IS NOT NULL`, não pela mera existência da linha.
   - [x] Retornar **500** nos casos retryable (ex.: `subscription_not_found`) **antes** de queimar o `asaas_event_id`.
   - [x] Garantir reprocessamento (ver **S4** — job de reconciliação).
   - Nota: o `PAYMENT_CREATED` (que entrega o `invoiceUrl`, plano B do passo 9) pode chegar **antes** do passo 8 persistir o `asaas_subscription_id` → hoje é descartado.
 
 - [x] **C3 — CORS por env (não travar em `localhost:5173`).**
-  As respostas do `create-subscription` devolvem `Access-Control-Allow-Origin: http://localhost:5173`, mas o preflight OPTIONS devolve `*` (inconsistente). Em produção o navegador bloqueia tudo.
+      As respostas do `create-subscription` devolvem `Access-Control-Allow-Origin: http://localhost:5173`, mas o preflight OPTIONS devolve `*` (inconsistente). Em produção o navegador bloqueia tudo.
   - [x] Usar `ALLOWED_ORIGIN` via env var, **igual** no OPTIONS e no POST.
 
 ---
@@ -36,18 +36,18 @@
 ## 🟠 Alto — inconsistências de dados/cobrança
 
 - [x] **H1 — Corrigir a matemática da renovação.**
-  Hoje: `newPeriodEnd = addMonths(paymentDate, ciclo)` — quem renova antes de vencer **perde** os dias restantes.
+      Hoje: `newPeriodEnd = addMonths(paymentDate, ciclo)` — quem renova antes de vencer **perde** os dias restantes.
   - [x] Trocar por: `new_end = max(current_period_end, paymentDate) + ciclo`.
   - Ref.: `TODO-pagamentos.md:105` (`current_period_end += interval`).
 
 - [x] **H2 — Eliminar corrida que duplica customer/subscription no Asaas.**
-  Dois cliques/retries concorrentes leem `asaas_subscription_id = null` e ambos criam no Asaas; a assinatura órfã continua cobrando.
+      Dois cliques/retries concorrentes leem `asaas_subscription_id = null` e ambos criam no Asaas; a assinatura órfã continua cobrando.
   - [x] Reivindicar a linha atomicamente antes de chamar o Asaas:
         `update subscriptions set ... where id = ? and asaas_subscription_id is null returning *`.
   - [x] (Complementar) enviar **idempotency key** ao Asaas.
 
 - [x] **H3 — Enviar idempotency key nas chamadas ao Asaas.**
-  `createCustomer`/`createSubscription` sem chave: timeout de rede em chamada bem-sucedida vira duplicata no retry.
+      `createCustomer`/`createSubscription` sem chave: timeout de rede em chamada bem-sucedida vira duplicata no retry.
   - [x] Adicionar o header de idempotência do Asaas em ambas as chamadas.
 
 ---
@@ -55,7 +55,7 @@
 ## 🟡 Médio — segurança e hardening
 
 - [ ] **M1 — Proteger/remover rotas públicas de teste.**
-  `/teste-asaas` está pública (`app-routes.tsx:216-231`) e todo o `ProtectedRoute` está comentado. Hoje **nada** no app está protegido no nível de rota.
+      `/teste-asaas` está pública (`app-routes.tsx:216-231`) e todo o `ProtectedRoute` está comentado. Hoje **nada** no app está protegido no nível de rota.
   - [x] Remover (ou gatear) `/teste-asaas` antes de prod.
   - [ ] Reativar o `ProtectedRoute`.
 - [x] **M2 — Comparação de token constant-time** no webhook (hoje `receivedToken !== expectedToken` → timing side-channel).
@@ -70,20 +70,20 @@
 - [x] **S1 — Confirmar índices.**
   - [x] Índice **único** em `subscriptions.asaas_subscription_id` (o webhook faz `.eq(...)`).
   - [x] Conferir únicos em `payments.asaas_payment_id` e `webhook_events.asaas_event_id`.
-- [X] **S2 — Sanear `webhook_events`.**
-  - [X] Adicionar `received_at timestamptz default now()` (hoje não dá nem para podar por data).
-  - [X] Política de retenção/partição + payload enxuto.
-- [X] **S3 — Remover o loop bloqueante de invoice (~2,1s).**
-  - [X] Retornar `invoice_url: null` na hora e confiar no webhook `PAYMENT_CREATED` para entregar a URL. (docs #10)
-- [X] **S4 — Job de reconciliação.**
-  - [X] Job periódico que compara o estado local com o Asaas (lista pagamentos/assinaturas) e corrige a deriva. Rede de segurança para os eventos perdidos (C2).
+- [x] **S2 — Sanear `webhook_events`.**
+  - [x] Adicionar `received_at timestamptz default now()` (hoje não dá nem para podar por data).
+  - [x] Política de retenção/partição + payload enxuto.
+- [x] **S3 — Remover o loop bloqueante de invoice (~2,1s).**
+  - [x] Retornar `invoice_url: null` na hora e confiar no webhook `PAYMENT_CREATED` para entregar a URL. (docs #10)
+- [x] **S4 — Job de reconciliação.**
+  - [x] Job periódico que compara o estado local com o Asaas (lista pagamentos/assinaturas) e corrige a deriva. Rede de segurança para os eventos perdidos (C2).
 
 ---
 
 ## ✅ Pré-produção — fora da revisão de código, mas obrigatório
 
 - [ ] **Auditar RLS + GRANTs** de todas as tabelas (lembrete do projeto: "403 num GET = falta de GRANT").
-- [X] **Revisar `_shared/asaas.ts`** — tratamento de erro/timeout e **guarda da API key**.
+- [x] **Revisar `_shared/asaas.ts`** — tratamento de erro/timeout e **guarda da API key**.
 - [ ] NÃO VAI SER FEITO AGORA - REEMBOLSO = ENTRAR EM CONTATO**Fluxo de cancelamento / reembolso / troca de plano** (hoje o webhook só trata `past_due`).
 - [ ] **Observabilidade + alertas** — saber quando um pagamento falha silenciosamente (sem isso, C2/S4 não são seguros).
 - [ ] **Fiscal (nota fiscal) e LGPD** — guarda de CPF/CNPJ e dados de cobrança.

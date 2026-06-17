@@ -12,22 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getPlans } from "@/lib/supabase/plans";
+import type { Plan, PlanCycle } from "@/lib/supabase/plans";
 import { supabase } from "@/lib/supabase/supabase";
 import { cn } from "@/lib/utils";
 import { isValidCpfCnpj } from "@/utils/validate-cpf-cnpj";
 
-type PlanCycle = "MONTHLY" | "SEMIANNUALLY" | "YEARLY";
 type BillingType = "PIX" | "BOLETO" | "CREDIT_CARD";
-
-type Plan = {
-  id: string;
-  code: string;
-  name: string;
-  description: string | null;
-  price_cents: number;
-  asaas_cycle: PlanCycle;
-  sort_order: number;
-};
 
 const fallbackPlans: Plan[] = [
   {
@@ -96,6 +87,12 @@ function getErrorMessage(error: unknown) {
   return "Erro desconhecido";
 }
 
+type InvokeErrorWithContext = {
+  context?: {
+    json?: () => Promise<unknown>;
+  };
+};
+
 export function BuyPlanMain() {
   const [plans, setPlans] = useState<Plan[]>(fallbackPlans);
   const [selectedCycle, setSelectedCycle] = useState<PlanCycle>("MONTHLY");
@@ -117,13 +114,7 @@ export function BuyPlanMain() {
 
     async function loadData() {
       const [plansRes, userRes] = await Promise.all([
-        supabase
-          .from("plans")
-          .select(
-            "id, code, name, description, price_cents, asaas_cycle, sort_order",
-          )
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true }),
+        getPlans(),
         supabase.auth.getUser(),
       ]);
 
@@ -211,7 +202,7 @@ export function BuyPlanMain() {
 
       if (invokeError) {
         // FunctionsHttpError guarda a Response em .context — extrai o body real.
-        const body = await (invokeError as any).context
+        const body = await (invokeError as InvokeErrorWithContext).context
           ?.json?.()
           .catch(() => null);
         setError(

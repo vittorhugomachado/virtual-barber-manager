@@ -41,7 +41,11 @@ export function TopFixedNotice({
     if (!el) return;
 
     const update = () => {
-      document.body.style.paddingTop = `${el.offsetHeight}px`;
+      const height = `${el.offsetHeight}px`;
+      document.body.style.paddingTop = height;
+      // Exposto como CSS var para elementos `position: fixed` (ex.: a sidebar),
+      // que ignoram o padding do body e precisam descer manualmente.
+      document.documentElement.style.setProperty("--top-notice-height", height);
     };
     update();
 
@@ -51,6 +55,7 @@ export function TopFixedNotice({
     return () => {
       observer.disconnect();
       document.body.style.paddingTop = "";
+      document.documentElement.style.removeProperty("--top-notice-height");
     };
   }, [isVisible]);
 

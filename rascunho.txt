@@ -1,0 +1,89 @@
+1) Arquivos e o papel de cada um
+🖥️ Frontend (virtual-barber-manager)
+Arquivo	Papel no fluxo
+routes/app-routes.tsx	Registra as rotas /assinar e /minha-assinatura.
+pages/buy-plan-page.tsx	Ao abrir, chama getMySubscription(). Se já tem asaas_subscription_id → redireciona para /minha-assinatura. Senão, renderiza o wizard.
+pages/my-subscription-page.tsx	Placeholder (só <h1>) — futura tela de renovar/cancelar.
+components/main/buy-plan.tsx (BuyPlanMain)	O wizard de 2 passos: passo 1 escolhe o plano (cards), passo 2 método + CPF/CNPJ. Chama a create-subscription e mostra o link da fatura.
+lib/supabase/plans/get-plans.ts	SELECT em plans (ativos, ordenados) — fonte dos preços na tela.
+lib/supabase/plans/types.ts	Tipo Plan / PlanCycle.
+lib/supabase/subscriptions/get-my-subscription.ts	SELECT da assinatura do dono (a RLS filtra) — usado pelo redirect.
+lib/supabase/supabase.ts	Client Supabase (anon key) usado no front.
+utils/validate-cpf-cnpj.ts	Valida CPF/CNPJ no front (UX — feedback instantâneo).
+components/common/top-fixed-notice.tsx	Banner "Período de testes acaba em X dias / Renovar agora" → CTA leva para /assinar.
+⚙️ Edge Functions (repo das functions)
+Arquivo	Papel no fluxo
+create-subscription/index.ts	Porta de criação. Converte trial → pago: autentica, valida dono, lê plano do banco, rate limit, claim, cria/reusa customer+subscription no Asaas, grava IDs (incomplete), busca a fatura.
+asaas-webhook/index.ts	Sincroniza o estado. Recebe eventos do Asaas, valida token, dedup, acha a assinatura, espelha o pagamento e seta active/past_due + current_period_end.
+reconcile-subscriptions/index.ts	Rede de segurança (cron). Reprocessa eventos que ficaram presos no webhook.
+_shared/asaas.ts	Client HTTP do Asaas (createCustomer, createSubscription, lookups, listSubscriptionPayments) com timeout/guarda da key.
+_shared/supabaseAdmin.ts	Client service_role (usado pela create-subscription).
+🗄️ Tabelas
+Tabela	Papel
+plans	Catálogo (preço/ciclo) — fonte única do preço.
+subscriptions	Estado por barbearia: status, current_period_end (campo sagrado), IDs do Asaas, provisioning_started_at, grace_period_days.
+payments	Histórico de cobranças (espelho do Asaas).
+webhook_events	Log dos eventos (idempotência via processed_at/attempts).
+ops_alerts	Alertas de observabilidade (gave_up, payment_failed...).
+asaas_rate_limits	Contador do rate limit.
+🔧 Funções SQL + crons
+Objeto	Papel
+is_barbershop_active()	O gate — lê current_period_end (+ trial + carência) para liberar/bloquear escrita.
+claim_subscription_provisioning()	Claim atômico anti-corrida (H2).
+rate_limit_hit()	Rate limit por usuário (M5).
+Trigger de signup	Cria a subscription em trialing quando a barbearia nasce.
+Cron reconcile-subscriptions	A cada 10 min.
+Cron prune-webhook-events	Diário (poda eventos antigos).
+2) O fluxo em texto comum
+🌱 Nascimento (signup)
+Dono se cadastra → trigger do banco cria a barbershops + a subscriptions com status = trialing (30 dias) → ainda sem IDs do Asaas.
+
+💳 Converter trial em pago (/assinar)
+Front abre /assinar → buy-plan-page chama getMySubscription().
+→ Se já tem asaas_subscription_id → redireciona para /minha-assinatura.
+→ Senão, mostra o wizard.
+Passo 1: BuyPlanMain chama getPlans() → mostra os 3 cards (preços do banco). Cliente escolhe um → passo 2.
+Passo 2: escolhe método (Pix/Boleto/Cartão) + digita CPF/CNPJ (validado no front).
+Front chama create-subscription (via supabase.functions.invoke).
+🔒 Dentro da create-subscription
+Ela verifica, em ordem:
+
+JWT válido? (quem é o usuário) → senão 401.
+CPF/CNPJ válido? (M4) → senão 400.
+Rate limit ok? (rate_limit_hit, M5) → senão 429.
+É dono da barbearia? → senão 403.
+Plano existe e está ativo? (lê preço/ciclo do banco, nunca do front).
+Já tem asaas_subscription_id? → senão 409 (vai pra /minha-assinatura).
+Claim atômico (claim_subscription_provisioning, H2) → se outro request está criando, 409.
+Customer no Asaas: procura por externalReference (H3) → reusa ou cria.
+Subscription no Asaas: procura por externalReference (H3) → reusa ou cria.
+Grava asaas_customer_id/asaas_subscription_id + status = incomplete (libera o claim).
+Busca a 1ª fatura (invoiceUrl) → devolve para o front.
+→ Front recebe invoice_url → botão "Ir para o pagamento" abre a página hospedada do Asaas.
+
+💰 Pagamento
+Cliente paga no Asaas (Pix/Boleto/Cartão — cartão digitado lá, nunca no nosso app).
+
+📨 Webhook (asaas-webhook)
+Asaas dispara o evento → webhook verifica:
+
+Token confere? (constant-time, M2) → senão 401.
+Já processei esse evento? (dedup por processed_at, C2) → se sim, ignora.
+Acho a subscription pelo asaas_subscription_id?
+→ Não: retry (500) até 5x; esgotou → gave_up + alerta na ops_alerts.
+→ Sim: espelha o pagamento em payments e:
+Evento de pagamento confirmado → status = active + current_period_end = max(fim atual, paymentDate) + ciclo (H1).
+Evento de falha/vencimento → status = past_due + alerta.
+🛟 Rede de segurança (reconcile-subscriptions, cron 10 min)
+Pega eventos presos/gave_up → reprocessa (reaplica o efeito). Garante que nada fique perdido.
+
+🚪 O acesso (gate)
+Quando a barbearia tenta criar registros (membros, futuramente clientes/agendamentos):
+→ chama is_barbershop_active() → lê current_period_end (+ carência) →
+
+dentro do prazo → libera o INSERT.
+fora do prazo → bloqueia (somente leitura).
+Resumo de 1 linha do "caminho feliz"
+Signup cria o trial → /assinar mostra os planos (do banco) → create-subscription valida tudo e cria a assinatura no Asaas (incomplete) → cliente paga no Asaas → asaas-webhook confirma e seta active + current_period_end → gate lê esse campo e libera o uso. Se o webhook falhar, a reconciliação conserta.
+
+Quer que eu transforme isso num docs/FLUXO-PAGAMENTO.md versionado (com esse texto + os diagramas Mermaid que fiz antes)?

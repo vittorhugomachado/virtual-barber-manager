@@ -5,7 +5,7 @@ import { BuyPlanMain } from "@/components/main/buy-plan";
 import { Spinner } from "@/components/ui/spinner";
 import { getMySubscription } from "@/lib/supabase/subscriptions/get-my-subscription";
 
-export function BuyPlanPage() {
+export function SignaturePage() {
   const [checking, setChecking] = useState(true);
   const [alreadySubscribed, setAlreadySubscribed] = useState(false);
 
@@ -18,9 +18,9 @@ export function BuyPlanPage() {
       // Já assinou (tem assinatura no Asaas) -> manda para "minha assinatura",
       // onde ficam renovar/cancelar. A página /assinar é só para a 1ª compra.
       setAlreadySubscribed(Boolean(data?.asaas_subscription_id));
+      console.log(data);
       setChecking(false);
     }
-
     void check();
 
     return () => {

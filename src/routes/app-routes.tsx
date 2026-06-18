@@ -20,9 +20,9 @@ const AsaasTestPage = lazy(() =>
     default: module.AsaasTestPage,
   })),
 );
-const BuyPlanPage = lazy(() =>
-  import("@/pages/buy-plan-page").then(module => ({
-    default: module.BuyPlanPage,
+const SignaturePage = lazy(() =>
+  import("@/pages/signature-page").then(module => ({
+    default: module.SignaturePage,
   })),
 );
 const MySubscriptionPage = lazy(() =>
@@ -231,10 +231,10 @@ export function AppRoutes() {
         }
       />
       <Route
-        path="/assinar"
+        path="/assinatura"
         element={
           <PublicPageLoader>
-            <BuyPlanPage />
+            <SignaturePage />
           </PublicPageLoader>
         }
       />

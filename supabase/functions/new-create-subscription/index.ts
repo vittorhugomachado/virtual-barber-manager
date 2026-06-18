@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // new-create-subscription/index.ts
 // ============================================================================
 // Converte um trial em assinatura paga usando checkout transparente.
@@ -69,6 +70,15 @@ type AsaasPayment = {
   bankSlipUrl?: string;
   dueDate?: string;
   dateCreated?: string;
+  paymentDate?: string;
+};
+
+type BillingAddress = {
+  zip_code: string | null;
+  street: string | null;
+  number: string | null;
+  complement: string | null;
+  neighborhood: string | null;
 };
 
 type CustomerPayload = {
@@ -105,6 +115,23 @@ class AsaasError extends Error {
 }
 
 const ALLOWED_BILLING = new Set<BillingType>(["CREDIT_CARD", "PIX", "BOLETO"]);
+
+const CONFIRMING_STATUSES = new Set(["CONFIRMED", "RECEIVED"]);
+
+const CYCLE_MONTHS: Record<string, number> = {
+  WEEKLY: 0,
+  BIWEEKLY: 0,
+  MONTHLY: 1,
+  QUARTERLY: 3,
+  SEMIANNUALLY: 6,
+  YEARLY: 12,
+};
+
+function addMonths(from: Date, months: number): Date {
+  const d = new Date(from);
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
 
 const ALLOWED_ORIGINS = (
   Deno.env.get("ALLOWED_ORIGINS") ?? "http://localhost:5173"
@@ -453,11 +480,6 @@ Deno.serve(async req => {
   const cpfCnpj = digits(body.cpf_cnpj);
   const email = body.email?.trim();
   const mobilePhone = digits(body.mobile_phone) || undefined;
-  const postalCode = digits(body.postal_code) || undefined;
-  const address = body.address?.trim();
-  const addressNumber = body.address_number?.trim();
-  const addressComplement = body.address_complement?.trim();
-  const province = body.province?.trim();
   const remoteIp = getRemoteIp(req);
 
   if (!barbershopId || !planId) {
@@ -491,12 +513,6 @@ Deno.serve(async req => {
   if (billingType === "CREDIT_CARD") {
     if (!remoteIp) {
       return json(400, { error: "missing_remote_ip" });
-    }
-    if (!postalCode || postalCode.length !== 8) {
-      return json(400, { error: "missing_postal_code" });
-    }
-    if (!addressNumber) {
-      return json(400, { error: "missing_address_number" });
     }
     if (!creditCard || creditCard.number.length < 13) {
       return json(400, { error: "missing_credit_card_number" });
@@ -542,6 +558,33 @@ Deno.serve(async req => {
     if (shopError) throw shopError;
     if (!shop || shop.owner_id !== userId) {
       return json(403, { error: "not_barbershop_owner" });
+    }
+
+    const { data: billingAddress, error: addressError } = await supabase
+      .from("addresses")
+      .select("zip_code, street, number, complement, neighborhood")
+      .eq("barbershop_id", barbershopId)
+      .maybeSingle();
+
+    if (addressError) throw addressError;
+
+    const address = billingAddress as BillingAddress | null;
+    const postalCode = digits(address?.zip_code) || undefined;
+    const addressStreet = address?.street?.trim();
+    const addressNumber = address?.number?.trim();
+    const addressComplement = address?.complement?.trim();
+    const province = address?.neighborhood?.trim();
+
+    if (billingType === "CREDIT_CARD") {
+      if (!address) {
+        return json(400, { error: "missing_billing_address" });
+      }
+      if (!postalCode || postalCode.length !== 8) {
+        return json(400, { error: "missing_postal_code" });
+      }
+      if (!addressNumber) {
+        return json(400, { error: "missing_address_number" });
+      }
     }
 
     const { data: plan, error: planError } = await supabase
@@ -590,7 +633,7 @@ Deno.serve(async req => {
       email,
       mobilePhone,
       postalCode,
-      address,
+      address: addressStreet,
       addressNumber,
       complement: addressComplement,
       province,
@@ -639,27 +682,59 @@ Deno.serve(async req => {
       });
     }
 
-    subscriptionCreated = true;
     const asaasSubscriptionId = subscription.id;
 
-    const { error: updateError } = await supabase
+    const { data: updatedRows, error: updateError } = await supabase
       .from("subscriptions")
       .update({
         plan_id: plan.id,
         asaas_subscription_id: asaasSubscriptionId,
-        status: "incomplete",
         provisioning_started_at: null,
       })
-      .eq("id", sub.id);
+      .eq("id", sub.id)
+      .select("id");
 
     if (updateError) throw updateError;
+    if (!updatedRows?.length) {
+      console.error(
+        `DB update retornou 0 linhas para subscription ${sub.id}.`,
+      );
+      throw new Error("db_update_zero_rows");
+    }
+
+    subscriptionCreated = true;
 
     let invoiceUrl: string | null = null;
+    let activatedDirectly = false;
     try {
       const payments = await listSubscriptionPayments(asaasSubscriptionId);
       invoiceUrl = pickOldestUnpaidInvoiceUrl(payments.data ?? []);
+
+      // Ativa imediatamente se o pagamento já foi confirmado (cartão aprovado na hora).
+      // Evita depender do webhook chegar para sair do status "incomplete".
+      const confirmedPayment = (payments.data ?? []).find(p =>
+        CONFIRMING_STATUSES.has(p.status ?? ""),
+      );
+      if (confirmedPayment) {
+        const months = CYCLE_MONTHS[plan.asaas_cycle] ?? 1;
+        // Âncora ESTÁVEL na cobrança (dueDate), nunca "now" — assim este caminho
+        // e o webhook calculam o MESMO current_period_end e não somam duplicado.
+        const anchor = confirmedPayment.dueDate
+          ? new Date(confirmedPayment.dueDate)
+          : confirmedPayment.paymentDate
+            ? new Date(confirmedPayment.paymentDate)
+            : new Date();
+        const { error: activateError } = await supabase
+          .from("subscriptions")
+          .update({
+            status: "active",
+            current_period_end: addMonths(anchor, months).toISOString(),
+          })
+          .eq("id", sub.id);
+        if (!activateError) activatedDirectly = true;
+      }
     } catch (_error) {
-      // O webhook PAYMENT_CREATED ainda pode entregar a URL depois.
+      // O webhook PAYMENT_CREATED/CONFIRMED ainda pode entregar a URL depois.
     }
 
     return json(200, {
@@ -667,6 +742,7 @@ Deno.serve(async req => {
       billing_type: billingType,
       asaas_subscription_id: asaasSubscriptionId,
       invoice_url: invoiceUrl,
+      ...(activatedDirectly ? { status: "active" } : {}),
     });
   } catch (error) {
     if (claimedSubId && !subscriptionCreated) {

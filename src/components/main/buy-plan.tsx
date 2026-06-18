@@ -18,16 +18,6 @@ import { getMySubscription } from "@/lib/supabase/subscriptions/get-my-subscript
 
 type BillingType = "PIX" | "BOLETO" | "CREDIT_CARD";
 type PaymentState = "idle" | "processing" | "confirmed";
-type BillingAddress = {
-  zip_code: string | null;
-  street: string | null;
-  number: string | null;
-  complement: string | null;
-  neighborhood: string | null;
-  city: string | null;
-  state: string | null;
-  country: string | null;
-};
 
 const CYCLE_MONTHS: Record<string, number> = {
   WEEKLY: 0,
@@ -68,6 +58,9 @@ const ERROR_MESSAGES: Record<string, string> = {
     "Ja estamos processando sua assinatura. Aguarde um instante.",
   invalid_cpf_cnpj: "CPF ou CNPJ invalido.",
   missing_cpf_cnpj: "Informe o CPF ou CNPJ.",
+  missing_billing_address: "Cadastre o endereco da barbearia antes de assinar.",
+  missing_postal_code: "O endereco da barbearia esta sem CEP valido.",
+  missing_address_number: "O endereco da barbearia esta sem numero.",
   rate_limited: "Muitas tentativas. Aguarde um instante e tente de novo.",
   not_barbershop_owner: "Apenas o proprietario pode assinar.",
   invalid_or_inactive_plan: "Plano indisponivel. Recarregue a pagina.",
@@ -124,9 +117,6 @@ export function BuyPlanMain() {
   const [barbershopName, setBarbershopName] = useState("");
   const [barbershopEmail, setBarbershopEmail] = useState("");
   const [barbershopPhone, setBarbershopPhone] = useState("");
-  const [billingAddress, setBillingAddress] = useState<BillingAddress | null>(
-    null,
-  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
@@ -178,17 +168,6 @@ export function BuyPlanMain() {
           setBarbershopName(shop.name ?? "");
           setBarbershopEmail(shop.email ?? "");
           setBarbershopPhone(shop.phone ?? "");
-
-          const { data: address } = await supabase
-            .from("addresses")
-            .select(
-              "zip_code, street, number, complement, neighborhood, city, state, country",
-            )
-            .eq("barbershop_id", shop.id)
-            .maybeSingle();
-
-          if (!mounted) return;
-          setBillingAddress((address as BillingAddress | null) ?? null);
         }
       }
     }
@@ -269,15 +248,6 @@ export function BuyPlanMain() {
     if (!barbershopEmail.trim()) return "Sua barbearia esta sem email.";
 
     if (billingType === "CREDIT_CARD") {
-      if (!billingAddress) {
-        return "Cadastre o endereco da barbearia antes de assinar.";
-      }
-      if ((billingAddress.zip_code ?? "").replace(/\D/g, "").length !== 8) {
-        return "O endereco da barbearia esta sem CEP valido.";
-      }
-      if (!billingAddress.number?.trim()) {
-        return "O endereco da barbearia esta sem numero.";
-      }
       if (cardNumber.replace(/\D/g, "").length < 13) {
         return "Informe o numero do cartao.";
       }
@@ -315,15 +285,6 @@ export function BuyPlanMain() {
             cpf_cnpj: cpfCnpj.replace(/\D/g, ""),
             email: barbershopEmail.trim(),
             mobile_phone: barbershopPhone.replace(/\D/g, "") || undefined,
-            postal_code:
-              billingAddress?.zip_code?.replace(/\D/g, "") || undefined,
-            address: billingAddress?.street ?? undefined,
-            address_number: billingAddress?.number ?? undefined,
-            address_complement: billingAddress?.complement ?? undefined,
-            province: billingAddress?.neighborhood ?? undefined,
-            city: billingAddress?.city ?? undefined,
-            state: billingAddress?.state ?? undefined,
-            country: billingAddress?.country ?? undefined,
             credit_card:
               billingType === "CREDIT_CARD"
                 ? {
@@ -345,11 +306,13 @@ export function BuyPlanMain() {
         return;
       }
 
-      const url =
-        (data as { invoice_url?: string | null })?.invoice_url ?? null;
-      setInvoiceUrl(url);
+      const response = data as {
+        invoice_url?: string | null;
+        status?: string;
+      };
+      setInvoiceUrl(response.invoice_url ?? null);
       setDone(true);
-      setPaymentState("processing");
+      setPaymentState(response.status === "active" ? "confirmed" : "processing");
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

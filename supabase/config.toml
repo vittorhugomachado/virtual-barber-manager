@@ -1,0 +1,14 @@
+project_id = "fjfrybzaeghouslsyhgl"
+
+# Funções chamadas por terceiros (Asaas / pg_cron) NÃO recebem JWT do Supabase —
+# elas autenticam por header secreto. Verify JWT precisa ficar OFF, senão o
+# chamador toma 401 antes da função rodar (foi o que travou o webhook).
+[functions.asaas-webhook]
+verify_jwt = false
+
+[functions.reconcile-subscriptions]
+verify_jwt = false
+
+# Chamada pelo dono logado no manager — recebe o JWT do usuário. Mantém ON.
+[functions.new-create-subscription]
+verify_jwt = true

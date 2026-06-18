@@ -1,38 +1,42 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Banknote,
-  CalendarClock,
-  CheckCircle2,
+  ArrowLeft,
   CreditCard,
   Loader2,
   QrCode,
   ReceiptText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getPlans } from "@/lib/supabase/plans/get-plans";
-import type { Plan, PlanCycle } from "@/lib/supabase/plans/types";
+import type { Plan } from "@/lib/supabase/plans/types";
 import { supabase } from "@/lib/supabase/supabase";
 import { cn } from "@/lib/utils";
 import { isValidCpfCnpj } from "@/utils/validate-cpf-cnpj";
 
 type BillingType = "PIX" | "BOLETO" | "CREDIT_CARD";
 
-const cycleOptions: Array<{
-  cycle: PlanCycle;
-  label: string;
-  hint: string;
-}> = [
-  { cycle: "MONTHLY", label: "Mensal", hint: "Cobrança todo mes" },
-  {
-    cycle: "SEMIANNUALLY",
-    label: "Semestral",
-    hint: "Cobrança a cada 6 meses",
-  },
-  { cycle: "YEARLY", label: "Anual", hint: "Cobrança a cada 12 meses" },
-];
+const CYCLE_MONTHS: Record<string, number> = {
+  WEEKLY: 0,
+  BIWEEKLY: 0,
+  MONTHLY: 1,
+  QUARTERLY: 3,
+  SEMIANNUALLY: 6,
+  YEARLY: 12,
+};
+const CYCLE_LABEL: Record<string, string> = {
+  MONTHLY: "Mensal",
+  QUARTERLY: "Trimestral",
+  SEMIANNUALLY: "Semestral",
+  YEARLY: "Anual",
+};
+const CYCLE_SUFFIX: Record<string, string> = {
+  MONTHLY: "/mês",
+  QUARTERLY: "/trimestre",
+  SEMIANNUALLY: "/semestre",
+  YEARLY: "/ano",
+};
 
 const billingOptions: Array<{
   type: BillingType;
@@ -41,14 +45,33 @@ const billingOptions: Array<{
 }> = [
   { type: "PIX", label: "Pix", icon: QrCode },
   { type: "BOLETO", label: "Boleto", icon: ReceiptText },
-  { type: "CREDIT_CARD", label: "Cartao", icon: CreditCard },
+  { type: "CREDIT_CARD", label: "Cartão", icon: CreditCard },
 ];
+
+// Mensagens amigáveis para os códigos de erro da create-subscription.
+const ERROR_MESSAGES: Record<string, string> = {
+  subscription_already_exists: "Você já possui uma assinatura.",
+  provisioning_in_progress:
+    "Já estamos processando sua assinatura. Aguarde um instante.",
+  invalid_cpf_cnpj: "CPF ou CNPJ inválido.",
+  missing_cpf_cnpj: "Informe o CPF ou CNPJ.",
+  rate_limited: "Muitas tentativas. Aguarde um instante e tente de novo.",
+  not_barbershop_owner: "Apenas o proprietário pode assinar.",
+  invalid_or_inactive_plan: "Plano indisponível. Recarregue a página.",
+  internal_error: "Erro interno. Tente novamente mais tarde.",
+};
 
 function formatMoney(cents: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
   }).format(cents / 100);
+}
+const cycleLabel = (cycle: string) => CYCLE_LABEL[cycle] ?? cycle;
+const cycleSuffix = (cycle: string) => CYCLE_SUFFIX[cycle] ?? "/ciclo";
+function monthlyEquivalentCents(plan: Plan) {
+  const months = CYCLE_MONTHS[plan.asaas_cycle] || 1;
+  return Math.round(plan.price_cents / months);
 }
 
 function getErrorMessage(error: unknown) {
@@ -58,26 +81,35 @@ function getErrorMessage(error: unknown) {
 }
 
 type InvokeErrorWithContext = {
-  context?: {
-    json?: () => Promise<unknown>;
-  };
+  context?: { json?: () => Promise<unknown> };
 };
 
+function friendlyErrorFromBody(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as { error?: string; message?: string };
+  if (b.error && ERROR_MESSAGES[b.error]) return ERROR_MESSAGES[b.error];
+  if (typeof b.message === "string") return b.message;
+  if (typeof b.error === "string") return b.error;
+  return null;
+}
+
 export function BuyPlanMain() {
+  const [step, setStep] = useState<1 | 2>(1);
+
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [selectedCycle, setSelectedCycle] = useState<PlanCycle>("MONTHLY");
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [billingType, setBillingType] = useState<BillingType>("PIX");
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [plansError, setPlansError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<unknown>(null);
-  const [error, setError] = useState<string | null>(null);
 
-  const [barbershopId, setBarbershopId] = useState<string>("");
-  const [barbershopName, setBarbershopName] = useState<string | null>(null);
-  const [loadingShop, setLoadingShop] = useState(true);
+  const [barbershopId, setBarbershopId] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [mobilePhone, setMobilePhone] = useState("");
+
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -87,11 +119,8 @@ export function BuyPlanMain() {
         getPlans(),
         supabase.auth.getUser(),
       ]);
-
       if (!mounted) return;
 
-      // Planos — SEM fallback: ou vem do banco, ou mostra erro honesto.
-      // Nunca mostrar preço hardcoded (poderia divergir do que o Asaas cobra).
       if (plansRes.error) {
         setPlans([]);
         setPlansError(
@@ -106,38 +135,46 @@ export function BuyPlanMain() {
       }
       setLoadingPlans(false);
 
-      // Barbearia do dono logado
       const userId = userRes.data.user?.id;
       if (userId) {
         const { data: shop } = await supabase
           .from("barbershops")
-          .select("id, name")
+          .select("id")
           .eq("owner_id", userId)
           .maybeSingle();
         if (!mounted) return;
-        if (shop) {
-          setBarbershopId(shop.id);
-          setBarbershopName(shop.name);
-        }
+        if (shop) setBarbershopId(shop.id);
       }
-      setLoadingShop(false);
     }
 
     void loadData();
-
     return () => {
       mounted = false;
     };
   }, []);
 
+  // "Melhor valor" = menor preço por mês — calculado dos dados, sem hardcode.
+  const bestValuePlanId = useMemo(() => {
+    if (plans.length < 2) return null;
+    return plans.reduce((best, p) =>
+      monthlyEquivalentCents(p) < monthlyEquivalentCents(best) ? p : best,
+    ).id;
+  }, [plans]);
+
   const selectedPlan = useMemo(
-    () => plans.find(plan => plan.asaas_cycle === selectedCycle) ?? plans[0],
-    [plans, selectedCycle],
+    () => plans.find(p => p.id === selectedPlanId) ?? null,
+    [plans, selectedPlanId],
   );
 
-  async function handleCreateSubscription() {
-    if (!selectedPlan || submitting) return;
+  function choosePlan(id: string) {
+    setSelectedPlanId(id);
+    setError(null);
+    setDone(false);
+    setStep(2);
+  }
 
+  async function handleSubscribe() {
+    if (!selectedPlan || submitting) return;
     if (!barbershopId) {
       setError("Nenhuma barbearia encontrada para o usuário logado.");
       return;
@@ -147,13 +184,14 @@ export function BuyPlanMain() {
       return;
     }
     if (!isValidCpfCnpj(cpfCnpj)) {
-      setError("CPF ou CNPJ invalido.");
+      setError("CPF ou CNPJ inválido.");
       return;
     }
 
     setSubmitting(true);
-    setResult(null);
     setError(null);
+    setDone(false);
+    setInvoiceUrl(null);
 
     try {
       const { data, error: invokeError } = await supabase.functions.invoke(
@@ -170,16 +208,16 @@ export function BuyPlanMain() {
       );
 
       if (invokeError) {
-        // FunctionsHttpError guarda a Response em .context — extrai o body real.
         const body = await (invokeError as InvokeErrorWithContext).context
           ?.json?.()
           .catch(() => null);
-        setError(
-          body ? JSON.stringify(body, null, 2) : getErrorMessage(invokeError),
-        );
+        setError(friendlyErrorFromBody(body) ?? getErrorMessage(invokeError));
         return;
       }
-      setResult(data);
+
+      const url = (data as { invoice_url?: string | null })?.invoice_url ?? null;
+      setInvoiceUrl(url);
+      setDone(true);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -189,103 +227,134 @@ export function BuyPlanMain() {
 
   return (
     <main className="min-h-screen bg-zinc-100 px-4 py-8 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <header className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
-            <Banknote className="size-4" />
-            Teste Asaas
-          </div>
-          <h1 className="text-2xl font-semibold tracking-normal">
-            Criar assinatura de teste
-          </h1>
-          <p className="max-w-2xl text-sm text-zinc-600 dark:text-zinc-400">
-            Escolha o ciclo do plano Pro e o metodo de pagamento para chamar a
-            Edge Function <code>create-subscription</code>.
-          </p>
-        </header>
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+        {/* Stepper */}
+        <div className="flex items-center justify-center gap-3 text-sm">
+          <StepPill n={1} label="Plano" active={step === 1} done={step > 1} />
+          <div className="h-px w-10 bg-zinc-300 dark:bg-zinc-700" />
+          <StepPill n={2} label="Pagamento" active={step === 2} done={false} />
+        </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        {step === 1 && (
           <section className="flex flex-col gap-6">
-            <Card className="rounded-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <CalendarClock className="size-4" />
-                  Ciclo do plano
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingPlans ? (
-                  <p className="text-sm text-zinc-500">Carregando planos…</p>
-                ) : plansError ? (
-                  <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
-                    {plansError}
-                  </p>
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {cycleOptions.map(option => {
-                      const plan = plans.find(
-                        item => item.asaas_cycle === option.cycle,
-                      );
-                      const active = selectedCycle === option.cycle;
+            <div className="flex flex-col items-center gap-1 text-center">
+              <h1 className="text-2xl font-semibold">Escolha seu plano</h1>
+              <p className="text-sm text-zinc-500">
+                Selecione o ciclo que faz mais sentido para a sua barbearia.
+              </p>
+            </div>
 
-                      return (
-                        <button
-                          key={option.cycle}
-                          type="button"
-                          onClick={() => setSelectedCycle(option.cycle)}
-                          className={cn(
-                            "flex min-h-36 flex-col justify-between rounded-lg border bg-white p-4 text-left transition dark:bg-zinc-900",
-                            active
-                              ? "border-blue-600 ring-2 ring-blue-600/20"
-                              : "border-zinc-200 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600",
-                          )}
-                        >
-                          <span className="flex items-start justify-between gap-3">
-                            <span>
-                              <span className="block text-sm font-semibold">
-                                {option.label}
-                              </span>
-                              <span className="mt-1 block text-xs text-zinc-500">
-                                {option.hint}
-                              </span>
-                            </span>
-                            {active && (
-                              <CheckCircle2 className="size-5 shrink-0 text-blue-600" />
-                            )}
-                          </span>
+            {loadingPlans ? (
+              <p className="text-center text-sm text-zinc-500">
+                Carregando planos…
+              </p>
+            ) : plansError ? (
+              <p className="mx-auto max-w-md rounded-md border border-red-200 bg-red-50 p-3 text-center text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                {plansError}
+              </p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-3">
+                {plans.map(plan => {
+                  const best = plan.id === bestValuePlanId;
+                  const months = CYCLE_MONTHS[plan.asaas_cycle] || 1;
+                  return (
+                    <div
+                      key={plan.id}
+                      className={cn(
+                        "relative flex flex-col rounded-2xl border bg-white p-6 transition dark:bg-zinc-900",
+                        best
+                          ? "border-blue-500 ring-1 ring-blue-500/30"
+                          : "border-zinc-200 dark:border-zinc-800",
+                      )}
+                    >
+                      {best && (
+                        <span className="absolute right-4 top-4 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                          Melhor valor
+                        </span>
+                      )}
 
-                          <span className="mt-4">
-                            <span className="block text-lg font-semibold">
-                              {plan ? formatMoney(plan.price_cents) : "-"}
-                            </span>
-                            <span className="mt-1 block text-xs text-zinc-500">
-                              {plan?.code ?? "Plano indisponível"}
-                            </span>
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      <h3 className="text-lg font-semibold">
+                        {cycleLabel(plan.asaas_cycle)}
+                      </h3>
 
-            <Card className="rounded-lg">
-              <CardHeader>
-                <CardTitle className="text-base">Metodo de pagamento</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-3">
+                      <div className="mt-3 flex items-end gap-1">
+                        <span className="text-3xl font-bold">
+                          {formatMoney(plan.price_cents)}
+                        </span>
+                        <span className="mb-1 text-sm text-zinc-500">
+                          {cycleSuffix(plan.asaas_cycle)}
+                        </span>
+                      </div>
+
+                      {months > 1 && (
+                        <p className="mt-1 text-xs text-zinc-500">
+                          equivale a {formatMoney(monthlyEquivalentCents(plan))}
+                          /mês
+                        </p>
+                      )}
+
+                      {plan.description && (
+                        <p className="mt-4 text-sm text-zinc-500">
+                          {plan.description}
+                        </p>
+                      )}
+
+                      <Button
+                        type="button"
+                        size="lg"
+                        variant={best ? "default" : "outline"}
+                        onClick={() => choosePlan(plan.id)}
+                        className="mt-6 w-full"
+                      >
+                        Escolher {cycleLabel(plan.asaas_cycle)}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
+        {step === 2 && selectedPlan && (
+          <section className="mx-auto flex w-full max-w-lg flex-col gap-6">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="flex items-center gap-1 self-start text-sm text-zinc-500 transition hover:text-zinc-900 dark:hover:text-zinc-100"
+            >
+              <ArrowLeft className="size-4" />
+              Voltar aos planos
+            </button>
+
+            {/* Resumo do plano escolhido */}
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+              <div className="min-w-0">
+                <p className="text-xs text-zinc-500">Plano selecionado</p>
+                <p className="truncate font-semibold">{selectedPlan.name}</p>
+              </div>
+              <p className="shrink-0 text-xl font-bold">
+                {formatMoney(selectedPlan.price_cents)}
+                <span className="text-sm font-normal text-zinc-500">
+                  {cycleSuffix(selectedPlan.asaas_cycle)}
+                </span>
+              </p>
+            </div>
+
+            {/* Método de pagamento */}
+            <div className="flex flex-col gap-2">
+              <Label className="text-sm font-medium">Método de pagamento</Label>
+              <div className="grid grid-cols-3 gap-3">
                 {billingOptions.map(option => {
                   const Icon = option.icon;
                   const active = billingType === option.type;
-
                   return (
                     <button
                       key={option.type}
                       type="button"
                       onClick={() => setBillingType(option.type)}
                       className={cn(
-                        "flex h-24 flex-col items-center justify-center gap-2 rounded-lg border bg-white text-sm font-medium transition dark:bg-zinc-900",
+                        "flex h-20 flex-col items-center justify-center gap-1.5 rounded-lg border bg-white text-sm font-medium transition dark:bg-zinc-900",
                         active
                           ? "border-blue-600 text-blue-600 ring-2 ring-blue-600/20"
                           : "border-zinc-200 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600",
@@ -296,142 +365,111 @@ export function BuyPlanMain() {
                     </button>
                   );
                 })}
-              </CardContent>
-            </Card>
-          </section>
+              </div>
+              {billingType === "CREDIT_CARD" && (
+                <p className="text-xs text-zinc-500">
+                  Os dados do cartão são preenchidos com segurança na página do
+                  Asaas — nunca passam por aqui.
+                </p>
+              )}
+            </div>
 
-          <aside className="flex flex-col gap-4">
-            <Card className="rounded-lg">
-              <CardHeader>
-                <CardTitle className="text-base">Dados do assinante</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <Label className="text-xs text-zinc-500">Barbearia</Label>
-                  {loadingShop ? (
-                    <p className="text-xs text-zinc-400">Carregando...</p>
-                  ) : barbershopName ? (
-                    <p className="truncate text-sm font-medium">
-                      {barbershopName}
-                    </p>
-                  ) : (
-                    <p className="text-xs text-red-500">
-                      Nenhuma barbearia encontrada
-                    </p>
-                  )}
-                </div>
+            {/* CPF / CNPJ */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="cpf-cnpj" className="text-sm font-medium">
+                CPF / CNPJ <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="cpf-cnpj"
+                placeholder="000.000.000-00"
+                value={cpfCnpj}
+                onChange={e =>
+                  setCpfCnpj(e.target.value.replace(/\D/g, "").slice(0, 14))
+                }
+              />
+            </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="cpf-cnpj" className="text-xs">
-                    CPF / CNPJ <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="cpf-cnpj"
-                    placeholder="000.000.000-00"
-                    value={cpfCnpj}
-                    onChange={e =>
-                      setCpfCnpj(e.target.value.replace(/\D/g, "").slice(0, 14))
-                    }
-                  />
-                </div>
+            {/* Celular */}
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="mobile-phone" className="text-sm font-medium">
+                Celular (opcional)
+              </Label>
+              <Input
+                id="mobile-phone"
+                placeholder="(11) 99999-9999"
+                value={mobilePhone}
+                onChange={e => setMobilePhone(e.target.value)}
+              />
+            </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="mobile-phone" className="text-xs">
-                    Celular (opcional)
-                  </Label>
-                  <Input
-                    id="mobile-phone"
-                    placeholder="(11) 99999-9999"
-                    value={mobilePhone}
-                    onChange={e => setMobilePhone(e.target.value)}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-lg">
-              <CardHeader>
-                <CardTitle className="text-base">Resumo</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-900">
-                  <p className="text-sm font-medium">{selectedPlan?.name}</p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {selectedPlan?.description}
-                  </p>
-                  <p className="mt-4 text-2xl font-semibold">
-                    {selectedPlan ? formatMoney(selectedPlan.price_cents) : "-"}
-                  </p>
-                </div>
-
-                <dl className="grid gap-2 text-sm">
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-zinc-500">Ciclo</dt>
-                    <dd className="font-medium">{selectedCycle}</dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-zinc-500">Pagamento</dt>
-                    <dd className="font-medium">{billingType}</dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-zinc-500">Barbershop ID</dt>
-                    <dd className="max-w-44 truncate font-mono text-xs">
-                      {barbershopId || "-"}
-                    </dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-zinc-500">Plan ID</dt>
-                    <dd className="max-w-44 truncate font-mono text-xs">
-                      {selectedPlan?.id}
-                    </dd>
-                  </div>
-                </dl>
-
-                <Button
-                  type="button"
-                  size="lg"
-                  onClick={handleCreateSubscription}
-                  disabled={
-                    submitting ||
-                    !selectedPlan ||
-                    !barbershopId ||
-                    !cpfCnpj.trim()
-                  }
-                  className="max-w-none"
-                >
-                  {submitting && <Loader2 className="size-4 animate-spin" />}
-                  {submitting ? "Criando assinatura..." : "Testar assinatura"}
-                </Button>
-
-                {(loadingPlans || loadingShop) && (
-                  <p className="text-xs text-zinc-500">Carregando...</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {(error || result !== null) && (
-              <Card className="rounded-lg">
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    Resposta da function
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {error ? (
-                    <pre className="max-h-80 overflow-auto rounded-lg bg-red-50 p-3 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-300">
-                      {error}
-                    </pre>
-                  ) : (
-                    <pre className="max-h-80 overflow-auto rounded-lg bg-emerald-50 p-3 text-xs text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300">
-                      {JSON.stringify(result, null, 2)}
-                    </pre>
-                  )}
-                </CardContent>
-              </Card>
+            {error && (
+              <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                {error}
+              </p>
             )}
-          </aside>
-        </div>
+
+            {done ? (
+              invoiceUrl ? (
+                <Button asChild size="lg">
+                  <a href={invoiceUrl} target="_blank" rel="noopener noreferrer">
+                    Ir para o pagamento
+                  </a>
+                </Button>
+              ) : (
+                <p className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+                  Assinatura criada! Estamos preparando sua fatura — isso leva
+                  alguns segundos.
+                </p>
+              )
+            ) : (
+              <Button
+                type="button"
+                size="lg"
+                onClick={handleSubscribe}
+                disabled={submitting || !barbershopId || !cpfCnpj.trim()}
+              >
+                {submitting && <Loader2 className="size-4 animate-spin" />}
+                {submitting ? "Processando..." : "Assinar"}
+              </Button>
+            )}
+          </section>
+        )}
       </div>
     </main>
+  );
+}
+
+function StepPill({
+  n,
+  label,
+  active,
+  done,
+}: {
+  n: number;
+  label: string;
+  active: boolean;
+  done: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className={cn(
+          "flex size-6 items-center justify-center rounded-full text-xs font-semibold",
+          active || done
+            ? "bg-blue-600 text-white"
+            : "bg-zinc-300 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300",
+        )}
+      >
+        {n}
+      </span>
+      <span
+        className={cn(
+          "text-sm",
+          active ? "font-semibold" : "text-zinc-500",
+        )}
+      >
+        {label}
+      </span>
+    </div>
   );
 }

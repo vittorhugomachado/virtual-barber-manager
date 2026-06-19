@@ -289,6 +289,29 @@ export function computeNewPeriodEnd(
   return addMonths(anchor, months);
 }
 
+export type CouponInfo = {
+  id: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  description: string | null;
+  uses_count: number;
+  max_uses: number | null;
+  expires_at: string | null;
+};
+
+// Calcula o preço final com desconto. Mínimo de R$1,00 (100 cents).
+// discount_type 'fixed': discount_value em reais (ex: 50 = R$50 off).
+// discount_type 'percentage': discount_value em % (ex: 20 = 20% off).
+export function applyCouponDiscount(
+  priceCents: number,
+  coupon: Pick<CouponInfo, "discount_type" | "discount_value">,
+): number {
+  if (coupon.discount_type === "percentage") {
+    return Math.max(100, Math.round(priceCents * (1 - coupon.discount_value / 100)));
+  }
+  return Math.max(100, priceCents - Math.round(coupon.discount_value * 100));
+}
+
 export function pickOldestUnpaidPayment(
   payments: AsaasPayment[],
 ): AsaasPayment | null {

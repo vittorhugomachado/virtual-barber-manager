@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, CreditCard, Loader2, QrCode } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle,
+  CreditCard,
+  Loader2,
+  QrCode,
+  Tag,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +26,13 @@ type PixData = {
   encodedImage?: string;
   payload?: string;
   expirationDate?: string;
+};
+
+type AppliedCoupon = {
+  id: string;
+  discount_type: "percentage" | "fixed";
+  discount_value: number;
+  description: string | null;
 };
 
 const CYCLE_MONTHS: Record<string, number> = {
@@ -57,11 +72,16 @@ const ERROR_MESSAGES: Record<string, string> = {
   provisioning_in_progress:
     "Ja estamos processando sua assinatura. Aguarde um instante.",
   invalid_cpf_cnpj: "CPF ou CNPJ invalido.",
+  invalid_credit_card_expiry:
+    "Data de validade do cartão inválida. Use o formato MM/AA.",
   missing_cpf_cnpj: "Informe o CPF ou CNPJ.",
   missing_billing_address: "Cadastre o endereco da barbearia antes de assinar.",
   missing_postal_code: "O endereco da barbearia esta sem CEP valido.",
   missing_address_number: "O endereco da barbearia esta sem numero.",
   rate_limited: "Muitas tentativas. Aguarde um instante e tente de novo.",
+  invalid_coupon: "Cupom inválido ou inexistente.",
+  coupon_expired: "Este cupom expirou.",
+  coupon_exhausted: "Este cupom atingiu o limite de usos.",
   not_barbershop_owner: "Apenas o proprietario pode assinar.",
   invalid_or_inactive_plan: "Plano indisponivel. Recarregue a pagina.",
   internal_error: "Erro interno. Tente novamente mais tarde.",
@@ -111,6 +131,7 @@ export function BuyPlanMain() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [billingType, setBillingType] = useState<BillingType>("CREDIT_CARD");
+  const [installmentCount, setInstallmentCount] = useState(1);
   const [loadingPlans, setLoadingPlans] = useState(true);
   const [plansError, setPlansError] = useState<string | null>(null);
   const [barbershopId, setBarbershopId] = useState("");
@@ -124,6 +145,12 @@ export function BuyPlanMain() {
   const [pixCopied, setPixCopied] = useState(false);
   const [done, setDone] = useState(false);
   const [paymentState, setPaymentState] = useState<PaymentState>("idle");
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(
+    null,
+  );
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -200,7 +227,25 @@ export function BuyPlanMain() {
     [plans, selectedPlanId],
   );
 
+  const finalPriceCents = useMemo(() => {
+    if (!selectedPlan) return 0;
+    if (!appliedCoupon) return selectedPlan.price_cents;
+    if (appliedCoupon.discount_type === "percentage") {
+      return Math.max(
+        100,
+        Math.round(
+          selectedPlan.price_cents * (1 - appliedCoupon.discount_value / 100),
+        ),
+      );
+    }
+    return Math.max(
+      100,
+      selectedPlan.price_cents - Math.round(appliedCoupon.discount_value * 100),
+    );
+  }, [selectedPlan, appliedCoupon]);
+
   function choosePlan(planId: string) {
+    const plan = plans.find(p => p.id === planId);
     setSelectedPlanId(planId);
     setError(null);
     setDone(false);
@@ -208,6 +253,17 @@ export function BuyPlanMain() {
     setPixData(null);
     setPixCopied(false);
     setPaymentState("idle");
+    setCouponInput("");
+    setAppliedCoupon(null);
+    setCouponError(null);
+    // Define o parcelamento padrão: 6x para semestral, 12x para anual, 1x para mensal.
+    const defaultInstallments =
+      plan?.asaas_cycle === "SEMIANNUALLY"
+        ? 6
+        : plan?.asaas_cycle === "YEARLY"
+          ? 12
+          : 1;
+    setInstallmentCount(defaultInstallments);
     setStep(2);
   }
 
@@ -231,6 +287,9 @@ export function BuyPlanMain() {
     setPixData(null);
     setPixCopied(false);
     setPaymentState("idle");
+    setCouponInput("");
+    setAppliedCoupon(null);
+    setCouponError(null);
     setSelectedPlanId(null);
     setStep(1);
   }
@@ -274,6 +333,41 @@ export function BuyPlanMain() {
     };
   }, [paymentState]);
 
+  async function handleApplyCoupon() {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    setCouponLoading(true);
+    setCouponError(null);
+    setAppliedCoupon(null);
+    try {
+      const { data, error: rpcError } = await supabase.rpc("validate_coupon", {
+        p_code: code,
+      });
+      if (rpcError) throw rpcError;
+      const result = data as {
+        valid: boolean;
+        id?: string;
+        discount_type?: string;
+        discount_value?: number;
+        description?: string;
+      };
+      if (!result?.valid) {
+        setCouponError(ERROR_MESSAGES.invalid_coupon);
+      } else {
+        setAppliedCoupon({
+          id: result.id!,
+          discount_type: result.discount_type as "percentage" | "fixed",
+          discount_value: result.discount_value!,
+          description: result.description ?? null,
+        });
+      }
+    } catch {
+      setCouponError("Erro ao validar cupom. Tente novamente.");
+    } finally {
+      setCouponLoading(false);
+    }
+  }
+
   function validateCheckout() {
     if (!selectedPlan) return "Selecione um plano.";
     if (!barbershopId) return "Nenhuma barbearia encontrada para o usuario.";
@@ -310,30 +404,39 @@ export function BuyPlanMain() {
     setPaymentState("idle");
 
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke(
-        "new-create-subscription",
-        {
-          body: {
-            barbershop_id: barbershopId,
-            plan_id: selectedPlan.id,
-            billing_type: billingType,
-            holder_name: holderName.trim(),
-            company_name: barbershopName.trim(),
-            cpf_cnpj: cpfCnpj.replace(/\D/g, ""),
-            email: barbershopEmail.trim(),
-            mobile_phone: barbershopPhone.replace(/\D/g, "") || undefined,
-            credit_card:
-              billingType === "CREDIT_CARD"
-                ? {
-                    number: cardNumber.replace(/\D/g, ""),
-                    expiry: cardExpiry,
-                    ccv: cardCcv.replace(/\D/g, ""),
-                    holder_name: holderName.trim(),
-                  }
-                : undefined,
-          },
+      const fn =
+        selectedPlan.asaas_cycle === "MONTHLY"
+          ? "create-monthly-subscription"
+          : "buy-pack";
+
+      const { data, error: invokeError } = await supabase.functions.invoke(fn, {
+        body: {
+          barbershop_id: barbershopId,
+          plan_id: selectedPlan.id,
+          billing_type: billingType,
+          holder_name: holderName.trim(),
+          company_name: barbershopName.trim(),
+          cpf_cnpj: cpfCnpj.replace(/\D/g, ""),
+          email: barbershopEmail.trim(),
+          mobile_phone: barbershopPhone.replace(/\D/g, "") || undefined,
+          ...(appliedCoupon
+            ? { coupon_code: couponInput.trim().toUpperCase() }
+            : {}),
+          ...(selectedPlan.asaas_cycle !== "MONTHLY" &&
+          billingType === "CREDIT_CARD"
+            ? { installment_count: installmentCount }
+            : {}),
+          credit_card:
+            billingType === "CREDIT_CARD"
+              ? {
+                  number: cardNumber.replace(/\D/g, ""),
+                  expiry: cardExpiry,
+                  ccv: cardCcv.replace(/\D/g, ""),
+                  holder_name: holderName.trim(),
+                }
+              : undefined,
         },
-      );
+      });
 
       if (invokeError) {
         const body = await (invokeError as InvokeErrorWithContext).context
@@ -486,7 +589,8 @@ export function BuyPlanMain() {
                         Parabens, seu pagamento foi confirmado
                       </h2>
                       <p className="mt-2 max-w-md text-sm">
-                        Você será redirecionado para sua assinatura em instantes.
+                        Você será redirecionado para sua assinatura em
+                        instantes.
                       </p>
                     </>
                   ) : paymentState === "timedout" ? (
@@ -499,8 +603,8 @@ export function BuyPlanMain() {
                       </h2>
                       <p className="mt-2 max-w-md text-sm">
                         Nao recebemos a confirmacao do pagamento. Se ja pagou,
-                        aguarde mais um pouco e atualize a pagina. Caso contrario,
-                        escolha novamente como deseja pagar.
+                        aguarde mais um pouco e atualize a pagina. Caso
+                        contrario, escolha novamente como deseja pagar.
                       </p>
                       <Button
                         type="button"
@@ -588,7 +692,7 @@ export function BuyPlanMain() {
                           type="button"
                           onClick={() => setBillingType(option.type)}
                           className={cn(
-                            "flex h-20 flex-col items-center justify-center gap-1.5 rounded-xl border text-sm font-medium transition",
+                            "flex h-20 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border text-sm font-medium transition",
                             active
                               ? "border-blue-600 bg-blue-50 text-blue-700 ring-2 ring-blue-600/15 dark:bg-blue-950/30 dark:text-blue-300"
                               : "border-zinc-200 hover:border-zinc-400 dark:border-zinc-800 dark:hover:border-zinc-600",
@@ -600,6 +704,35 @@ export function BuyPlanMain() {
                       );
                     })}
                   </div>
+
+                  {selectedPlan.asaas_cycle !== "MONTHLY" &&
+                    billingType === "CREDIT_CARD" && (
+                      <div className="flex flex-col gap-1.5">
+                        <Label htmlFor="installments">Parcelamento</Label>
+                        <select
+                          id="installments"
+                          value={installmentCount}
+                          onChange={e =>
+                            setInstallmentCount(Number(e.target.value))
+                          }
+                          className="flex h-9 w-full cursor-pointer rounded-md border border-zinc-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-950 dark:border-zinc-800 dark:bg-zinc-950 dark:focus-visible:ring-zinc-300"
+                        >
+                          {Array.from(
+                            {
+                              length:
+                                selectedPlan.asaas_cycle === "YEARLY" ? 12 : 6,
+                            },
+                            (_, i) => i + 1,
+                          ).map(n => (
+                            <option key={n} value={n}>
+                              {n === 1
+                                ? `1x de ${formatMoney(finalPriceCents)} (à vista)`
+                                : `${n}x de ${formatMoney(Math.ceil(finalPriceCents / n))}`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
@@ -630,18 +763,19 @@ export function BuyPlanMain() {
                   {billingType === "CREDIT_CARD" && (
                     <div className="grid gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950/50 sm:grid-cols-2">
                       <div className="flex flex-col gap-1.5 sm:col-span-2">
-                        <Label htmlFor="card-number">Numero do cartao</Label>
+                        <Label htmlFor="card-number">Número do cartão</Label>
                         <Input
                           id="card-number"
                           inputMode="numeric"
                           value={cardNumber}
-                          onChange={event =>
+                          onChange={event => {
+                            const digits = event.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 16);
                             setCardNumber(
-                              event.target.value
-                                .replace(/\D/g, "")
-                                .slice(0, 19),
-                            )
-                          }
+                              digits.replace(/(.{4})/g, "$1 ").trim(),
+                            );
+                          }}
                           placeholder="0000 0000 0000 0000"
                         />
                       </div>
@@ -650,8 +784,18 @@ export function BuyPlanMain() {
                         <Label htmlFor="card-expiry">Validade</Label>
                         <Input
                           id="card-expiry"
+                          inputMode="numeric"
                           value={cardExpiry}
-                          onChange={event => setCardExpiry(event.target.value)}
+                          onChange={event => {
+                            const digits = event.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 4);
+                            setCardExpiry(
+                              digits.length > 2
+                                ? `${digits.slice(0, 2)}/${digits.slice(2)}`
+                                : digits,
+                            );
+                          }}
                           placeholder="MM/AA"
                         />
                       </div>
@@ -664,7 +808,7 @@ export function BuyPlanMain() {
                           value={cardCcv}
                           onChange={event =>
                             setCardCcv(
-                              event.target.value.replace(/\D/g, "").slice(0, 4),
+                              event.target.value.replace(/\D/g, "").slice(0, 3),
                             )
                           }
                           placeholder="123"
@@ -684,6 +828,72 @@ export function BuyPlanMain() {
                       cobranca e mostrar o QR code aqui.
                     </div>
                   )}
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label
+                      htmlFor="coupon-code"
+                      className="flex items-center gap-1.5"
+                    >
+                      <Tag className="size-3.5" />
+                      Cupom de desconto
+                    </Label>
+                    {appliedCoupon ? (
+                      <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900 dark:bg-emerald-950/30">
+                        <CheckCircle className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <span className="flex-1 text-sm font-medium text-emerald-800 dark:text-emerald-300">
+                          {couponInput.trim().toUpperCase()}
+                          {appliedCoupon.description
+                            ? ` — ${appliedCoupon.description}`
+                            : ""}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAppliedCoupon(null);
+                            setCouponInput("");
+                            setCouponError(null);
+                          }}
+                          className="text-emerald-600 transition hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-200"
+                          aria-label="Remover cupom"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          id="coupon-code"
+                          value={couponInput}
+                          onChange={e => {
+                            setCouponInput(e.target.value.toUpperCase());
+                            setCouponError(null);
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === "Enter") void handleApplyCoupon();
+                          }}
+                          placeholder="INFLUENCER10"
+                          className="uppercase"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => void handleApplyCoupon()}
+                          disabled={couponLoading || !couponInput.trim()}
+                        >
+                          {couponLoading ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            "Aplicar"
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                    {couponError && (
+                      <p className="text-xs text-red-600 dark:text-red-400">
+                        {couponError}
+                      </p>
+                    )}
+                  </div>
 
                   {error && (
                     <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
@@ -737,10 +947,30 @@ export function BuyPlanMain() {
                   <span className="text-sm text-zinc-500">
                     {cycleLabel(selectedPlan.asaas_cycle)}
                   </span>
-                  <span className="font-semibold">
+                  <span
+                    className={cn(
+                      "font-semibold",
+                      appliedCoupon &&
+                        "text-zinc-400 line-through dark:text-zinc-600",
+                    )}
+                  >
                     {formatMoney(selectedPlan.price_cents)}
                   </span>
                 </div>
+                {appliedCoupon && (
+                  <div className="mt-1.5 flex items-center justify-between gap-4 text-sm">
+                    <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                      <Tag className="size-3" />
+                      {couponInput.trim().toUpperCase()}
+                    </span>
+                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                      -
+                      {appliedCoupon.discount_type === "percentage"
+                        ? `${appliedCoupon.discount_value}%`
+                        : formatMoney(appliedCoupon.discount_value * 100)}
+                    </span>
+                  </div>
+                )}
                 <div className="mt-2 flex items-center justify-between gap-4 text-sm text-zinc-500">
                   <span>Ciclo</span>
                   <span>{cycleSuffix(selectedPlan.asaas_cycle)}</span>
@@ -750,7 +980,7 @@ export function BuyPlanMain() {
               <div className="mt-5 flex items-center justify-between gap-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
                 <span className="font-medium">Total hoje</span>
                 <span className="text-2xl font-bold">
-                  {formatMoney(selectedPlan.price_cents)}
+                  {formatMoney(finalPriceCents)}
                 </span>
               </div>
 

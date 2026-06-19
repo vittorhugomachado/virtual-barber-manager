@@ -33,8 +33,10 @@ import {
   BillingAddress,
   CONFIRMING_STATUSES,
   CYCLE_MONTHS,
+  CouponInfo,
   CustomerPayload,
   AsaasPixQrCode,
+  applyCouponDiscount,
   computeNewPeriodEnd,
   corsHeaders,
   createCustomer,
@@ -64,6 +66,7 @@ type RequestBody = {
   cpf_cnpj?: string;
   email?: string;
   mobile_phone?: string;
+  coupon_code?: string;
   credit_card?: {
     number?: string;
     expiry?: string;
@@ -107,6 +110,7 @@ Deno.serve(async req => {
   const cpfCnpj = digits(body.cpf_cnpj);
   const email = body.email?.trim();
   const mobilePhone = digits(body.mobile_phone) || undefined;
+  const couponCode = body.coupon_code?.trim().toUpperCase() || undefined;
   const remoteIp = getRemoteIp(req);
 
   if (!barbershopId || !planId) return json(400, { error: "missing_barbershop_id_or_plan_id" });
@@ -189,6 +193,24 @@ Deno.serve(async req => {
     // Esta função só processa planos mensais.
     if (plan.asaas_cycle !== "MONTHLY") return json(400, { error: "plan_not_monthly" });
 
+    // Validação do cupom (opcional).
+    let coupon: CouponInfo | null = null;
+    if (couponCode) {
+      const { data: couponRow, error: couponError } = await supabase
+        .from("coupons")
+        .select("id, discount_type, discount_value, description, uses_count, max_uses, expires_at")
+        .eq("is_active", true)
+        .ilike("code", couponCode)
+        .maybeSingle();
+      if (couponError) throw couponError;
+      if (!couponRow) return json(422, { error: "invalid_coupon" });
+      if (couponRow.expires_at && new Date(couponRow.expires_at) <= new Date())
+        return json(422, { error: "coupon_expired" });
+      if (couponRow.max_uses !== null && couponRow.uses_count >= couponRow.max_uses)
+        return json(422, { error: "coupon_exhausted" });
+      coupon = couponRow as CouponInfo;
+    }
+
     const { data: sub, error: subError } = await supabase
       .from("subscriptions")
       .select("id, status, current_period_end, asaas_customer_id, asaas_subscription_id")
@@ -260,11 +282,27 @@ Deno.serve(async req => {
     let subscription = mustCreateFresh
       ? null
       : await findSubscriptionByExternalReference(barbershopId);
+
+    // Com cupom, sempre cria assinatura nova no Asaas para garantir o valor
+    // descontado — nunca reaproveita uma existente com preço errado.
+    if (subscription && coupon) {
+      try {
+        await deleteAsaasSubscription(subscription.id);
+      } catch (e) {
+        if (!(e instanceof AsaasError) || (e as AsaasError).status !== 404) throw e;
+      }
+      subscription = null;
+    }
+
     if (!subscription) {
+      const finalPriceCents = coupon
+        ? applyCouponDiscount(plan.price_cents, coupon)
+        : plan.price_cents;
+
       subscription = await createSubscription({
         customer: customerId,
         billingType,
-        value: plan.price_cents / 100,
+        value: finalPriceCents / 100,
         cycle: plan.asaas_cycle,
         nextDueDate: dueDateInDays(0),
         description: `Virtual Barber - ${plan.name}`,
@@ -292,6 +330,13 @@ Deno.serve(async req => {
     if (!updatedRows?.length) throw new Error("db_update_zero_rows");
 
     subscriptionCreated = true;
+
+    if (coupon) {
+      await supabase
+        .from("coupons")
+        .update({ uses_count: coupon.uses_count + 1 })
+        .eq("id", coupon.id);
+    }
 
     let activatedDirectly = false;
     let pix: AsaasPixQrCode | null = null;
@@ -327,6 +372,13 @@ Deno.serve(async req => {
       asaas_subscription_id: asaasSubscriptionId,
       ...(pix ? { pix } : {}),
       ...(activatedDirectly ? { status: "active" } : {}),
+      ...(coupon ? {
+        coupon_applied: {
+          discount_type: coupon.discount_type,
+          discount_value: coupon.discount_value,
+          description: coupon.description,
+        },
+      } : {}),
     });
   } catch (error) {
     if (claimedSubId && !subscriptionCreated) {

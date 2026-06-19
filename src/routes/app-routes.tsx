@@ -233,7 +233,7 @@ export function AppRoutes() {
           }
         />
         <Route
-          path="/assinatura"
+          path="/assinar"
           element={
             <PublicPageLoader>
               <BuySubscriptionPage />

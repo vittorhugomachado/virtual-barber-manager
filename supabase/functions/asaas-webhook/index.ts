@@ -163,7 +163,13 @@ Deno.serve(async req => {
     const asaasSubscriptionId: string | undefined = payment.subscription;
     const externalRef: string | undefined = payment.externalReference;
 
-    if (!asaasSubscriptionId) {
+    // Pagamentos sem assinatura Asaas (buy-pack) só precisam ser processados
+    // em eventos de confirmação — e apenas se houver externalReference para
+    // localizar a subscription. Qualquer outro caso sem subscription é ignorado.
+    if (
+      !asaasSubscriptionId &&
+      (!externalRef || !CONFIRMING_EVENTS.has(eventType))
+    ) {
       await markProcessed(supabase, eventId, "payment_without_subscription");
       return jsonResponse(200, {
         processed: true,
@@ -176,21 +182,25 @@ Deno.serve(async req => {
     const SUB_COLUMNS =
       "id, plan_id, status, current_period_end, asaas_subscription_id, plans:plan_id ( asaas_cycle )";
 
-    // 1ª tentativa: pelo id da assinatura no Asaas.
+    // 1ª tentativa: pelo id da assinatura no Asaas (planos mensais recorrentes).
     let sub: any = null;
-    {
+    if (asaasSubscriptionId) {
       const { data, error } = await supabase
         .from("subscriptions")
         .select(SUB_COLUMNS)
         .eq("asaas_subscription_id", asaasSubscriptionId)
         .maybeSingle();
       if (error)
-        return await failRetryable(`erro buscando subscription: ${error.message}`);
+        return await failRetryable(
+          `erro buscando subscription: ${error.message}`,
+        );
       sub = data;
     }
 
-    // Fallback: pelo externalReference (= barbershop_id). Cobre a CORRIDA em que o
-    // webhook chega ANTES do new-create-subscription gravar o asaas_subscription_id.
+    // Fallback: pelo externalReference (= barbershop_id).
+    // Cobre duas situações:
+    //   1. Corrida: webhook chega antes do create-monthly-subscription gravar o id.
+    //   2. Pack payment (buy-pack): nunca tem asaas_subscription_id.
     if (!sub && externalRef) {
       const { data, error } = await supabase
         .from("subscriptions")
@@ -202,8 +212,8 @@ Deno.serve(async req => {
           `erro buscando subscription (ref): ${error.message}`,
         );
       sub = data;
-      // Backfill do id que ainda não tinha sido gravado (mesmo valor, idempotente).
-      if (sub && !sub.asaas_subscription_id) {
+      // Backfill do id apenas para assinaturas recorrentes (pack não tem subscription_id).
+      if (sub && !sub.asaas_subscription_id && asaasSubscriptionId) {
         await supabase
           .from("subscriptions")
           .update({ asaas_subscription_id: asaasSubscriptionId })

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // buy-pack/index.ts
 // ============================================================================
 // Compra um pack semestral ou anual como cobranca UNICA (POST /payments).
@@ -26,7 +27,9 @@ import {
   BillingType,
   CONFIRMING_STATUSES,
   CYCLE_MONTHS,
+  CouponInfo,
   CustomerPayload,
+  applyCouponDiscount,
   asaasFetch,
   computeNewPeriodEnd,
   corsHeaders,
@@ -55,6 +58,7 @@ type RequestBody = {
   cpf_cnpj?: string;
   email?: string;
   mobile_phone?: string;
+  coupon_code?: string;
   installment_count?: number;
   credit_card?: {
     number?: string;
@@ -105,7 +109,12 @@ async function createOneTimePayment(params: {
       params.installmentCount && params.installmentCount > 1
         ? params.installmentCount
         : undefined;
-    if (installments) payload.installmentCount = installments;
+    if (installments) {
+      payload.installmentCount = installments;
+      payload.installmentValue = parseFloat(
+        (params.value / installments).toFixed(2),
+      );
+    }
 
     payload.creditCard = {
       holderName: params.creditCard.holderName,
@@ -169,6 +178,7 @@ Deno.serve(async req => {
   const cpfCnpj = digits(body.cpf_cnpj);
   const email = body.email?.trim();
   const mobilePhone = digits(body.mobile_phone) || undefined;
+  const couponCode = body.coupon_code?.trim().toUpperCase() || undefined;
   const remoteIp = getRemoteIp(req);
   // Parcelamento: valido apenas para cartao; ignorado para PIX.
   const installmentCount =
@@ -269,6 +279,29 @@ Deno.serve(async req => {
     if (!PACK_CYCLES.has(plan.asaas_cycle))
       return json(400, { error: "plan_not_pack" });
 
+    // Validação do cupom (opcional).
+    let coupon: CouponInfo | null = null;
+    if (couponCode) {
+      const { data: couponRow, error: couponError } = await supabase
+        .from("coupons")
+        .select(
+          "id, discount_type, discount_value, description, uses_count, max_uses, expires_at",
+        )
+        .eq("is_active", true)
+        .ilike("code", couponCode)
+        .maybeSingle();
+      if (couponError) throw couponError;
+      if (!couponRow) return json(422, { error: "invalid_coupon" });
+      if (couponRow.expires_at && new Date(couponRow.expires_at) <= new Date())
+        return json(422, { error: "coupon_expired" });
+      if (
+        couponRow.max_uses !== null &&
+        couponRow.uses_count >= couponRow.max_uses
+      )
+        return json(422, { error: "coupon_exhausted" });
+      coupon = couponRow as CouponInfo;
+    }
+
     const { data: sub, error: subError } = await supabase
       .from("subscriptions")
       .select(
@@ -341,10 +374,14 @@ Deno.serve(async req => {
     await updateCustomer(customerId, customerPayload);
 
     // Cria a cobranca unica.
+    const finalPriceCents = coupon
+      ? applyCouponDiscount(plan.price_cents, coupon)
+      : plan.price_cents;
+
     const payment = await createOneTimePayment({
       customer: customerId,
       billingType,
-      value: plan.price_cents / 100,
+      value: finalPriceCents / 100,
       dueDate: dueDateInDays(0),
       description: `Virtual Barber - ${plan.name}`,
       externalReference: barbershopId,
@@ -364,11 +401,18 @@ Deno.serve(async req => {
     await supabase.from("payments").insert({
       subscription_id: sub.id,
       asaas_payment_id: payment.id,
-      amount_cents: plan.price_cents,
+      amount_cents: finalPriceCents,
       billing_type: billingType,
       status: payment.status ?? "PENDING",
       due_date: payment.dueDate ?? null,
     });
+
+    if (coupon) {
+      await supabase
+        .from("coupons")
+        .update({ uses_count: coupon.uses_count + 1 })
+        .eq("id", coupon.id);
+    }
 
     // Atualiza plan_id e limpa o lock. Status e period_end dependem da confirmacao.
     const months = CYCLE_MONTHS[plan.asaas_cycle] ?? 6;
@@ -420,6 +464,15 @@ Deno.serve(async req => {
       billing_type: billingType,
       ...(pix ? { pix } : {}),
       ...(isConfirmed ? { status: "active" } : {}),
+      ...(coupon
+        ? {
+            coupon_applied: {
+              discount_type: coupon.discount_type,
+              discount_value: coupon.discount_value,
+              description: coupon.description,
+            },
+          }
+        : {}),
     });
   } catch (error) {
     if (claimedSubId && !packPaymentCreated) {

@@ -172,6 +172,23 @@ CREATE TABLE public.addresses (
   CONSTRAINT addresses_barbershop_id_fkey FOREIGN KEY (barbershop_id) REFERENCES public.barbershops(id)
 );
 
+-- Cupons de desconto para influenciadores e campanhas.
+-- discount_type: 'percentage' (0-100) ou 'fixed' (valor em reais, ex: 50 = R$50 off).
+-- max_uses null = ilimitado.
+CREATE TABLE public.coupons (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  code text NOT NULL UNIQUE,
+  description text,
+  discount_type text NOT NULL CHECK (discount_type IN ('percentage', 'fixed')),
+  discount_value numeric(10,2) NOT NULL CHECK (discount_value > 0),
+  max_uses integer,
+  uses_count integer NOT NULL DEFAULT 0,
+  expires_at timestamp with time zone,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT coupons_pkey PRIMARY KEY (id)
+);
+
 
 -- ============================================================================
 -- 2. ENUMS
@@ -406,6 +423,35 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $f
   );
 $function$;
 
+-- Valida um cupom pelo código (case-insensitive). Seguro para chamar do frontend
+-- (SECURITY DEFINER — não expõe dados sensíveis, só retorna se é válido e o desconto).
+CREATE OR REPLACE FUNCTION public.validate_coupon(p_code text)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path TO '' AS $function$
+DECLARE
+  v_coupon public.coupons%rowtype;
+BEGIN
+  SELECT * INTO v_coupon
+  FROM public.coupons
+  WHERE upper(code) = upper(trim(p_code))
+    AND is_active = true
+    AND (expires_at IS NULL OR expires_at > now())
+    AND (max_uses IS NULL OR uses_count < max_uses)
+  LIMIT 1;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('valid', false);
+  END IF;
+
+  RETURN jsonb_build_object(
+    'valid',          true,
+    'id',             v_coupon.id,
+    'discount_type',  v_coupon.discount_type,
+    'discount_value', v_coupon.discount_value,
+    'description',    v_coupon.description
+  );
+END;
+$function$;
+
 -- Trigger helper: seta updated_at = now() em qualquer UPDATE.
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS trigger LANGUAGE plpgsql AS $function$
@@ -449,3 +495,7 @@ $function$;
 -- subscriptions
 --   SELECT subscriptions_select_owner → USING: EXISTS (
 --     SELECT 1 FROM barbershops b WHERE b.id = barbershop_id AND b.owner_id = auth.uid())
+
+-- coupons
+--   Sem política de SELECT para clientes — validação via RPC validate_coupon (SECURITY DEFINER).
+--   INSERT/UPDATE/DELETE: apenas service_role (edge functions).

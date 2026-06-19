@@ -4,7 +4,7 @@ Arquivo	Papel no fluxo
 routes/app-routes.tsx	Registra as rotas /assinar e /minha-assinatura.
 pages/buy-plan-page.tsx	Ao abrir, chama getMySubscription(). Se já tem asaas_subscription_id → redireciona para /minha-assinatura. Senão, renderiza o wizard.
 pages/my-subscription-page.tsx	Placeholder (só <h1>) — futura tela de renovar/cancelar.
-components/main/buy-plan.tsx (BuyPlanMain)	O wizard de 2 passos: passo 1 escolhe o plano (cards), passo 2 método + CPF/CNPJ. Chama a create-subscription e mostra o link da fatura.
+components/main/buy-plan.tsx (BuySubscriptionMain)	O wizard de 2 passos: passo 1 escolhe o plano (cards), passo 2 método + CPF/CNPJ. Chama a create-subscription e mostra o link da fatura.
 lib/supabase/plans/get-plans.ts	SELECT em plans (ativos, ordenados) — fonte dos preços na tela.
 lib/supabase/plans/types.ts	Tipo Plan / PlanCycle.
 lib/supabase/subscriptions/get-my-subscription.ts	SELECT da assinatura do dono (a RLS filtra) — usado pelo redirect.
@@ -42,7 +42,7 @@ Dono se cadastra → trigger do banco cria a barbershops + a subscriptions com s
 Front abre /assinar → buy-plan-page chama getMySubscription().
 → Se já tem asaas_subscription_id → redireciona para /minha-assinatura.
 → Senão, mostra o wizard.
-Passo 1: BuyPlanMain chama getPlans() → mostra os 3 cards (preços do banco). Cliente escolhe um → passo 2.
+Passo 1: BuySubscriptionMain chama getPlans() → mostra os 3 cards (preços do banco). Cliente escolhe um → passo 2.
 Passo 2: escolhe método (Pix/Boleto/Cartão) + digita CPF/CNPJ (validado no front).
 Front chama create-subscription (via supabase.functions.invoke).
 🔒 Dentro da create-subscription

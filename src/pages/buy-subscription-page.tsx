@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router";
 import { HeaderPage } from "@/components/common/header-page";
-import { BuyPlanMain } from "@/components/main/buy-plan";
+import { BuySubscriptionMain } from "@/components/main/buy-subscription-main";
 import { PendingPaymentCard } from "@/components/main/pending-payment-card";
 import { Spinner } from "@/components/ui/spinner";
 import { getMySubscription } from "@/lib/supabase/subscriptions/get-my-subscription";
@@ -92,7 +92,7 @@ export function BuySubscriptionPage() {
           onRestart={() => setRestarting(true)}
         />
       ) : (
-        <BuyPlanMain />
+        <BuySubscriptionMain />
       )}
     </div>
   );

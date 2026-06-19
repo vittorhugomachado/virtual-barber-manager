@@ -126,7 +126,7 @@ function friendlyErrorFromBody(body: unknown): string | null {
   return null;
 }
 
-export function BuyPlanMain() {
+export function BuySubscriptionMain() {
   const [step, setStep] = useState<1 | 2>(1);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -643,6 +643,7 @@ export function BuyPlanMain() {
                             size="sm"
                             variant="outline"
                             onClick={() => void copyPixPayload()}
+                            className="max-w-22"
                           >
                             {pixCopied ? "Copiado!" : "Copiar"}
                           </Button>
@@ -829,72 +830,6 @@ export function BuyPlanMain() {
                     </div>
                   )}
 
-                  <div className="flex flex-col gap-1.5">
-                    <Label
-                      htmlFor="coupon-code"
-                      className="flex items-center gap-1.5"
-                    >
-                      <Tag className="size-3.5" />
-                      Cupom de desconto
-                    </Label>
-                    {appliedCoupon ? (
-                      <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900 dark:bg-emerald-950/30">
-                        <CheckCircle className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                        <span className="flex-1 text-sm font-medium text-emerald-800 dark:text-emerald-300">
-                          {couponInput.trim().toUpperCase()}
-                          {appliedCoupon.description
-                            ? ` — ${appliedCoupon.description}`
-                            : ""}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAppliedCoupon(null);
-                            setCouponInput("");
-                            setCouponError(null);
-                          }}
-                          className="text-emerald-600 transition hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-200"
-                          aria-label="Remover cupom"
-                        >
-                          <X className="size-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <Input
-                          id="coupon-code"
-                          value={couponInput}
-                          onChange={e => {
-                            setCouponInput(e.target.value.toUpperCase());
-                            setCouponError(null);
-                          }}
-                          onKeyDown={e => {
-                            if (e.key === "Enter") void handleApplyCoupon();
-                          }}
-                          placeholder="INFLUENCER10"
-                          className="uppercase"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => void handleApplyCoupon()}
-                          disabled={couponLoading || !couponInput.trim()}
-                        >
-                          {couponLoading ? (
-                            <Loader2 className="size-4 animate-spin" />
-                          ) : (
-                            "Aplicar"
-                          )}
-                        </Button>
-                      </div>
-                    )}
-                    {couponError && (
-                      <p className="text-xs text-red-600 dark:text-red-400">
-                        {couponError}
-                      </p>
-                    )}
-                  </div>
-
                   {error && (
                     <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
                       {error}
@@ -977,7 +912,74 @@ export function BuyPlanMain() {
                 </div>
               </div>
 
-              <div className="mt-5 flex items-center justify-between gap-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+              <div className="mt-4 flex flex-col gap-1.5">
+                <Label
+                  htmlFor="coupon-code"
+                  className="flex items-center gap-1.5 text-xs text-zinc-500"
+                >
+                  <Tag className="size-3" />
+                  Cupom de desconto
+                </Label>
+                {appliedCoupon ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-900 dark:bg-emerald-950/30">
+                    <CheckCircle className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span className="flex-1 text-xs font-medium text-emerald-800 dark:text-emerald-300">
+                      {couponInput.trim().toUpperCase()}
+                      {appliedCoupon.description
+                        ? ` — ${appliedCoupon.description}`
+                        : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAppliedCoupon(null);
+                        setCouponInput("");
+                        setCouponError(null);
+                      }}
+                      className="text-emerald-600 transition hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-200"
+                      aria-label="Remover cupom"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-[1fr_auto] items-center gap-2">
+                    <Input
+                      id="coupon-code"
+                      value={couponInput}
+                      onChange={e => {
+                        setCouponInput(e.target.value.toUpperCase());
+                        setCouponError(null);
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") void handleApplyCoupon();
+                      }}
+                      placeholder="LANCAMENTO50OFF"
+                      className="h-8 text-xs uppercase"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void handleApplyCoupon()}
+                      disabled={couponLoading || !couponInput.trim()}
+                    >
+                      {couponLoading ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        "Aplicar"
+                      )}
+                    </Button>
+                  </div>
+                )}
+                {couponError && (
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    {couponError}
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
                 <span className="font-medium">Total hoje</span>
                 <span className="text-2xl font-bold">
                   {formatMoney(finalPriceCents)}

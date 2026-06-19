@@ -9,6 +9,9 @@ verify_jwt = false
 [functions.reconcile-subscriptions]
 verify_jwt = false
 
-# Chamada pelo dono logado no manager — recebe o JWT do usuário. Mantém ON.
-[functions.new-create-subscription]
+# Chamadas pelo dono logado no manager — recebem o JWT do usuário. Mantém ON.
+[functions.create-monthly-subscription]
+verify_jwt = true
+
+[functions.buy-pack]
 verify_jwt = true

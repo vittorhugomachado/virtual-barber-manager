@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  CreditCard,
-  Loader2,
-  QrCode,
-  ReceiptText,
-} from "lucide-react";
+import { useNavigate } from "react-router";
+import { ArrowLeft, CreditCard, Loader2, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,8 +11,14 @@ import { cn } from "@/lib/utils";
 import { isValidCpfCnpj } from "@/utils/validate-cpf-cnpj";
 import { getMySubscription } from "@/lib/supabase/subscriptions/get-my-subscription";
 
-type BillingType = "PIX" | "BOLETO" | "CREDIT_CARD";
-type PaymentState = "idle" | "processing" | "confirmed";
+type BillingType = "PIX" | "CREDIT_CARD";
+type PaymentState = "idle" | "processing" | "confirmed" | "timedout";
+
+type PixData = {
+  encodedImage?: string;
+  payload?: string;
+  expirationDate?: string;
+};
 
 const CYCLE_MONTHS: Record<string, number> = {
   WEEKLY: 0,
@@ -49,7 +50,6 @@ const billingOptions: Array<{
 }> = [
   { type: "CREDIT_CARD", label: "Cartao", icon: CreditCard },
   { type: "PIX", label: "Pix", icon: QrCode },
-  { type: "BOLETO", label: "Boleto", icon: ReceiptText },
 ];
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -120,8 +120,17 @@ export function BuyPlanMain() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
+  const [pixData, setPixData] = useState<PixData | null>(null);
+  const [pixCopied, setPixCopied] = useState(false);
   const [done, setDone] = useState(false);
   const [paymentState, setPaymentState] = useState<PaymentState>("idle");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (paymentState !== "confirmed") return;
+    const t = setTimeout(() => void navigate("/minha-assinatura"), 2000);
+    return () => clearTimeout(t);
+  }, [paymentState, navigate]);
 
   const [holderName, setHolderName] = useState("");
   const [cpfCnpj, setCpfCnpj] = useState("");
@@ -196,8 +205,34 @@ export function BuyPlanMain() {
     setError(null);
     setDone(false);
     setInvoiceUrl(null);
+    setPixData(null);
+    setPixCopied(false);
     setPaymentState("idle");
     setStep(2);
+  }
+
+  async function copyPixPayload() {
+    if (!pixData?.payload) return;
+    try {
+      await navigator.clipboard.writeText(pixData.payload);
+      setPixCopied(true);
+      window.setTimeout(() => setPixCopied(false), 2000);
+    } catch {
+      // navegador sem permissão de clipboard — usuário copia manualmente.
+    }
+  }
+
+  // Volta ao passo 1 para o usuário escolher tudo de novo. A cobrança pendente
+  // é cancelada no backend quando ele reenviar (cancela e cria outra).
+  function restartCheckout() {
+    setError(null);
+    setDone(false);
+    setInvoiceUrl(null);
+    setPixData(null);
+    setPixCopied(false);
+    setPaymentState("idle");
+    setSelectedPlanId(null);
+    setStep(1);
   }
 
   useEffect(() => {
@@ -221,10 +256,10 @@ export function BuyPlanMain() {
         return;
       }
 
+      // ~2 min (40 x 3s) sem confirmar -> PIX/cartao nao aprovam mais.
+      // Para tudo e oferece recomecar a escolha.
       if (attempts >= 40) {
-        setError(
-          "Pagamento iniciado, mas a confirmacao ainda nao chegou. Aguarde alguns instantes e atualize a pagina.",
-        );
+        setPaymentState("timedout");
       }
     }
 
@@ -270,6 +305,8 @@ export function BuyPlanMain() {
     setError(null);
     setDone(false);
     setInvoiceUrl(null);
+    setPixData(null);
+    setPixCopied(false);
     setPaymentState("idle");
 
     try {
@@ -309,10 +346,14 @@ export function BuyPlanMain() {
       const response = data as {
         invoice_url?: string | null;
         status?: string;
+        pix?: PixData | null;
       };
       setInvoiceUrl(response.invoice_url ?? null);
+      setPixData(response.pix ?? null);
       setDone(true);
-      setPaymentState(response.status === "active" ? "confirmed" : "processing");
+      setPaymentState(
+        response.status === "active" ? "confirmed" : "processing",
+      );
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -431,7 +472,9 @@ export function BuyPlanMain() {
                     "flex min-h-80 flex-col items-center justify-center rounded-2xl border p-8 text-center",
                     paymentState === "confirmed"
                       ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200"
-                      : "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200",
+                      : paymentState === "timedout"
+                        ? "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+                        : "border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200",
                   )}
                 >
                   {paymentState === "confirmed" ? (
@@ -443,9 +486,69 @@ export function BuyPlanMain() {
                         Parabens, seu pagamento foi confirmado
                       </h2>
                       <p className="mt-2 max-w-md text-sm">
-                        Voce ja pode levar sua barbearia para o proximo nivel
-                        com a Virtual.
+                        Você será redirecionado para sua assinatura em instantes.
                       </p>
+                    </>
+                  ) : paymentState === "timedout" ? (
+                    <>
+                      <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-amber-500 text-white">
+                        !
+                      </div>
+                      <h2 className="text-xl font-semibold">
+                        Nao identificamos seu pagamento
+                      </h2>
+                      <p className="mt-2 max-w-md text-sm">
+                        Nao recebemos a confirmacao do pagamento. Se ja pagou,
+                        aguarde mais um pouco e atualize a pagina. Caso contrario,
+                        escolha novamente como deseja pagar.
+                      </p>
+                      <Button
+                        type="button"
+                        size="lg"
+                        className="mt-6"
+                        onClick={restartCheckout}
+                      >
+                        Escolher novamente
+                      </Button>
+                    </>
+                  ) : pixData ? (
+                    <>
+                      <h2 className="text-xl font-semibold">
+                        Pague com Pix para ativar
+                      </h2>
+                      <p className="mt-2 max-w-md text-sm">
+                        Escaneie o QR code ou copie o codigo abaixo. O acesso e
+                        liberado automaticamente assim que o pagamento cair.
+                      </p>
+
+                      {pixData.encodedImage && (
+                        <img
+                          src={`data:image/png;base64,${pixData.encodedImage}`}
+                          alt="QR code do Pix"
+                          className="mt-5 size-56 rounded-xl bg-white p-3"
+                        />
+                      )}
+
+                      {pixData.payload && (
+                        <div className="mt-5 flex w-full max-w-md items-center gap-2 rounded-lg border border-blue-200 bg-white p-2 dark:border-blue-900 dark:bg-zinc-900">
+                          <span className="flex-1 truncate font-mono text-xs text-zinc-700 dark:text-zinc-300">
+                            {pixData.payload}
+                          </span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => void copyPixPayload()}
+                          >
+                            {pixCopied ? "Copiado!" : "Copiar"}
+                          </Button>
+                        </div>
+                      )}
+
+                      <div className="mt-5 flex items-center gap-2 text-sm">
+                        <Loader2 className="size-4 animate-spin" />
+                        Aguardando confirmacao do pagamento...
+                      </div>
                     </>
                   ) : (
                     <>
@@ -474,7 +577,7 @@ export function BuyPlanMain() {
                 </div>
               ) : (
                 <>
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     {billingOptions.map(option => {
                       const Icon = option.icon;
                       const active = billingType === option.type;
@@ -578,14 +681,7 @@ export function BuyPlanMain() {
                   {billingType === "PIX" && (
                     <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
                       Depois de confirmar, vamos gerar o Pix da primeira
-                      cobranca e mostrar as instrucoes de pagamento aqui.
-                    </div>
-                  )}
-
-                  {billingType === "BOLETO" && (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
-                      Depois de confirmar, vamos gerar o boleto da primeira
-                      cobranca e mostrar o link para pagamento.
+                      cobranca e mostrar o QR code aqui.
                     </div>
                   )}
 

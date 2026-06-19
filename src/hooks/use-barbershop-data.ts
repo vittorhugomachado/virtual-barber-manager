@@ -52,17 +52,14 @@ export function useBarbershopData() {
       // 1) Caminho do DONO.
       const { data: ownerShop } = await supabase
         .from("barbershops")
-        .select("*, profiles(name)")
+        .select("*")
         .eq("owner_id", userId)
         .maybeSingle();
 
       if (cancelled) return;
 
       if (ownerShop) {
-        setBarbershopWithRole(
-          { ...ownerShop, owner_name: ownerShop.profiles?.name ?? "" },
-          "owner",
-        );
+        setBarbershopWithRole(ownerShop, "owner");
         loadedForId.current = userId;
         setIsLoading(false);
         return;
@@ -86,7 +83,7 @@ export function useBarbershopData() {
       const [{ data: shop }, { data: member }] = await Promise.all([
         supabase
           .from("barbershops")
-          .select("*, profiles(name)")
+          .select("*")
           .eq("id", memberBarbershopId)
           .single(),
         supabase
@@ -100,7 +97,7 @@ export function useBarbershopData() {
 
       if (shop) {
         setBarbershopWithRole(
-          { ...shop, owner_name: shop.profiles?.name ?? "" },
+          shop,
           member?.role ?? "reader",
           member?.username ?? undefined,
         );

@@ -95,7 +95,7 @@ export function SidebarComponent() {
           />
         )}
         <div className="flex items-center absolute top-0 -right-12 gap-2 p-4">
-          <SidebarTrigger className="bg-[#18181B]" />
+          <SidebarTrigger />
         </div>
       </SidebarHeader>
 

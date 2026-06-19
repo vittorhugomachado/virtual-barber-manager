@@ -1,7 +1,7 @@
 ﻿import { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router";
 import { PublicRoute } from "./public-route";
-// import { ProtectedRoute } from "./protected-route";
+import { ProtectedRoute } from "./protected-route";
 // import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
 // import { SettingsSkeleton } from "@/components/skeleton/settings-skeleton";
 // import { ManageTeamSkeleton } from "@/components/skeleton/manage-team-skeleton";
@@ -20,9 +20,9 @@ const AsaasTestPage = lazy(() =>
     default: module.AsaasTestPage,
   })),
 );
-const SignaturePage = lazy(() =>
-  import("@/pages/signature-page").then(module => ({
-    default: module.SignaturePage,
+const BuySubscriptionPage = lazy(() =>
+  import("@/pages/buy-subscription-page").then(module => ({
+    default: module.BuySubscriptionPage,
   })),
 );
 const MySubscriptionPage = lazy(() =>
@@ -222,30 +222,33 @@ export function AppRoutes() {
           </PublicPageLoader>
         }
       /> */}
-      <Route
-        path="/painel"
-        element={
-          <PublicPageLoader>
-            <DashboardPage />
-          </PublicPageLoader>
-        }
-      />
-      <Route
-        path="/assinatura"
-        element={
-          <PublicPageLoader>
-            <SignaturePage />
-          </PublicPageLoader>
-        }
-      />
-      <Route
-        path="/minha-assinatura"
-        element={
-          <PublicPageLoader>
-            <MySubscriptionPage />
-          </PublicPageLoader>
-        }
-      />
+      {/* Rotas protegidas com sidebar */}
+      <Route element={<ProtectedRoute withSidebar />}>
+        <Route
+          path="/painel"
+          element={
+            <PublicPageLoader>
+              <DashboardPage />
+            </PublicPageLoader>
+          }
+        />
+        <Route
+          path="/assinatura"
+          element={
+            <PublicPageLoader>
+              <BuySubscriptionPage />
+            </PublicPageLoader>
+          }
+        />
+        <Route
+          path="/minha-assinatura"
+          element={
+            <PublicPageLoader>
+              <MySubscriptionPage />
+            </PublicPageLoader>
+          }
+        />
+      </Route>
       {/* Rotas de teste/diagnóstico — SÓ em desenvolvimento.
           import.meta.env.DEV é `false` no build de produção, então estas rotas
           NÃO existem em prod (404). Evita expor a página de cobrança e o

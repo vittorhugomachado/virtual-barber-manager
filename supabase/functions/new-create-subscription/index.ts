@@ -12,9 +12,9 @@
 //   4. Cria/reusa customer no Asaas.
 //   5. Cria a assinatura no Asaas.
 //      - CREDIT_CARD: envia creditCard + creditCardHolderInfo.
-//      - PIX/BOLETO: cria assinatura e devolve invoice_url da primeira cobranca.
-//   6. Grava IDs no banco. Status fica incomplete ate webhook confirmar.
-//   7. Devolve invoice_url quando existir.
+//      - PIX: cria assinatura e devolve o QR code da primeira cobranca.
+//   6. Grava IDs no banco. Se houver cobranca pendente, cancela e recria.
+//   7. Devolve invoice_url / pix quando existir.
 //
 // Seguranca:
 //   - Nunca salva numero do cartao nem CVV.
@@ -24,7 +24,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-type BillingType = "CREDIT_CARD" | "PIX" | "BOLETO";
+type BillingType = "CREDIT_CARD" | "PIX";
 
 type RequestBody = {
   barbershop_id?: string;
@@ -61,6 +61,8 @@ type AsaasCustomer = {
 
 type AsaasSubscription = {
   id: string;
+  status?: string;
+  deleted?: boolean;
 };
 
 type AsaasPayment = {
@@ -114,7 +116,7 @@ class AsaasError extends Error {
   }
 }
 
-const ALLOWED_BILLING = new Set<BillingType>(["CREDIT_CARD", "PIX", "BOLETO"]);
+const ALLOWED_BILLING = new Set<BillingType>(["CREDIT_CARD", "PIX"]);
 
 const CONFIRMING_STATUSES = new Set(["CONFIRMED", "RECEIVED"]);
 
@@ -141,9 +143,9 @@ const ALLOWED_ORIGINS = (
   .filter(Boolean);
 
 const UNPAID_STATUSES = new Set([
-  "PENDING",
-  "OVERDUE",
-  "AWAITING_RISK_ANALYSIS",
+  "PENDING", //AGUARDANDO PAGAMENTO
+  "OVERDUE", //PAGAMENTO VENCIDO
+  "AWAITING_RISK_ANALYSIS", //PAGAMENTO AGUARDANDO ANALISE DE RISCO
 ]);
 
 function getSupabaseAdmin() {
@@ -274,12 +276,14 @@ function isValidCpfCnpj(value: string | undefined): boolean {
   return false;
 }
 
+//DATA DE VENCIMENTO DA COBRANÇA (DUE DATE) - 0 = HOJE, 1 = AMANHÃ, 2 = DEPOIS DE AMANHÃ...
 function dueDateInDays(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date.toISOString().slice(0, 10);
 }
 
+//VERIFICA VENCIMENTO DO CARTÃO NO FORMATO MM/AA OU MM/AAAA
 function parseCardExpiry(expiry: string | undefined) {
   const onlyDigits = digits(expiry);
   if (onlyDigits.length !== 4 && onlyDigits.length !== 6) return null;
@@ -295,7 +299,10 @@ function parseCardExpiry(expiry: string | undefined) {
   return { expiryMonth: month, expiryYear: year };
 }
 
-function pickOldestUnpaidInvoiceUrl(payments: AsaasPayment[]): string | null {
+//PEGA A COBRANÇA PENDENTE MAIS ANTIGA (CASO HAJA MAIS DE UMA) PARA EXIBIR A MESMA INVOICE_URL
+function pickOldestUnpaidPayment(
+  payments: AsaasPayment[],
+): AsaasPayment | null {
   const unpaid = (payments ?? [])
     .filter(payment => UNPAID_STATUSES.has(payment.status ?? ""))
     .sort((a, b) => {
@@ -304,9 +311,10 @@ function pickOldestUnpaidInvoiceUrl(payments: AsaasPayment[]): string | null {
       return dateA - dateB;
     });
 
-  return unpaid[0]?.invoiceUrl ?? unpaid[0]?.bankSlipUrl ?? null;
+  return unpaid[0] ?? null;
 }
 
+//PEGA O IP REAL DO USUÁRIO, CONSIDERANDO POSSÍVEIS PROXY/LOAD BALANCER (X-Forwarded-For, CF-Connecting-IP, X-Real-IP)
 function getRemoteIp(req: Request): string | undefined {
   return (
     req.headers.get("cf-connecting-ip") ??
@@ -316,6 +324,7 @@ function getRemoteIp(req: Request): string | undefined {
   );
 }
 
+//BUSCA CUSTOMER EXISTENTE PELO EXTERNAL_REFERENCE (BARBERSHOP ID) PARA REUSAR NA TROCA DE ASSINATURA
 async function findCustomerByExternalReference(externalReference: string) {
   const query = new URLSearchParams({ externalReference });
   const response = await asaasFetch<AsaasListResponse<AsaasCustomer>>(
@@ -324,6 +333,7 @@ async function findCustomerByExternalReference(externalReference: string) {
   return response.data?.[0] ?? null;
 }
 
+//CRIA O CLIENTE NO ASAAS
 async function createCustomer(params: CustomerPayload) {
   return asaasFetch<AsaasCustomer>("/customers", {
     method: "POST",
@@ -343,6 +353,7 @@ async function createCustomer(params: CustomerPayload) {
   });
 }
 
+//ATUALIZA O CLIENTE NO ASAAS
 async function updateCustomer(customerId: string, params: CustomerPayload) {
   return asaasFetch<AsaasCustomer>(`/customers/${customerId}`, {
     method: "PUT",
@@ -362,14 +373,26 @@ async function updateCustomer(customerId: string, params: CustomerPayload) {
   });
 }
 
+//BUSCA UMA ASSINATURA EXISTENTE PELO EXTERNAL_REFERENCE (BARBERSHOP ID) PARA REUSAR NA TROCA DE ASSINATURA
 async function findSubscriptionByExternalReference(externalReference: string) {
   const query = new URLSearchParams({ externalReference });
   const response = await asaasFetch<AsaasListResponse<AsaasSubscription>>(
     `/subscriptions?${query}`,
   );
-  return response.data?.[0] ?? null;
+  // Nunca reaproveita uma assinatura já deletada (evita reusar a que acabou de
+  // ser cancelada no fluxo de troca de método).
+  return (response.data ?? []).find(sub => !sub.deleted) ?? null;
 }
 
+//DELETA A ASSINATURA NO ASAAS PELO ID DA INSCRIÇÃO
+async function deleteAsaasSubscription(subscriptionId: string) {
+  return asaasFetch<{ deleted?: boolean; id?: string }>(
+    `/subscriptions/${subscriptionId}`,
+    { method: "DELETE" },
+  );
+}
+
+//CRIA A ASSINATURA NO ASAAS COM OS DADOS NECESSÁRIOS PARA CARTÃO DE CRÉDITO OU PIX, DEPENDENDO DO TIPO DE COBRANÇA ESCOLHIDO PELO USUÁRIO
 async function createSubscription(params: {
   customer: string;
   billingType: BillingType;
@@ -430,10 +453,23 @@ async function createSubscription(params: {
   });
 }
 
+//BUSCATODAS AS COBRANÇAS DE UMA ASSINATURA
 async function listSubscriptionPayments(subscriptionId: string) {
   return asaasFetch<AsaasListResponse<AsaasPayment>>(
     `/subscriptions/${subscriptionId}/payments`,
   );
+}
+
+type AsaasPixQrCode = {
+  success?: boolean;
+  encodedImage?: string;
+  payload?: string;
+  expirationDate?: string;
+};
+
+//GERA O QR CODE PARA PAGAMENTO VIA PIX, BUSCANDO PELO ID DA COBRANÇA NO ASAAS (SOMENTE PARA COBRANÇA DO TIPO PIX)
+async function getPixQrCode(paymentId: string) {
+  return asaasFetch<AsaasPixQrCode>(`/payments/${paymentId}/pixQrCode`);
 }
 
 Deno.serve(async req => {
@@ -549,14 +585,14 @@ Deno.serve(async req => {
   let claimedSubId: string | null = null;
 
   try {
-    const { data: shop, error: shopError } = await supabase
+    const { data: barbershop, error: barbershopError } = await supabase
       .from("barbershops")
       .select("id, name, owner_id")
       .eq("id", barbershopId)
       .maybeSingle();
 
-    if (shopError) throw shopError;
-    if (!shop || shop.owner_id !== userId) {
+    if (barbershopError) throw shopError;
+    if (!barbershop || barbershop.owner_id !== userId) {
       return json(403, { error: "not_barbershop_owner" });
     }
 
@@ -608,7 +644,10 @@ Deno.serve(async req => {
     if (!sub) {
       return json(409, { error: "no_subscription_row" });
     }
-    if (sub.asaas_subscription_id) {
+    // Já assinou e está ATIVA -> bloqueia (o front manda para "minha assinatura").
+    // Se houver cobrança apenas PENDENTE, seguimos: cancelamos a antiga e criamos
+    // outra logo abaixo (o usuário recomeçou o pagamento).
+    if (sub.asaas_subscription_id && sub.status === "active") {
       return json(409, {
         error: "subscription_already_exists",
         asaas_subscription_id: sub.asaas_subscription_id,
@@ -625,6 +664,30 @@ Deno.serve(async req => {
       return json(409, { error: "provisioning_in_progress" });
     }
     claimedSubId = sub.id;
+
+    // Cobrança pendente: cancela a assinatura no Asaas e zera o id local,
+    // forçando a criação de uma nova logo abaixo.
+    let mustCreateFresh = false;
+    if (sub.asaas_subscription_id) {
+      try {
+        await deleteAsaasSubscription(sub.asaas_subscription_id);
+      } catch (cancelError) {
+        // Se já não existe no Asaas (404), segue — o objetivo é não tê-la mais.
+        if (
+          !(cancelError instanceof AsaasError) ||
+          cancelError.status !== 404
+        ) {
+          throw cancelError;
+        }
+      }
+      const { error: clearError } = await supabase
+        .from("subscriptions")
+        .update({ asaas_subscription_id: null })
+        .eq("id", sub.id);
+      if (clearError) throw clearError;
+      sub.asaas_subscription_id = null;
+      mustCreateFresh = true;
+    }
 
     const customerPayload: CustomerPayload = {
       name: holderName,
@@ -660,7 +723,9 @@ Deno.serve(async req => {
 
     await updateCustomer(customerId, customerPayload);
 
-    let subscription = await findSubscriptionByExternalReference(barbershopId);
+    let subscription = mustCreateFresh
+      ? null
+      : await findSubscriptionByExternalReference(barbershopId);
     if (!subscription) {
       subscription = await createSubscription({
         customer: customerId,
@@ -696,9 +761,7 @@ Deno.serve(async req => {
 
     if (updateError) throw updateError;
     if (!updatedRows?.length) {
-      console.error(
-        `DB update retornou 0 linhas para subscription ${sub.id}.`,
-      );
+      console.error(`DB update retornou 0 linhas para subscription ${sub.id}.`);
       throw new Error("db_update_zero_rows");
     }
 
@@ -706,13 +769,33 @@ Deno.serve(async req => {
 
     let invoiceUrl: string | null = null;
     let activatedDirectly = false;
+    let pix: AsaasPixQrCode | null = null;
     try {
       const payments = await listSubscriptionPayments(asaasSubscriptionId);
-      invoiceUrl = pickOldestUnpaidInvoiceUrl(payments.data ?? []);
+      const list = payments.data ?? [];
+      const unpaid = pickOldestUnpaidPayment(list);
+      invoiceUrl = unpaid?.invoiceUrl ?? unpaid?.bankSlipUrl ?? null;
+
+      // PIX: busca o QR code da cobrança em aberto para exibir na própria
+      // interface (API key fica no servidor, nunca vai pro client).
+      if (billingType === "PIX" && unpaid?.id) {
+        try {
+          const qr = await getPixQrCode(unpaid.id);
+          if (qr?.payload) {
+            pix = {
+              encodedImage: qr.encodedImage,
+              payload: qr.payload,
+              expirationDate: qr.expirationDate,
+            };
+          }
+        } catch (_e) {
+          // Sem QR agora; o invoice_url ainda permite pagar.
+        }
+      }
 
       // Ativa imediatamente se o pagamento já foi confirmado (cartão aprovado na hora).
       // Evita depender do webhook chegar para sair do status "incomplete".
-      const confirmedPayment = (payments.data ?? []).find(p =>
+      const confirmedPayment = list.find(p =>
         CONFIRMING_STATUSES.has(p.status ?? ""),
       );
       if (confirmedPayment) {
@@ -742,6 +825,7 @@ Deno.serve(async req => {
       billing_type: billingType,
       asaas_subscription_id: asaasSubscriptionId,
       invoice_url: invoiceUrl,
+      ...(pix ? { pix } : {}),
       ...(activatedDirectly ? { status: "active" } : {}),
     });
   } catch (error) {

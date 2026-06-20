@@ -173,11 +173,13 @@ Deno.serve(async req => {
     const externalRef: string | undefined = payment.externalReference;
 
     // Pagamentos sem assinatura Asaas (buy-pack) só precisam ser processados
-    // em eventos de confirmação — e apenas se houver externalReference para
-    // localizar a subscription. Qualquer outro caso sem subscription é ignorado.
+    // em eventos de confirmação (ativar/renovar) OU de estorno (revogar) — e
+    // apenas se houver externalReference para localizar a subscription.
+    // Qualquer outro caso sem subscription é ignorado.
     if (
       !asaasSubscriptionId &&
-      (!externalRef || !CONFIRMING_EVENTS.has(eventType))
+      (!externalRef ||
+        (!CONFIRMING_EVENTS.has(eventType) && !REVOKING_EVENTS.has(eventType)))
     ) {
       await markProcessed(supabase, eventId, "payment_without_subscription");
       return jsonResponse(200, {

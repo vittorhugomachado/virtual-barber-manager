@@ -125,12 +125,15 @@ Deno.serve(async req => {
       const externalRef: string | undefined = payment.externalReference;
 
       // Pagamentos sem assinatura Asaas (buy-pack) só interessam em eventos de
-      // confirmação e quando há externalReference (= barbershop_id). Qualquer
-      // outro caso sem subscription é terminal. MESMA defesa do webhook — antes
-      // o reconcile descartava TODO pagamento de pack (não tinha paridade).
+      // confirmação (ativar) OU estorno (revogar), e quando há externalReference
+      // (= barbershop_id). Qualquer outro caso sem subscription é terminal.
+      // MESMA defesa do webhook — antes o reconcile descartava TODO pagamento
+      // de pack (não tinha paridade).
       if (
         !asaasSubscriptionId &&
-        (!externalRef || !CONFIRMING_EVENTS.has(eventType))
+        (!externalRef ||
+          (!CONFIRMING_EVENTS.has(eventType) &&
+            !REVOKING_EVENTS.has(eventType)))
       ) {
         await markProcessed(
           supabase,
@@ -240,7 +243,9 @@ Deno.serve(async req => {
         // Estorno/chargeback: encurta o período para now + carência curta.
         // Nunca estende. Mesma lógica do webhook.
         if (REVOKING_EVENTS.has(eventType)) {
-          const graceEnd = new Date(Date.now() + REVOKE_GRACE_DAYS * 86_400_000);
+          const graceEnd = new Date(
+            Date.now() + REVOKE_GRACE_DAYS * 86_400_000,
+          );
           const current = sub.current_period_end
             ? new Date(sub.current_period_end)
             : null;

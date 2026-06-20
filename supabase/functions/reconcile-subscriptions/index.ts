@@ -18,6 +18,14 @@ const FAILING_EVENTS = new Set([
   "PAYMENT_CHARGEBACK_REQUESTED",
   "PAYMENT_REVERSED",
 ]);
+// Paridade com o webhook: estorno/chargeback encurta o período (não basta
+// past_due). PAYMENT_OVERDUE simples não entra aqui.
+const REVOKING_EVENTS = new Set([
+  "PAYMENT_REFUNDED",
+  "PAYMENT_CHARGEBACK_REQUESTED",
+  "PAYMENT_REVERSED",
+]);
+const REVOKE_GRACE_DAYS = 2;
 const CYCLE_MONTHS: Record<string, number> = {
   WEEKLY: 0,
   BIWEEKLY: 0,
@@ -61,6 +69,11 @@ function addMonths(from: Date, months: number): Date {
 Deno.serve(async req => {
   // -------- 1. Autenticação por segredo (só o pg_cron pode chamar) --------
   const expected = Deno.env.get("RECONCILE_SECRET");
+  if (!expected) {
+    // Fail-closed: sem segredo configurado não dá pra autenticar ninguém.
+    console.error("RECONCILE_SECRET não configurado.");
+    return jsonResponse(500, { error: "server_misconfigured" });
+  }
   const received = req.headers.get("x-reconcile-secret");
   if (!received || !(await safeEqual(received, expected))) {
     return jsonResponse(401, { error: "unauthorized" });
@@ -222,9 +235,22 @@ Deno.serve(async req => {
           .eq("id", sub.id);
         if (updErr) throw new Error(`erro ativando: ${updErr.message}`); // try/catch trata
       } else if (FAILING_EVENTS.has(eventType)) {
+        const update: Record<string, unknown> = { status: "past_due" };
+
+        // Estorno/chargeback: encurta o período para now + carência curta.
+        // Nunca estende. Mesma lógica do webhook.
+        if (REVOKING_EVENTS.has(eventType)) {
+          const graceEnd = new Date(Date.now() + REVOKE_GRACE_DAYS * 86_400_000);
+          const current = sub.current_period_end
+            ? new Date(sub.current_period_end)
+            : null;
+          const newEnd = current && current < graceEnd ? current : graceEnd;
+          update.current_period_end = newEnd.toISOString();
+        }
+
         const { error: updErr } = await supabase
           .from("subscriptions")
-          .update({ status: "past_due" })
+          .update(update)
           .eq("id", sub.id);
         if (updErr) throw new Error(`erro past_due: ${updErr.message}`);
       }

@@ -309,19 +309,31 @@ RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path TO '' AS $function
 $function$;
 
 -- Remove usuários não confirmados criados há mais de 48h (limpeza periódica).
+-- Apaga os filhos da barbearia na ordem de dependência antes da barbearia
+-- (anti-FK; funciona com ou sem ON DELETE CASCADE) — ver supabase/medium-light-fixes.sql.
 CREATE OR REPLACE FUNCTION public.cleanup_unverified_users()
 RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
 declare
-  v_user_id uuid;
+  v_user_id       uuid;
+  v_barbershop_id uuid;
 begin
   for v_user_id in
     select id from auth.users
     where email_confirmed_at is null and created_at < now() - interval '48 hours'
   loop
-    delete from public.store_style where barbershop_id in (select id from public.barbershops where owner_id = v_user_id);
-    delete from public.barbershops where owner_id = v_user_id;
+    select id into v_barbershop_id from public.barbershops where owner_id = v_user_id;
+    if v_barbershop_id is not null then
+      delete from public.payments where subscription_id in (
+        select id from public.subscriptions where barbershop_id = v_barbershop_id
+      );
+      delete from public.subscriptions     where barbershop_id = v_barbershop_id;
+      delete from public.addresses         where barbershop_id = v_barbershop_id;
+      delete from public.store_style        where barbershop_id = v_barbershop_id;
+      delete from public.barbershop_members where barbershop_id = v_barbershop_id;
+      delete from public.barbershops        where id = v_barbershop_id;
+    end if;
     delete from public.profiles where id = v_user_id;
-    delete from auth.users where id = v_user_id;
+    delete from auth.users      where id = v_user_id;
   end loop;
 end;
 $function$;
@@ -372,21 +384,12 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $func
 --         insere profiles, barbershops, store_style e subscriptions (trialing).
 $function$;
 
--- Verifica se a barbearia tem acesso ativo ao sistema:
---   active, OU trialing com trial_ends_at > now(),
---   OU past_due com current_period_end + 5 dias > now().
--- Usada na RLS de barbershop_members (gate_inserts).
+-- has_active_access: alias de is_barbershop_active (fonte única de verdade).
+-- Era código morto e divergente (status-based, grace fixo 5d). Agora delega
+-- para is_barbershop_active — ver supabase/medium-light-fixes.sql.
 CREATE OR REPLACE FUNCTION public.has_active_access(p_barbershop_id uuid)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS $function$
-  select exists (
-    select 1 from public.subscriptions
-    where barbershop_id = p_barbershop_id
-      and (
-        status = 'active'
-        or (status = 'trialing' and trial_ends_at > now())
-        or (status = 'past_due' and current_period_end + interval '5 days' > now())
-      )
-  );
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO '' AS $function$
+  select public.is_barbershop_active(p_barbershop_id);
 $function$;
 
 -- Versão mais completa de has_active_access: inclui grace_period_days dinâmico

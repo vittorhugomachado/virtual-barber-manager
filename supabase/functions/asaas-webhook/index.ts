@@ -20,6 +20,15 @@ const FAILING_EVENTS = new Set([
   "PAYMENT_CHARGEBACK_REQUESTED",
   "PAYMENT_REVERSED",
 ]);
+// Estorno/chargeback: além de past_due, encurta o período para now + carência
+// curta (não basta marcar past_due, senão o cliente que estornou mantém acesso
+// até o fim do período pago). PAYMENT_OVERDUE simples NÃO entra aqui.
+const REVOKING_EVENTS = new Set([
+  "PAYMENT_REFUNDED",
+  "PAYMENT_CHARGEBACK_REQUESTED",
+  "PAYMENT_REVERSED",
+]);
+const REVOKE_GRACE_DAYS = 2;
 
 // M2: comparação em tempo constante (anti timing attack).
 // SHA-256 dos dois e compara os digests (tamanho fixo → não vaza length nem
@@ -284,19 +293,35 @@ Deno.serve(async req => {
           `erro ativando subscription: ${updErr.message}`,
         );
     } else if (FAILING_EVENTS.has(eventType)) {
+      const update: Record<string, unknown> = { status: "past_due" };
+
+      // Estorno/chargeback: encurta o período para now + carência curta.
+      // Nunca ESTENDE — se já falta menos que a carência, mantém o atual.
+      if (REVOKING_EVENTS.has(eventType)) {
+        const graceEnd = new Date(Date.now() + REVOKE_GRACE_DAYS * 86_400_000);
+        const current = sub.current_period_end
+          ? new Date(sub.current_period_end)
+          : null;
+        const newEnd = current && current < graceEnd ? current : graceEnd;
+        update.current_period_end = newEnd.toISOString();
+      }
+
       const { error: updErr } = await supabase
         .from("subscriptions")
-        .update({ status: "past_due" })
+        .update(update)
         .eq("id", sub.id);
       if (updErr)
         return await failRetryable(`erro marcando past_due: ${updErr.message}`);
 
       // alerta só APÓS o past_due ter sido aplicado com sucesso
+      const isRevoke = REVOKING_EVENTS.has(eventType);
       await supabase.from("ops_alerts").insert({
-        level: "warning",
+        level: isRevoke ? "error" : "warning",
         source: "webhook",
-        kind: "payment_failed",
-        message: `Assinatura ${sub.id} -> past_due (${eventType})`,
+        kind: isRevoke ? "payment_revoked" : "payment_failed",
+        message: `Assinatura ${sub.id} -> past_due (${eventType})${
+          isRevoke ? ` — período encurtado p/ +${REVOKE_GRACE_DAYS}d` : ""
+        }`,
         context: { subscriptionId: sub.id, asaasSubscriptionId },
       });
     }

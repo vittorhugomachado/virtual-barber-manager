@@ -249,6 +249,15 @@ Deno.serve(async req => {
       const cycle: string = sub.plans?.asaas_cycle ?? "MONTHLY";
       const months = CYCLE_MONTHS[cycle] ?? 1;
 
+      // Parcelas 2+ de pack (buy-pack, sem asaas_subscription_id) não devem
+      // estender o período — já foi definido na compra ou pela 1ª parcela.
+      const installmentNumber: number =
+        (payment.installmentNumber as number) ?? 1;
+      if (!asaasSubscriptionId && installmentNumber > 1) {
+        await markProcessed(supabase, eventId);
+        return jsonResponse(200, { processed: true, event: eventType });
+      }
+
       // Âncora ESTÁVEL na cobrança (dueDate), nunca "now": evita dupla contagem
       // quando o create-subscription já ativou para o MESMO pagamento.
       const anchor = payment.dueDate

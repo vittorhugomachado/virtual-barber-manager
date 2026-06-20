@@ -234,6 +234,7 @@ Deno.serve(async req => {
 
   let packPaymentCreated = false;
   let claimedSubId: string | null = null;
+  let reservedCouponId: string | null = null;
 
   try {
     const { data: barbershop, error: barbershopError } = await supabase
@@ -312,12 +313,16 @@ Deno.serve(async req => {
     if (subError) throw subError;
     if (!sub) return json(409, { error: "no_subscription_row" });
 
-    // Bloqueia se ativo com mais de 7 dias restantes.
+    // Bloqueia renovação antecipada de pacote (sem recorrência) com mais de 7
+    // dias restantes. PORÉM: um mensalista recorrente (asaas_subscription_id
+    // preenchido) pode TROCAR para pacote a qualquer momento — os dias
+    // restantes são preservados por computeNewPeriodEnd.
     const sevenDaysFromNow = new Date(Date.now() + 7 * 86_400_000);
     const canRenew =
       !sub.current_period_end ||
       new Date(sub.current_period_end) <= sevenDaysFromNow;
-    if (sub.status === "active" && !canRenew) {
+    const isMonthlyToPackSwitch = !!sub.asaas_subscription_id;
+    if (sub.status === "active" && !canRenew && !isMonthlyToPackSwitch) {
       return json(409, { error: "subscription_already_active" });
     }
 
@@ -378,6 +383,24 @@ Deno.serve(async req => {
       ? applyCouponDiscount(plan.price_cents, coupon)
       : plan.price_cents;
 
+    // Reserva ATÔMICA do cupom antes de cobrar (evita estourar max_uses por
+    // concorrência). Se a cobrança falhar adiante, o catch faz o release.
+    if (coupon) {
+      const { data: reserved, error: reserveError } = await supabase.rpc(
+        "increment_coupon_usage",
+        { p_coupon_id: coupon.id },
+      );
+      if (reserveError) throw reserveError;
+      if (!reserved) {
+        await supabase
+          .from("subscriptions")
+          .update({ provisioning_started_at: null })
+          .eq("id", sub.id);
+        return json(422, { error: "coupon_exhausted" });
+      }
+      reservedCouponId = coupon.id;
+    }
+
     const payment = await createOneTimePayment({
       customer: customerId,
       billingType,
@@ -406,13 +429,6 @@ Deno.serve(async req => {
       status: payment.status ?? "PENDING",
       due_date: payment.dueDate ?? null,
     });
-
-    if (coupon) {
-      await supabase
-        .from("coupons")
-        .update({ uses_count: coupon.uses_count + 1 })
-        .eq("id", coupon.id);
-    }
 
     // Atualiza plan_id e limpa o lock. Status e period_end dependem da confirmacao.
     const months = CYCLE_MONTHS[plan.asaas_cycle] ?? 6;
@@ -480,6 +496,13 @@ Deno.serve(async req => {
         .from("subscriptions")
         .update({ provisioning_started_at: null })
         .eq("id", claimedSubId);
+    }
+
+    // Cobrança não concluiu após reservar o cupom: libera a reserva.
+    if (reservedCouponId && !packPaymentCreated) {
+      await supabase.rpc("decrement_coupon_usage", {
+        p_coupon_id: reservedCouponId,
+      });
     }
 
     if (error instanceof AsaasError) {

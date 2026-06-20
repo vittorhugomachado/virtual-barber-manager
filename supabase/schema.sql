@@ -291,16 +291,16 @@ end;
 $function$;
 
 -- Lock de provisionamento: retorna TRUE e seta provisioning_started_at somente
--- se a assinatura ainda não tem asaas_subscription_id E o lock está livre
--- (nunca setado, ou setado há mais de 2 minutos — request morreu no meio).
--- Chamado em: new-create-subscription (início do checkout).
+-- se o lock está livre (nunca setado, ou setado há mais de 2 minutos — request
+-- morreu no meio). NÃO depende de asaas_subscription_id, para permitir troca de
+-- plano (mensal->pacote) e re-assinatura a qualquer momento.
+-- Chamado em: create-monthly-subscription / buy-pack (início do checkout).
 CREATE OR REPLACE FUNCTION public.claim_subscription_provisioning(p_id uuid)
 RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path TO '' AS $function$
   with claimed as (
     update public.subscriptions
     set provisioning_started_at = now()
     where id = p_id
-      and asaas_subscription_id is null
       and (provisioning_started_at is null
            or provisioning_started_at < now() - interval '2 minutes')
     returning id
@@ -364,9 +364,10 @@ $function$;
 -- Trigger: cria profile + barbershop + store_style + subscription (trial 30d)
 -- quando um novo usuário com role='barbershop' se cadastra.
 -- Também gera o slug único a partir do nome da barbearia.
+-- SET search_path TO '' (anti search_path hijacking) — ver supabase/critical-fixes.sql.
 CREATE OR REPLACE FUNCTION public.handle_new_barbershop_user()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $function$
--- (ver definição completa no Dashboard > Database > Functions)
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $function$
+-- (definição completa e versionada em supabase/critical-fixes.sql)
 -- Passos: valida role, idempotência, telefone duplicado, gera slug,
 --         insere profiles, barbershops, store_style e subscriptions (trialing).
 $function$;
@@ -450,6 +451,30 @@ BEGIN
     'description',    v_coupon.description
   );
 END;
+$function$;
+
+-- Consome um uso do cupom de forma ATÔMICA (guarda max_uses/expires/is_active).
+-- Retorna false se não pôde consumir. Só service_role (edge functions).
+-- Substitui o read-modify-write que permitia estourar max_uses por concorrência.
+CREATE OR REPLACE FUNCTION public.increment_coupon_usage(p_coupon_id uuid)
+RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path TO '' AS $function$
+  with updated as (
+    update public.coupons
+    set uses_count = uses_count + 1
+    where id = p_coupon_id
+      and is_active = true
+      and (expires_at is null or expires_at > now())
+      and (max_uses is null or uses_count < max_uses)
+    returning id
+  )
+  select exists (select 1 from updated);
+$function$;
+
+-- Libera a reserva de cupom quando a cobrança falha (best-effort, >= 0).
+CREATE OR REPLACE FUNCTION public.decrement_coupon_usage(p_coupon_id uuid)
+RETURNS void LANGUAGE sql SECURITY DEFINER SET search_path TO '' AS $function$
+  update public.coupons set uses_count = greatest(uses_count - 1, 0)
+  where id = p_coupon_id;
 $function$;
 
 -- Trigger helper: seta updated_at = now() em qualquer UPDATE.

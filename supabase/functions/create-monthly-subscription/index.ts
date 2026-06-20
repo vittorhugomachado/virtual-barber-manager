@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // create-monthly-subscription/index.ts
 // ============================================================================
 // Converte um trial em assinatura MENSAL recorrente (checkout transparente).
@@ -83,7 +84,8 @@ Deno.serve(async req => {
       headers: { "Content-Type": "application/json", ...cors },
     });
 
-  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+  if (req.method === "OPTIONS")
+    return new Response(null, { status: 204, headers: cors });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
 
   const authHeader = req.headers.get("Authorization");
@@ -91,7 +93,8 @@ Deno.serve(async req => {
 
   const userClient = getUserClient(authHeader);
   const { data: userData, error: userError } = await userClient.auth.getUser();
-  if (userError || !userData?.user) return json(401, { error: "invalid_token" });
+  if (userError || !userData?.user)
+    return json(401, { error: "invalid_token" });
 
   const userId = userData.user.id;
 
@@ -113,8 +116,10 @@ Deno.serve(async req => {
   const couponCode = body.coupon_code?.trim().toUpperCase() || undefined;
   const remoteIp = getRemoteIp(req);
 
-  if (!barbershopId || !planId) return json(400, { error: "missing_barbershop_id_or_plan_id" });
-  if (!ALLOWED_BILLING.has(billingType as BillingType)) return json(400, { error: "invalid_billing_type" });
+  if (!barbershopId || !planId)
+    return json(400, { error: "missing_barbershop_id_or_plan_id" });
+  if (!ALLOWED_BILLING.has(billingType as BillingType))
+    return json(400, { error: "invalid_billing_type" });
   if (!holderName) return json(400, { error: "missing_holder_name" });
   if (!email) return json(400, { error: "missing_email" });
   if (!isValidCpfCnpj(cpfCnpj)) return json(400, { error: "invalid_cpf_cnpj" });
@@ -133,9 +138,11 @@ Deno.serve(async req => {
 
   if (billingType === "CREDIT_CARD") {
     if (!remoteIp) return json(400, { error: "missing_remote_ip" });
-    if (!creditCard || creditCard.number.length < 13) return json(400, { error: "missing_credit_card_number" });
+    if (!creditCard || creditCard.number.length < 13)
+      return json(400, { error: "missing_credit_card_number" });
     if (!expiry) return json(400, { error: "invalid_credit_card_expiry" });
-    if (creditCard.ccv.length < 3) return json(400, { error: "missing_credit_card_ccv" });
+    if (creditCard.ccv.length < 3)
+      return json(400, { error: "missing_credit_card_ccv" });
   }
 
   const supabase = getSupabaseAdmin();
@@ -144,13 +151,18 @@ Deno.serve(async req => {
     "asaas_rate_limit_hit",
     { p_key: `create-sub:${userId}`, p_max: 8, p_window_seconds: 60 },
   );
-  if (rateLimitError) console.error("Erro no rate limit:", rateLimitError.message);
+  if (rateLimitError)
+    console.error("Erro no rate limit:", rateLimitError.message);
   else if (!allowed) {
-    return json(429, { error: "rate_limited", message: "Muitas tentativas. Aguarde um instante e tente novamente." });
+    return json(429, {
+      error: "rate_limited",
+      message: "Muitas tentativas. Aguarde um instante e tente novamente.",
+    });
   }
 
   let subscriptionCreated = false;
   let claimedSubId: string | null = null;
+  let reservedCouponId: string | null = null;
 
   try {
     const { data: barbershop, error: barbershopError } = await supabase
@@ -160,7 +172,8 @@ Deno.serve(async req => {
       .maybeSingle();
 
     if (barbershopError) throw barbershopError;
-    if (!barbershop || barbershop.owner_id !== userId) return json(403, { error: "not_barbershop_owner" });
+    if (!barbershop || barbershop.owner_id !== userId)
+      return json(403, { error: "not_barbershop_owner" });
 
     const { data: billingAddress, error: addressError } = await supabase
       .from("addresses")
@@ -178,7 +191,8 @@ Deno.serve(async req => {
 
     if (billingType === "CREDIT_CARD") {
       if (!address) return json(400, { error: "missing_billing_address" });
-      if (!postalCode || postalCode.length !== 8) return json(400, { error: "missing_postal_code" });
+      if (!postalCode || postalCode.length !== 8)
+        return json(400, { error: "missing_postal_code" });
       if (!addressNumber) return json(400, { error: "missing_address_number" });
     }
 
@@ -188,17 +202,21 @@ Deno.serve(async req => {
       .eq("id", planId)
       .maybeSingle();
     if (planError) throw planError;
-    if (!plan || !plan.is_active) return json(400, { error: "invalid_or_inactive_plan" });
+    if (!plan || !plan.is_active)
+      return json(400, { error: "invalid_or_inactive_plan" });
 
     // Esta função só processa planos mensais.
-    if (plan.asaas_cycle !== "MONTHLY") return json(400, { error: "plan_not_monthly" });
+    if (plan.asaas_cycle !== "MONTHLY")
+      return json(400, { error: "plan_not_monthly" });
 
     // Validação do cupom (opcional).
     let coupon: CouponInfo | null = null;
     if (couponCode) {
       const { data: couponRow, error: couponError } = await supabase
         .from("coupons")
-        .select("id, discount_type, discount_value, description, uses_count, max_uses, expires_at")
+        .select(
+          "id, discount_type, discount_value, description, uses_count, max_uses, expires_at",
+        )
         .eq("is_active", true)
         .ilike("code", couponCode)
         .maybeSingle();
@@ -206,14 +224,19 @@ Deno.serve(async req => {
       if (!couponRow) return json(422, { error: "invalid_coupon" });
       if (couponRow.expires_at && new Date(couponRow.expires_at) <= new Date())
         return json(422, { error: "coupon_expired" });
-      if (couponRow.max_uses !== null && couponRow.uses_count >= couponRow.max_uses)
+      if (
+        couponRow.max_uses !== null &&
+        couponRow.uses_count >= couponRow.max_uses
+      )
         return json(422, { error: "coupon_exhausted" });
       coupon = couponRow as CouponInfo;
     }
 
     const { data: sub, error: subError } = await supabase
       .from("subscriptions")
-      .select("id, status, current_period_end, asaas_customer_id, asaas_subscription_id")
+      .select(
+        "id, status, current_period_end, asaas_customer_id, asaas_subscription_id",
+      )
       .eq("barbershop_id", barbershopId)
       .maybeSingle();
     if (subError) throw subError;
@@ -242,7 +265,8 @@ Deno.serve(async req => {
       try {
         await deleteAsaasSubscription(sub.asaas_subscription_id);
       } catch (cancelError) {
-        if (!(cancelError instanceof AsaasError) || cancelError.status !== 404) throw cancelError;
+        if (!(cancelError instanceof AsaasError) || cancelError.status !== 404)
+          throw cancelError;
       }
       const { error: clearError } = await supabase
         .from("subscriptions")
@@ -270,7 +294,9 @@ Deno.serve(async req => {
     let customerId = sub.asaas_customer_id;
     if (!customerId) {
       const existing = await findCustomerByExternalReference(barbershopId);
-      customerId = existing ? existing.id : (await createCustomer(customerPayload)).id;
+      customerId = existing
+        ? existing.id
+        : (await createCustomer(customerPayload)).id;
       const { error: customerUpdateError } = await supabase
         .from("subscriptions")
         .update({ asaas_customer_id: customerId })
@@ -289,7 +315,8 @@ Deno.serve(async req => {
       try {
         await deleteAsaasSubscription(subscription.id);
       } catch (e) {
-        if (!(e instanceof AsaasError) || (e as AsaasError).status !== 404) throw e;
+        if (!(e instanceof AsaasError) || (e as AsaasError).status !== 404)
+          throw e;
       }
       subscription = null;
     }
@@ -298,6 +325,26 @@ Deno.serve(async req => {
       const finalPriceCents = coupon
         ? applyCouponDiscount(plan.price_cents, coupon)
         : plan.price_cents;
+
+      // Reserva ATÔMICA do cupom antes de criar a cobrança no Asaas.
+      // increment_coupon_usage faz o incremento com guarda max_uses numa única
+      // operação, evitando estourar o limite por concorrência. Se a criação
+      // falhar adiante, o catch faz o decrement (release).
+      if (coupon) {
+        const { data: reserved, error: reserveError } = await supabase.rpc(
+          "increment_coupon_usage",
+          { p_coupon_id: coupon.id },
+        );
+        if (reserveError) throw reserveError;
+        if (!reserved) {
+          await supabase
+            .from("subscriptions")
+            .update({ provisioning_started_at: null })
+            .eq("id", sub.id);
+          return json(422, { error: "coupon_exhausted" });
+        }
+        reservedCouponId = coupon.id;
+      }
 
       subscription = await createSubscription({
         customer: customerId,
@@ -323,20 +370,17 @@ Deno.serve(async req => {
 
     const { data: updatedRows, error: updateError } = await supabase
       .from("subscriptions")
-      .update({ plan_id: plan.id, asaas_subscription_id: asaasSubscriptionId, provisioning_started_at: null })
+      .update({
+        plan_id: plan.id,
+        asaas_subscription_id: asaasSubscriptionId,
+        provisioning_started_at: null,
+      })
       .eq("id", sub.id)
       .select("id");
     if (updateError) throw updateError;
     if (!updatedRows?.length) throw new Error("db_update_zero_rows");
 
     subscriptionCreated = true;
-
-    if (coupon) {
-      await supabase
-        .from("coupons")
-        .update({ uses_count: coupon.uses_count + 1 })
-        .eq("id", coupon.id);
-    }
 
     let activatedDirectly = false;
     let pix: AsaasPixQrCode | null = null;
@@ -348,17 +392,32 @@ Deno.serve(async req => {
       if (billingType === "PIX" && unpaid?.id) {
         try {
           const qr = await getPixQrCode(unpaid.id);
-          if (qr?.payload) pix = { encodedImage: qr.encodedImage, payload: qr.payload, expirationDate: qr.expirationDate };
-        } catch (_e) { /* sem QR agora; webhook entrega depois */ }
+          if (qr?.payload)
+            pix = {
+              encodedImage: qr.encodedImage,
+              payload: qr.payload,
+              expirationDate: qr.expirationDate,
+            };
+        } catch (_e) {
+          /* sem QR agora; webhook entrega depois */
+        }
       }
 
-      const confirmedPayment = list.find(p => CONFIRMING_STATUSES.has(p.status ?? ""));
+      const confirmedPayment = list.find(p =>
+        CONFIRMING_STATUSES.has(p.status ?? ""),
+      );
       if (confirmedPayment) {
         const months = CYCLE_MONTHS[plan.asaas_cycle] ?? 1;
-        const newPeriodEnd = computeNewPeriodEnd(sub.current_period_end, months);
+        const newPeriodEnd = computeNewPeriodEnd(
+          sub.current_period_end,
+          months,
+        );
         const { error: activateError } = await supabase
           .from("subscriptions")
-          .update({ status: "active", current_period_end: newPeriodEnd.toISOString() })
+          .update({
+            status: "active",
+            current_period_end: newPeriodEnd.toISOString(),
+          })
           .eq("id", sub.id);
         if (!activateError) activatedDirectly = true;
       }
@@ -372,13 +431,15 @@ Deno.serve(async req => {
       asaas_subscription_id: asaasSubscriptionId,
       ...(pix ? { pix } : {}),
       ...(activatedDirectly ? { status: "active" } : {}),
-      ...(coupon ? {
-        coupon_applied: {
-          discount_type: coupon.discount_type,
-          discount_value: coupon.discount_value,
-          description: coupon.description,
-        },
-      } : {}),
+      ...(coupon
+        ? {
+            coupon_applied: {
+              discount_type: coupon.discount_type,
+              discount_value: coupon.discount_value,
+              description: coupon.description,
+            },
+          }
+        : {}),
     });
   } catch (error) {
     if (claimedSubId && !subscriptionCreated) {
@@ -388,9 +449,21 @@ Deno.serve(async req => {
         .eq("id", claimedSubId);
     }
 
+    // Cobrança não concluiu após reservar o cupom: libera a reserva.
+    if (reservedCouponId && !subscriptionCreated) {
+      await supabase.rpc("decrement_coupon_usage", {
+        p_coupon_id: reservedCouponId,
+      });
+    }
+
     if (error instanceof AsaasError) {
       console.error("AsaasError:", error.status, error.code, error.message);
-      return json(422, { error: "asaas_error", code: error.code, message: error.message, details: error.details });
+      return json(422, {
+        error: "asaas_error",
+        code: error.code,
+        message: error.message,
+        details: error.details,
+      });
     }
 
     console.error("Erro inesperado em create-monthly-subscription:", error);

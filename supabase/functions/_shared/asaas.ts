@@ -307,7 +307,10 @@ export function applyCouponDiscount(
   coupon: Pick<CouponInfo, "discount_type" | "discount_value">,
 ): number {
   if (coupon.discount_type === "percentage") {
-    return Math.max(100, Math.round(priceCents * (1 - coupon.discount_value / 100)));
+    return Math.max(
+      100,
+      Math.round(priceCents * (1 - coupon.discount_value / 100)),
+    );
   }
   return Math.max(100, priceCents - Math.round(coupon.discount_value * 100));
 }

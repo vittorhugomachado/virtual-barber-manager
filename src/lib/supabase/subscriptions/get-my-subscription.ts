@@ -12,6 +12,7 @@ export type MySubscription = {
   status: SubscriptionStatus;
   asaas_customer_id: string | null;
   asaas_subscription_id: string | null;
+  current_period_end: string | null;
 };
 
 // Retorna a assinatura da barbearia do usuário logado.
@@ -29,7 +30,7 @@ export async function getMySubscription(): Promise<{
 
   const { data, error } = await supabase
     .from("subscriptions")
-    .select("id, status, asaas_customer_id, asaas_subscription_id")
+    .select("id, status, asaas_customer_id, asaas_subscription_id, current_period_end")
     .maybeSingle();
 
   if (error) return { data: null, error: error.message };

@@ -101,41 +101,57 @@ Deno.serve(async req => {
       const eventType: string = ev.event_type ?? body?.event;
       const payment = body?.payment;
 
-      // Sem cobrança de assinatura -> terminal: marca processado e segue.
-      if (!payment || typeof payment !== "object" || !payment.subscription) {
+      // Sem objeto de pagamento -> terminal: marca processado e segue.
+      if (!payment || typeof payment !== "object") {
+        await markProcessed(supabase, ev.asaas_event_id, "no_payment_object");
+        results.skipped++;
+        continue;
+      }
+
+      const asaasSubscriptionId: string | undefined = payment.subscription;
+      const externalRef: string | undefined = payment.externalReference;
+
+      // Pagamentos sem assinatura Asaas (buy-pack) só interessam em eventos de
+      // confirmação e quando há externalReference (= barbershop_id). Qualquer
+      // outro caso sem subscription é terminal. MESMA defesa do webhook — antes
+      // o reconcile descartava TODO pagamento de pack (não tinha paridade).
+      if (
+        !asaasSubscriptionId &&
+        (!externalRef || !CONFIRMING_EVENTS.has(eventType))
+      ) {
         await markProcessed(
           supabase,
           ev.asaas_event_id,
-          "no_subscription_payment",
+          "payment_without_subscription",
         );
         results.skipped++;
         continue;
       }
 
-      // Acha a subscription pelo id do Asaas; se não achar, cai no
-      // externalReference (= barbershop_id) — mesma defesa do webhook.
+      // Acha a subscription: 1º pelo id do Asaas; senão pelo externalReference.
       const SUB_COLUMNS =
         "id, status, current_period_end, asaas_subscription_id, plans:plan_id ( asaas_cycle )";
       let sub: any = null;
-      {
+      if (asaasSubscriptionId) {
         const { data } = await supabase
           .from("subscriptions")
           .select(SUB_COLUMNS)
-          .eq("asaas_subscription_id", payment.subscription)
+          .eq("asaas_subscription_id", asaasSubscriptionId)
           .maybeSingle();
         sub = data;
       }
-      if (!sub && payment.externalReference) {
+      if (!sub && externalRef) {
         const { data } = await supabase
           .from("subscriptions")
           .select(SUB_COLUMNS)
-          .eq("barbershop_id", payment.externalReference)
+          .eq("barbershop_id", externalRef)
           .maybeSingle();
         sub = data;
-        if (sub && !sub.asaas_subscription_id) {
+        // Backfill do id só para recorrentes (pack não tem subscription_id).
+        if (sub && !sub.asaas_subscription_id && asaasSubscriptionId) {
           await supabase
             .from("subscriptions")
-            .update({ asaas_subscription_id: payment.subscription })
+            .update({ asaas_subscription_id: asaasSubscriptionId })
             .eq("id", sub.id);
         }
       }
@@ -165,10 +181,23 @@ Deno.serve(async req => {
       );
 
       // Aplica o efeito — a MESMA lógica do webhook.
-      // Aplica o efeito — a MESMA lógica do webhook.
       if (CONFIRMING_EVENTS.has(eventType)) {
         const cycle: string = sub.plans?.asaas_cycle ?? "MONTHLY";
         const months = CYCLE_MONTHS[cycle] ?? 1;
+
+        // Parcelas 2+ de pack (sem asaas_subscription_id) não estendem o
+        // período — já foi definido na compra ou pela 1ª parcela. Igual webhook.
+        const installmentNumber: number =
+          (payment.installmentNumber as number) ?? 1;
+        if (!asaasSubscriptionId && installmentNumber > 1) {
+          await markProcessed(
+            supabase,
+            ev.asaas_event_id,
+            "reconciled_pack_installment",
+          );
+          results.reconciled++;
+          continue;
+        }
 
         // Âncora ESTÁVEL na cobrança (dueDate), nunca "now": mesma lógica
         // idempotente do webhook — não soma ciclo duplicado.

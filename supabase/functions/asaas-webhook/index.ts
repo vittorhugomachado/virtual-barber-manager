@@ -191,7 +191,7 @@ Deno.serve(async req => {
     // H1: inclui current_period_end. Inclui asaas_subscription_id para detectar
     // o backfill quando a busca cair no fallback por externalReference.
     const SUB_COLUMNS =
-      "id, plan_id, status, current_period_end, asaas_subscription_id, plans:plan_id ( asaas_cycle )";
+      "id, plan_id, status, current_period_end, pending_period_end, asaas_subscription_id, plans:plan_id ( asaas_cycle )";
 
     // 1ª tentativa: pelo id da assinatura no Asaas (planos mensais recorrentes).
     let sub: any = null;
@@ -277,17 +277,26 @@ Deno.serve(async req => {
           ? new Date(payment.paymentDate)
           : new Date();
       const candidate = addMonths(anchor, months);
-      // H1: nunca encurta — mantém o MAIOR entre o fim atual e o candidato.
+      // #9: a edge function (PIX pendente) grava em pending_period_end o fim
+      // calculado PRESERVANDO os dias restantes. Usamos o maior entre ele e o
+      // candidato (dueDate). É robusto a hint velho: se estiver desatualizado,
+      // candidate (recente) vence. pending_period_end NÃO libera acesso sozinho.
+      const pending = sub.pending_period_end
+        ? new Date(sub.pending_period_end)
+        : null;
+      const target = pending && pending > candidate ? pending : candidate;
+      // H1: nunca encurta — mantém o MAIOR entre o fim atual e o alvo.
       const current = sub.current_period_end
         ? new Date(sub.current_period_end)
         : null;
-      const newPeriodEnd = current && current > candidate ? current : candidate;
+      const newPeriodEnd = current && current > target ? current : target;
 
       const { error: updErr } = await supabase
         .from("subscriptions")
         .update({
           status: "active",
           current_period_end: newPeriodEnd.toISOString(),
+          pending_period_end: null, // consumido
         })
         .eq("id", sub.id);
       if (updErr)

@@ -101,6 +101,7 @@ CREATE TABLE public.subscriptions (
   updated_at timestamp with time zone,
   grace_period_days integer NOT NULL DEFAULT 6,
   provisioning_started_at timestamp with time zone,
+  pending_period_end timestamp with time zone,   -- #9: fim preservando dias (dica p/ o webhook no PIX; NÃO libera acesso)
   CONSTRAINT subscriptions_pkey PRIMARY KEY (id),
   CONSTRAINT subscriptions_barbershop_id_fkey FOREIGN KEY (barbershop_id) REFERENCES public.barbershops(id),
   CONSTRAINT subscriptions_plan_id_fkey FOREIGN KEY (plan_id) REFERENCES public.plans(id)

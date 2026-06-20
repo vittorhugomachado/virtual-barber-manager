@@ -146,7 +146,7 @@ Deno.serve(async req => {
 
       // Acha a subscription: 1º pelo id do Asaas; senão pelo externalReference.
       const SUB_COLUMNS =
-        "id, status, current_period_end, asaas_subscription_id, plans:plan_id ( asaas_cycle )";
+        "id, status, current_period_end, pending_period_end, asaas_subscription_id, plans:plan_id ( asaas_cycle )";
       let sub: any = null;
       if (asaasSubscriptionId) {
         const { data } = await supabase
@@ -223,17 +223,25 @@ Deno.serve(async req => {
             ? new Date(payment.paymentDate)
             : new Date();
         const candidate = addMonths(anchor, months);
-        // H1: nunca encurta — mantém o MAIOR entre o fim atual e o candidato.
+        // #9: usa pending_period_end (fim preservando dias, gravado pela edge
+        // function no PIX pendente) quando for maior que o candidato. Mesma
+        // lógica do webhook. pending_period_end não libera acesso sozinho.
+        const pending = sub.pending_period_end
+          ? new Date(sub.pending_period_end)
+          : null;
+        const target = pending && pending > candidate ? pending : candidate;
+        // H1: nunca encurta — mantém o MAIOR entre o fim atual e o alvo.
         const current = sub.current_period_end
           ? new Date(sub.current_period_end)
           : null;
-        const newEnd = current && current > candidate ? current : candidate;
+        const newEnd = current && current > target ? current : target;
 
         const { error: updErr } = await supabase
           .from("subscriptions")
           .update({
             status: "active",
             current_period_end: newEnd.toISOString(),
+            pending_period_end: null, // consumido
           })
           .eq("id", sub.id);
         if (updErr) throw new Error(`erro ativando: ${updErr.message}`); // try/catch trata

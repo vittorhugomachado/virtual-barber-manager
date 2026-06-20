@@ -18,11 +18,12 @@ function addMonths(from, months) {
   return d;
 }
 
-// webhook/reconcile: efeito de PAYMENT_CONFIRMED
+// webhook/reconcile: efeito de PAYMENT_CONFIRMED (com pending_period_end — #9)
 function confirmNewPeriodEnd({
   dueDate,
   paymentDate,
   currentPeriodEnd,
+  pendingPeriodEnd,
   months,
 }) {
   const anchor = dueDate
@@ -31,8 +32,11 @@ function confirmNewPeriodEnd({
       ? new Date(paymentDate)
       : new Date();
   const candidate = addMonths(anchor, months);
+  // #9: usa o pending (fim preservando dias) quando maior que o candidato.
+  const pending = pendingPeriodEnd ? new Date(pendingPeriodEnd) : null;
+  const target = pending && pending > candidate ? pending : candidate;
   const current = currentPeriodEnd ? new Date(currentPeriodEnd) : null;
-  return current && current > candidate ? current : candidate;
+  return current && current > target ? current : target;
 }
 
 // webhook/reconcile: efeito de estorno/chargeback (#6)
@@ -271,6 +275,62 @@ console.log("\n== #6 cobertura: pagamento de PACOTE (sem assinatura) ==");
   check(
     "recorrente (com asaas_subscription_id) sempre processa",
     processesNoSub("PAYMENT_REFUNDED", undefined, "sub_123") === true,
+  );
+}
+
+console.log("\n== #9: renovação PIX preserva os dias (pending_period_end) ==");
+{
+  const now = Date.parse("2026-06-20T12:00:00.000Z");
+  const current = iso(now + 5 * DAY); // mensalista com 5 dias restantes
+  const pending = iso(addMonths(new Date(current), 12)); // edge fn: preserva dias
+  const dueDate = "2026-06-20";
+
+  // webhook confirma o PIX -> usa o pending (preserva os 5 dias)
+  const r = confirmNewPeriodEnd({
+    dueDate,
+    currentPeriodEnd: current,
+    pendingPeriodEnd: pending,
+    months: 12,
+  });
+  check("PIX usa pending e preserva os 5 dias", iso(r) === pending, `got ${iso(r)}`);
+  check(
+    "PIX não perde dias vs ancorar só no dueDate",
+    new Date(r) > addMonths(new Date(dueDate), 12),
+  );
+
+  // reprocesso após o webhook zerar o pending -> idempotente
+  const r2 = confirmNewPeriodEnd({
+    dueDate,
+    currentPeriodEnd: r,
+    pendingPeriodEnd: null,
+    months: 12,
+  });
+  check("reprocesso sem pending é idempotente", iso(r2) === iso(r), `got ${iso(r2)}`);
+
+  // pending VELHO (menor que o candidato) é ignorado -> candidato vence
+  const stale = iso(now - 100 * DAY);
+  const r3 = confirmNewPeriodEnd({
+    dueDate,
+    currentPeriodEnd: null,
+    pendingPeriodEnd: stale,
+    months: 12,
+  });
+  check(
+    "pending velho é ignorado (candidato vence)",
+    iso(r3) === iso(addMonths(new Date(dueDate), 12)),
+    `got ${iso(r3)}`,
+  );
+
+  // sem pending (renovação recorrente automática) -> comportamento de antes
+  const r4 = confirmNewPeriodEnd({
+    dueDate: "2026-07-20",
+    currentPeriodEnd: "2026-07-20T00:00:00.000Z",
+    months: 1,
+  });
+  check(
+    "recorrente sem pending estende 1 ciclo normal",
+    iso(r4) === iso("2026-08-20T00:00:00.000Z"),
+    `got ${iso(r4)}`,
   );
 }
 

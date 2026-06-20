@@ -368,12 +368,22 @@ Deno.serve(async req => {
 
     const asaasSubscriptionId = subscription.id;
 
+    // #9: grava o fim PRESERVANDO os dias restantes. Se o pagamento for PIX
+    // (confirma depois), o webhook usa este valor ao ativar, em vez de ancorar
+    // só no dueDate (que perderia os dias). NÃO libera acesso — é só uma dica.
+    const months = CYCLE_MONTHS[plan.asaas_cycle] ?? 1;
+    const pendingPeriodEnd = computeNewPeriodEnd(
+      sub.current_period_end,
+      months,
+    ).toISOString();
+
     const { data: updatedRows, error: updateError } = await supabase
       .from("subscriptions")
       .update({
         plan_id: plan.id,
         asaas_subscription_id: asaasSubscriptionId,
         provisioning_started_at: null,
+        pending_period_end: pendingPeriodEnd,
       })
       .eq("id", sub.id)
       .select("id");
@@ -407,16 +417,13 @@ Deno.serve(async req => {
         CONFIRMING_STATUSES.has(p.status ?? ""),
       );
       if (confirmedPayment) {
-        const months = CYCLE_MONTHS[plan.asaas_cycle] ?? 1;
-        const newPeriodEnd = computeNewPeriodEnd(
-          sub.current_period_end,
-          months,
-        );
+        // reusa `months`/`pendingPeriodEnd` já calculados acima
         const { error: activateError } = await supabase
           .from("subscriptions")
           .update({
             status: "active",
-            current_period_end: newPeriodEnd.toISOString(),
+            current_period_end: pendingPeriodEnd,
+            pending_period_end: null, // consumido na ativação direta
           })
           .eq("id", sub.id);
         if (!activateError) activatedDirectly = true;

@@ -197,6 +197,14 @@ A correção combina três peças:
 Resultado: edge function ativar na hora **e** o webhook chegar depois para o
 mesmo pagamento → o `max()` mantém o valor já gravado em vez de somar de novo.
 
+**Renovação via PIX (preservação de dias):** quando o pagamento confirma depois
+(PIX), a edge function grava em `pending_period_end` o fim calculado preservando
+os dias restantes (`computeNewPeriodEnd`). O webhook, ao confirmar, usa
+`max(current, pending, candidate(dueDate))` e zera o `pending`. Assim a renovação
+antecipada via PIX não perde os dias, e continua idempotente (pending velho é
+ignorado pelo `max`). `pending_period_end` **não** libera acesso — só
+`current_period_end`.
+
 ---
 
 ## 9. Cupons
@@ -254,8 +262,9 @@ O `asaas-webhook` e o `reconcile-subscriptions` rodam com **Verify JWT desligado
 
 ## 13. Correções aplicadas (jun/2026)
 
-SQL em [`supabase/critical-fixes.sql`](../supabase/critical-fixes.sql) e
-[`supabase/medium-light-fixes.sql`](../supabase/medium-light-fixes.sql).
+SQL em [`supabase/critical-fixes.sql`](../supabase/critical-fixes.sql),
+[`supabase/medium-light-fixes.sql`](../supabase/medium-light-fixes.sql) e
+[`supabase/fix-pix-renewal.sql`](../supabase/fix-pix-renewal.sql).
 
 | # | Sev | Correção |
 | --- | --- | --- |
@@ -266,6 +275,7 @@ SQL em [`supabase/critical-fixes.sql`](../supabase/critical-fixes.sql) e
 | 5 | 🟡 | `cleanup_unverified_users` apaga filhos antes da barbearia (anti-FK) |
 | 6 | 🟡 | Estorno/chargeback → `past_due` **+ encurta período p/ now+2d** (webhook + reconcile, recorrente **e** pacote) |
 | 8 | 🟡 | `has_active_access` passa a delegar a `is_barbershop_active` (fonte única) |
+| 9 | 🟡 | Renovação **antecipada via PIX** preserva os dias restantes (coluna `pending_period_end`) |
 | 10 | 🟢 | `reconcile` fail-closed se `RECONCILE_SECRET` ausente |
 | 11 | 🟢 | `validate_coupon` revogado de `anon`/`PUBLIC` (anti-enumeração) |
 
@@ -287,8 +297,6 @@ SQL em [`supabase/critical-fixes.sql`](../supabase/critical-fixes.sql) e
 
 - **#7** Pacote parcelado no cartão libera o período inteiro na 1ª parcela
   (risco de inadimplência nas seguintes).
-- **#9** Renovação **antecipada via PIX** perde os dias restantes (o webhook
-  ancora no `dueDate`); cartão preserva via `computeNewPeriodEnd`.
 - **#12** `addMonths` herda overflow de fim de mês do JS (ex.: 31/jan + 1 mês).
 - Cupom ainda pode sofrer brute-force por usuário **autenticado** (mitigar com
   rate limit, se necessário).

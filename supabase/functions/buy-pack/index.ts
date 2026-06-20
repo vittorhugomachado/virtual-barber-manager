@@ -433,9 +433,13 @@ Deno.serve(async req => {
     // Atualiza plan_id e limpa o lock. Status e period_end dependem da confirmacao.
     const months = CYCLE_MONTHS[plan.asaas_cycle] ?? 6;
     const isConfirmed = CONFIRMING_STATUSES.has(payment.status ?? "");
-    const newPeriodEnd = isConfirmed
-      ? computeNewPeriodEnd(sub.current_period_end, months)
-      : null;
+    // #9: fim PRESERVANDO os dias restantes — vira current_period_end na hora se
+    // confirmado (cartao), ou fica como pending_period_end p/ o webhook usar no
+    // PIX. pending_period_end NAO libera acesso sozinho.
+    const computedEnd = computeNewPeriodEnd(
+      sub.current_period_end,
+      months,
+    ).toISOString();
 
     const { data: updatedRows, error: updateError } = await supabase
       .from("subscriptions")
@@ -446,9 +450,10 @@ Deno.serve(async req => {
         ...(isConfirmed
           ? {
               status: "active",
-              current_period_end: newPeriodEnd!.toISOString(),
+              current_period_end: computedEnd,
+              pending_period_end: null, // consumido na ativacao direta
             }
-          : { status: "incomplete" }),
+          : { status: "incomplete", pending_period_end: computedEnd }),
       })
       .eq("id", sub.id)
       .select("id");

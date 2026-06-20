@@ -63,7 +63,7 @@ Enum `subscription_status`: `trialing` · `incomplete` · `active` · `past_due`
 stateDiagram-v2
     [*] --> trialing : signup (trigger), trial 30d
     trialing --> active : 1º pagamento confirmado (webhook)
-    trialing --> incomplete : checkout PIX criado, aguardando pagamento
+    trialing --> incomplete : buy-pack PIX pendente (no mensal fica em trialing)
     incomplete --> active : PAYMENT_CONFIRMED / RECEIVED
     active --> active : renovação paga (estende current_period_end)
     active --> past_due : OVERDUE (sem encurtar) / REFUND·CHARGEBACK (encurta p/ now+2d)
@@ -73,7 +73,7 @@ stateDiagram-v2
 | Status | Significado | `current_period_end` |
 | --- | --- | --- |
 | `trialing` | Período de teste de 30 dias (criado no signup) | `null` (usa `trial_ends_at`) |
-| `incomplete` | Checkout iniciado, pagamento ainda não confirmado (típico PIX) | inalterado |
+| `incomplete` | Pacote (`buy-pack`) com pagamento pendente — típico PIX. No mensal, o PIX pendente permanece em `trialing` até confirmar. | inalterado |
 | `active` | Pago e válido | data futura |
 | `past_due` | Falha/atraso/estorno | mantido (overdue) ou encurtado p/ now+2d (estorno) |
 | `canceled` | Cancelada | — |

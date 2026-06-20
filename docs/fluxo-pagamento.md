@@ -179,6 +179,9 @@ Detalhes:
   são ignorados como terminais).
 - **Parcelas 2+** de pacote (`installmentNumber > 1`) **não** estendem o período
   (já concedido na 1ª parcela/compra).
+- **Reembolso PARCIAL** chega como `PAYMENT_PARTIALLY_REFUNDED` (evento separado)
+  e é **intencionalmente ignorado** (só registra em `payments`, não revoga). Apenas
+  `PAYMENT_REFUNDED` (total) revoga. ⚠️ Não adicione o parcial a `REVOKING_EVENTS`.
 
 ---
 

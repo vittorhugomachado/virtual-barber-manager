@@ -33,9 +33,9 @@ export function PendingPaymentCard({
                   Nao identificamos seu pagamento
                 </h1>
                 <p className="mt-2 text-sm">
-                  Nao recebemos a confirmacao. Se ja pagou, aguarde mais um pouco
-                  e atualize a pagina. Caso contrario, escolha novamente como
-                  deseja pagar.
+                  Nao recebemos a confirmacao. Se ja pagou, aguarde mais um
+                  pouco e atualize a pagina. Caso contrario, escolha novamente
+                  como deseja pagar.
                 </p>
               </div>
               <Button type="button" size="lg" onClick={onRestart}>

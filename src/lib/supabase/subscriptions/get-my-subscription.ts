@@ -30,7 +30,9 @@ export async function getMySubscription(): Promise<{
 
   const { data, error } = await supabase
     .from("subscriptions")
-    .select("id, status, asaas_customer_id, asaas_subscription_id, current_period_end")
+    .select(
+      "id, status, asaas_customer_id, asaas_subscription_id, current_period_end",
+    )
     .maybeSingle();
 
   if (error) return { data: null, error: error.message };

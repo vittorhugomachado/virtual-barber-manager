@@ -5,6 +5,7 @@ export type Plan = {
   code: string;
   name: string;
   description: string | null;
+  included_features: string[] | null;
   price_cents: number;
   asaas_cycle: PlanCycle;
   sort_order: number;

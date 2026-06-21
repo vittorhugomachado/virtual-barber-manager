@@ -35,6 +35,14 @@ type AppliedCoupon = {
   description: string | null;
 };
 
+function formatSubscriptionDate(date: Date) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
+
 const CYCLE_MONTHS: Record<string, number> = {
   WEEKLY: 0,
   BIWEEKLY: 0,
@@ -157,6 +165,7 @@ export function BuySubscriptionMain({
   );
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [activePeriodEnd, setActivePeriodEnd] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -175,9 +184,10 @@ export function BuySubscriptionMain({
     let mounted = true;
 
     async function loadData() {
-      const [plansRes, userRes] = await Promise.all([
+      const [plansRes, userRes, subscriptionRes] = await Promise.all([
         getPlans(),
         supabase.auth.getUser(),
+        getMySubscription(),
       ]);
 
       if (!mounted) return;
@@ -195,6 +205,13 @@ export function BuySubscriptionMain({
         setPlansError("Nenhum plano disponivel no momento.");
       }
       setLoadingPlans(false);
+
+      const sub = subscriptionRes.data;
+      if (sub?.status === "active" && sub.current_period_end) {
+        setActivePeriodEnd(
+          formatSubscriptionDate(new Date(sub.current_period_end)),
+        );
+      }
 
       const userId = userRes.data.user?.id;
       if (userId) {
@@ -469,7 +486,7 @@ export function BuySubscriptionMain({
       setSubmitting(false);
     }
   }
-
+  console.log(plans);
   return (
     <main className="min-h-screen bg-zinc-100 px-4 py-8 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -482,6 +499,16 @@ export function BuySubscriptionMain({
               </p>
             </div>
 
+            {activePeriodEnd && (
+              <div className="mx-auto w-full max-w-2xl rounded-lg bg-emerald-100 p-3 text-center dark:bg-emerald-950/30">
+                <p className="text-sm text-emerald-800 dark:text-emerald-300">
+                  Seu plano mensal ainda está ativo até {activePeriodEnd}.{" "}
+                  <br />
+                  Você pode aproveitar os descontos do plano semestral ou anual.
+                </p>
+              </div>
+            )}
+
             {loadingPlans ? (
               <p className="text-center text-sm text-zinc-500">
                 Carregando planos...
@@ -491,7 +518,7 @@ export function BuySubscriptionMain({
                 {plansError}
               </p>
             ) : (
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="gap-4 flex justify-center flex-wrap">
                 {plans.map(plan => {
                   const best = plan.id === bestValuePlanId;
                   const current = plan.id === currentPlanId;
@@ -501,12 +528,10 @@ export function BuySubscriptionMain({
                     <div
                       key={plan.id}
                       className={cn(
-                        "relative flex flex-col rounded-2xl border bg-white p-6 transition dark:bg-zinc-900",
+                        "w-90 relative flex flex-col rounded-2xl border bg-white p-6 transition dark:bg-zinc-900",
                         current
                           ? "border-emerald-500 ring-2 ring-emerald-500/20"
-                          : best
-                            ? "border-blue-500 ring-1 ring-blue-500/30"
-                            : "border-zinc-200 dark:border-zinc-800",
+                          : "border-zinc-200 dark:border-zinc-800",
                       )}
                     >
                       {current && (
@@ -517,53 +542,89 @@ export function BuySubscriptionMain({
 
                       {best && (
                         <span
-                          className={cn(
-                            "absolute right-4 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white",
-                            current ? "top-11" : "top-4",
-                          )}
+                          className={
+                            "absolute -rotate-8 -top-1 -left-2 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white"
+                          }
                         >
                           Melhor valor
                         </span>
                       )}
-
-                      <h3 className="text-lg font-semibold">
+                      <span
+                        className={
+                          "absolute w-10 h-12 right-3 top-0 rounded-b-full  flex flex-col items-center justify-center gap-1 bg-zinc-900 dark:bg-white font-semibold uppercase tracking-wide text-white dark:text-black"
+                        }
+                      >
+                        <span className="text-[16px] translate-y-1">
+                          {plan.asaas_cycle === "MONTHLY" && "50%"}
+                          {plan.asaas_cycle === "SEMIANNUALLY" && "56%"}
+                          {plan.asaas_cycle === "YEARLY" && "62%"}
+                        </span>
+                        <span className="text-[12px] -translate-y-1.5">
+                          OFF
+                        </span>
+                      </span>
+                      <h3 className="text-xl font-semibold">
                         {cycleLabel(plan.asaas_cycle)}
                       </h3>
 
                       <div className="mt-3 flex items-end gap-1">
-                        <span className="text-3xl font-bold">
-                          {formatMoney(plan.price_cents)}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="text-lg font-semilight line-through">
+                            {formatMoney(7990)}
+                          </span>
+                          <span className="text-3xl font-bold">
+                            {plan.asaas_cycle === "MONTHLY" &&
+                              formatMoney(plan.price_cents)}
+                            {plan.asaas_cycle === "SEMIANNUALLY" &&
+                              formatMoney(plan.price_cents / 6)}
+                            {plan.asaas_cycle === "YEARLY" &&
+                              formatMoney(plan.price_cents / 12)}
+                          </span>
+                        </div>
                         <span className="mb-1 text-sm text-zinc-500">
-                          {cycleSuffix(plan.asaas_cycle)}
+                          / mês
                         </span>
                       </div>
 
                       {months > 1 && (
                         <p className="mt-1 text-xs text-zinc-500">
-                          equivale a {formatMoney(monthlyEquivalentCents(plan))}
-                          /mes
+                          Total: {formatMoney(plan.price_cents)}
                         </p>
                       )}
 
-                      {plan.description && (
-                        <p className="mt-4 text-sm text-zinc-500">
-                          {plan.description}
-                        </p>
+                      {months <= 1 && (
+                        <p className="mt-1 text-xs text-transparent">--</p>
                       )}
 
                       <Button
                         type="button"
                         size="lg"
-                        variant={best || current ? "default" : "outline"}
+                        variant={current ? "outline" : "default"}
                         onClick={() => choosePlan(plan.id)}
-                        disabled={!barbershopId}
-                        className="mt-6 w-full"
+                        disabled={!barbershopId || current}
+                        className="mt-auto w-full mt-8"
                       >
                         {current
-                          ? `Continuar com ${cycleLabel(plan.asaas_cycle)}`
+                          ? `Plano atual`
                           : `Escolher ${cycleLabel(plan.asaas_cycle)}`}
                       </Button>
+
+                      {plan.included_features &&
+                        plan.included_features.length > 0 && (
+                          <ul className="mb-4 mt-8 flex flex-col gap-3.5 text-sm text-zinc-500">
+                            {plan.included_features.map((feature, index) => (
+                              <li
+                                key={index}
+                                className="flex items-center gap-2"
+                              >
+                                <CheckCircle className="size-4 text-emerald-600" />
+                                {feature}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                      <div className="mt-auto" />
                     </div>
                   );
                 })}
@@ -574,16 +635,15 @@ export function BuySubscriptionMain({
 
         {step === 2 && selectedPlan && (
           <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="flex absolute -translate-y-7 w-fit items-center gap-1 text-sm text-zinc-500 transition hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer"
+            >
+              <ArrowLeft className="size-4" />
+              Voltar aos planos
+            </button>
             <div className="flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="flex w-fit items-center gap-1 text-sm text-zinc-500 transition hover:text-zinc-900 dark:hover:text-zinc-100"
-              >
-                <ArrowLeft className="size-4" />
-                Voltar aos planos
-              </button>
-
               <div>
                 <h1 className="text-xl font-semibold">Pagamento</h1>
                 <p className="text-sm text-zinc-500">

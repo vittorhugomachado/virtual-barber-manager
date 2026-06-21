@@ -126,7 +126,13 @@ function friendlyErrorFromBody(body: unknown): string | null {
   return null;
 }
 
-export function BuySubscriptionMain() {
+type BuySubscriptionMainProps = {
+  currentPlanId?: string | null;
+};
+
+export function BuySubscriptionMain({
+  currentPlanId = null,
+}: BuySubscriptionMainProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
@@ -488,6 +494,7 @@ export function BuySubscriptionMain() {
               <div className="grid gap-4 md:grid-cols-3">
                 {plans.map(plan => {
                   const best = plan.id === bestValuePlanId;
+                  const current = plan.id === currentPlanId;
                   const months = CYCLE_MONTHS[plan.asaas_cycle] || 1;
 
                   return (
@@ -495,13 +502,26 @@ export function BuySubscriptionMain() {
                       key={plan.id}
                       className={cn(
                         "relative flex flex-col rounded-2xl border bg-white p-6 transition dark:bg-zinc-900",
-                        best
-                          ? "border-blue-500 ring-1 ring-blue-500/30"
-                          : "border-zinc-200 dark:border-zinc-800",
+                        current
+                          ? "border-emerald-500 ring-2 ring-emerald-500/20"
+                          : best
+                            ? "border-blue-500 ring-1 ring-blue-500/30"
+                            : "border-zinc-200 dark:border-zinc-800",
                       )}
                     >
+                      {current && (
+                        <span className="absolute right-4 top-4 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                          Sua assinatura atual
+                        </span>
+                      )}
+
                       {best && (
-                        <span className="absolute right-4 top-4 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                        <span
+                          className={cn(
+                            "absolute right-4 rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white",
+                            current ? "top-11" : "top-4",
+                          )}
+                        >
                           Melhor valor
                         </span>
                       )}
@@ -535,12 +555,14 @@ export function BuySubscriptionMain() {
                       <Button
                         type="button"
                         size="lg"
-                        variant={best ? "default" : "outline"}
+                        variant={best || current ? "default" : "outline"}
                         onClick={() => choosePlan(plan.id)}
                         disabled={!barbershopId}
                         className="mt-6 w-full"
                       >
-                        Escolher {cycleLabel(plan.asaas_cycle)}
+                        {current
+                          ? `Continuar com ${cycleLabel(plan.asaas_cycle)}`
+                          : `Escolher ${cycleLabel(plan.asaas_cycle)}`}
                       </Button>
                     </div>
                   );

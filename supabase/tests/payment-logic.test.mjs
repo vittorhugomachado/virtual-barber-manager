@@ -292,7 +292,11 @@ console.log("\n== #9: renovação PIX preserva os dias (pending_period_end) ==")
     pendingPeriodEnd: pending,
     months: 12,
   });
-  check("PIX usa pending e preserva os 5 dias", iso(r) === pending, `got ${iso(r)}`);
+  check(
+    "PIX usa pending e preserva os 5 dias",
+    iso(r) === pending,
+    `got ${iso(r)}`,
+  );
   check(
     "PIX não perde dias vs ancorar só no dueDate",
     new Date(r) > addMonths(new Date(dueDate), 12),
@@ -305,7 +309,11 @@ console.log("\n== #9: renovação PIX preserva os dias (pending_period_end) ==")
     pendingPeriodEnd: null,
     months: 12,
   });
-  check("reprocesso sem pending é idempotente", iso(r2) === iso(r), `got ${iso(r2)}`);
+  check(
+    "reprocesso sem pending é idempotente",
+    iso(r2) === iso(r),
+    `got ${iso(r2)}`,
+  );
 
   // pending VELHO (menor que o candidato) é ignorado -> candidato vence
   const stale = iso(now - 100 * DAY);

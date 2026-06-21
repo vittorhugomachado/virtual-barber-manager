@@ -38,7 +38,20 @@
       "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('./package.json'\\).scripts, null, 2\\)\\)\")",
       "Bash(npx eslint *)",
       "Bash(npx prettier *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(set -e)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git merge *)",
+      "Bash(git fetch *)",
+      "Bash(git push *)",
+      "Bash(grep -ivE \"//|/\\\\*\")",
+      "Bash(node supabase/tests/payment-logic.test.mjs)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(git reset *)",
+      "Bash(git restore *)",
+      "Bash(git rm *)",
+      "Bash(git commit -q -m ' *)"
     ]
   }
 }

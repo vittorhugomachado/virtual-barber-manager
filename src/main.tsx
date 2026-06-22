@@ -15,12 +15,12 @@ createRoot(document.getElementById("root")!).render(
       <AuthProvider>
         <Toaster />
         <ThemeToggle />
-        <TopFixedNotice
+        {/* <TopFixedNotice
           color="orange"
           message={"Período de testes acaba em 6 dias"}
           textAction={"Renovar agora"}
           onAction={() => alert("Renovado!")}
-        />
+        /> */}
         <AppRoutes />
       </AuthProvider>
     </BrowserRouter>

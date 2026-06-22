@@ -3,6 +3,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/common/logo";
+import { AddressForm } from "@/components/forms/address-form";
 
 type Step = {
   id: number;
@@ -19,6 +20,11 @@ const STEPS: Step[] = [
   { id: 2, label: "Horários", description: "Dias e horários de funcionamento" },
   { id: 3, label: "Serviços", description: "O que você oferece e os preços" },
   { id: 4, label: "Barbeiros", description: "Sua equipe de profissionais" },
+  {
+    id: 5,
+    label: "Página",
+    description: "Personalize a aparência do seu site público",
+  },
 ];
 
 const WELCOME_TEXT = "Bem-vindo à Virtual Barber!";
@@ -142,7 +148,7 @@ function StepsScreen({
               "transform 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 300ms",
           }}
         >
-          <Logo style="h-10" />
+          <Logo style="h-8" />
         </div>
       </div>
 
@@ -196,41 +202,54 @@ function StepsScreen({
           </div>
 
           {/* Formulário do passo atual */}
-          <div className="border rounded-xl p-6 bg-card min-h-64">
-            <h2 className="text-lg font-medium mb-1">{step.label}</h2>
-            <p className="text-muted-foreground text-sm mb-6">
-              {step.description}
-            </p>
-            <div className="h-32 flex items-center justify-center rounded-lg border border-dashed text-muted-foreground text-sm">
-              Formulário de {step.label.toLowerCase()} em breve
-            </div>
-          </div>
-
-          {/* Navegação */}
-          <div className="flex justify-between mt-6">
-            <button
-              disabled={currentStep === 1}
-              onClick={onPrev}
-              className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors"
-              style={{ opacity: currentStep === 1 ? 0 : 1 }}
-            >
-              Voltar
-            </button>
-            {currentStep < STEPS.length ? (
-              <Button onClick={onNext} className="w-26">
-                Próximo
-              </Button>
-            ) : (
-              <button
-                onClick={() => {
-                  // TODO: setar onboarding_completed = true e redirecionar para /painel
-                }}
-                className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          {currentStep === 1 ? (
+            <>
+              <AddressForm onSaved={onNext} fixedButtons />
+              <Button
+                type="submit"
+                form="address-form"
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full shadow-lg px-8"
               >
-                Concluir
+                Salvar endereço
+              </Button>
+            </>
+          ) : (
+            <div className="border rounded-xl p-6 bg-card min-h-64">
+              <h2 className="text-lg font-medium mb-1">{step.label}</h2>
+              <p className="text-muted-foreground text-sm mb-6">
+                {step.description}
+              </p>
+              <div className="h-32 flex items-center justify-center rounded-lg border border-dashed text-muted-foreground text-sm">
+                Formulário de {step.label.toLowerCase()} em breve
+              </div>
+            </div>
+          )}
+
+          {/* Navegação — oculta no step 1 (o AddressForm tem seu próprio botão) */}
+          {currentStep > 1 && (
+            <div className="flex justify-between mt-6">
+              <button
+                onClick={onPrev}
+                className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors"
+              >
+                Voltar
               </button>
-            )}
-          </div>
+              {currentStep < STEPS.length ? (
+                <Button onClick={onNext} className="w-26">
+                  Próximo
+                </Button>
+              ) : (
+                <button
+                  onClick={() => {
+                    // TODO: setar onboarding_completed = true e redirecionar para /painel
+                  }}
+                  className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                >
+                  Concluir
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

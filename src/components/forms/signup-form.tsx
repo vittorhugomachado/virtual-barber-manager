@@ -37,6 +37,9 @@ const formSchema = z.object({
     .max(30, "Nome deve ter no máximo 30 caracteres"),
   email: z.email("Email inválido"),
   password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
+  acceptedTerms: z.literal(true, {
+    error: "Você precisa aceitar os Termos de Serviço",
+  }),
 });
 
 const mensagens: Record<string, string> = {
@@ -62,6 +65,7 @@ export function SignupForm() {
       barbershopName: "",
       email: "",
       password: "",
+      acceptedTerms: undefined,
     },
   });
 
@@ -288,6 +292,43 @@ export function SignupForm() {
                             )}
                           </button>
                         </div>
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    name="acceptedTerms"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <label
+                          htmlFor="signup-form-accepted-terms"
+                          className="flex items-start gap-3 rounded-xl p-3 text-sm leading-6"
+                        >
+                          <input
+                            id="signup-form-accepted-terms"
+                            type="checkbox"
+                            checked={field.value === true}
+                            onChange={event =>
+                              field.onChange(event.target.checked)
+                            }
+                            className="mt-1 size-4 shrink-0 accent-[#0458EE]"
+                          />
+                          <span>
+                            Li e concordo com os{" "}
+                            <a
+                              href="https://virtualbarber.com.br/termos-de-servico"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="font-semibold text-[#0458EE] underline underline-offset-2"
+                            >
+                              Termos de Serviço
+                            </a>{" "}
+                            da plataforma
+                          </span>
+                        </label>
                         {fieldState.invalid && (
                           <FieldError errors={[fieldState.error]} />
                         )}

@@ -5,6 +5,7 @@
 > desatualizado (descreve uma `create-subscription` única que não existe mais).
 
 ## Sumário
+
 1. [Princípio central](#1-princípio-central)
 2. [Componentes](#2-componentes)
 3. [Estados da assinatura](#3-estados-da-assinatura)
@@ -31,6 +32,7 @@
 > recorrente ou pacote que estendeu o período.
 
 Duas garantias sustentam o fluxo:
+
 - **Idempotência:** reprocessar o mesmo pagamento nunca soma ciclo duas vezes
   (âncora estável no `dueDate` + `max(atual, candidato)`).
 - **Escrita controlada:** clientes só têm `SELECT` em `subscriptions`/`payments`
@@ -40,15 +42,15 @@ Duas garantias sustentam o fluxo:
 
 ## 2. Componentes
 
-| Componente | Onde roda | Papel |
-| --- | --- | --- |
-| `handle_new_barbershop_user` | Postgres (trigger em `auth.users`) | No signup: cria profile + barbershop + store_style + `subscriptions` trial |
-| `create-monthly-subscription` | Edge Function (JWT) | Converte trial em **assinatura mensal recorrente** no Asaas |
-| `buy-pack` | Edge Function (JWT) | Compra **pacote** semestral/anual como **cobrança única** |
-| `asaas-webhook` | Edge Function (token) | Recebe eventos do Asaas → ativa/renova/revoga acesso |
-| `reconcile-subscriptions` | Edge Function (segredo, via cron) | Rede de segurança: reprocessa eventos presos em `webhook_events` |
-| `_shared/asaas.ts` | Lib comum | HTTP Asaas, validações, `computeNewPeriodEnd`, `applyCouponDiscount`, etc. |
-| `is_barbershop_active` | Função SQL | Gate de acesso (período + carência ou trial) |
+| Componente                    | Onde roda                          | Papel                                                                      |
+| ----------------------------- | ---------------------------------- | -------------------------------------------------------------------------- |
+| `handle_new_barbershop_user`  | Postgres (trigger em `auth.users`) | No signup: cria profile + barbershop + store_style + `subscriptions` trial |
+| `create-monthly-subscription` | Edge Function (JWT)                | Converte trial em **assinatura mensal recorrente** no Asaas                |
+| `buy-pack`                    | Edge Function (JWT)                | Compra **pacote** semestral/anual como **cobrança única**                  |
+| `asaas-webhook`               | Edge Function (token)              | Recebe eventos do Asaas → ativa/renova/revoga acesso                       |
+| `reconcile-subscriptions`     | Edge Function (segredo, via cron)  | Rede de segurança: reprocessa eventos presos em `webhook_events`           |
+| `_shared/asaas.ts`            | Lib comum                          | HTTP Asaas, validações, `computeNewPeriodEnd`, `applyCouponDiscount`, etc. |
+| `is_barbershop_active`        | Função SQL                         | Gate de acesso (período + carência ou trial)                               |
 
 Arquivos: [`supabase/functions/`](../supabase/functions) · esquema de referência em
 [`supabase/schema.sql`](../supabase/schema.sql).
@@ -70,33 +72,34 @@ stateDiagram-v2
     past_due --> active : pagamento regularizado
 ```
 
-| Status | Significado | `current_period_end` |
-| --- | --- | --- |
-| `trialing` | Período de teste de 30 dias (criado no signup) | `null` (usa `trial_ends_at`) |
-| `incomplete` | Pacote (`buy-pack`) com pagamento pendente — típico PIX. No mensal, o PIX pendente permanece em `trialing` até confirmar. | inalterado |
-| `active` | Pago e válido | data futura |
-| `past_due` | Falha/atraso/estorno | mantido (overdue) ou encurtado p/ now+2d (estorno) |
-| `canceled` | Cancelada | — |
+| Status       | Significado                                                                                                               | `current_period_end`                               |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `trialing`   | Período de teste de 30 dias (criado no signup)                                                                            | `null` (usa `trial_ends_at`)                       |
+| `incomplete` | Pacote (`buy-pack`) com pagamento pendente — típico PIX. No mensal, o PIX pendente permanece em `trialing` até confirmar. | inalterado                                         |
+| `active`     | Pago e válido                                                                                                             | data futura                                        |
+| `past_due`   | Falha/atraso/estorno                                                                                                      | mantido (overdue) ou encurtado p/ now+2d (estorno) |
+| `canceled`   | Cancelada                                                                                                                 | —                                                  |
 
 ---
 
 ## 4. Tabelas
 
-| Tabela | Papel |
-| --- | --- |
-| `plans` | Catálogo (preço, `asaas_cycle`, `product_code`). Preço **nunca** vem do request. |
-| `subscriptions` | Estado por barbearia (1:1). Campo-verdade: `current_period_end`. |
-| `payments` | Histórico de cobranças (espelho do Asaas, idempotente por `asaas_payment_id`). |
-| `webhook_events` | Log de todo evento recebido; base do dedup e do reconcile. |
-| `coupons` | Cupons de desconto (`uses_count`/`max_uses`). |
-| `asaas_rate_limits` | Rate limit por chave (`create-sub:<uid>`, `buy-pack:<uid>`). |
-| `ops_alerts` | Alertas operacionais (falha de pagamento, gave_up, erro de reconcile). |
+| Tabela              | Papel                                                                            |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `plans`             | Catálogo (preço, `asaas_cycle`, `product_code`). Preço **nunca** vem do request. |
+| `subscriptions`     | Estado por barbearia (1:1). Campo-verdade: `current_period_end`.                 |
+| `payments`          | Histórico de cobranças (espelho do Asaas, idempotente por `asaas_payment_id`).   |
+| `webhook_events`    | Log de todo evento recebido; base do dedup e do reconcile.                       |
+| `coupons`           | Cupons de desconto (`uses_count`/`max_uses`).                                    |
+| `asaas_rate_limits` | Rate limit por chave (`create-sub:<uid>`, `buy-pack:<uid>`).                     |
+| `ops_alerts`        | Alertas operacionais (falha de pagamento, gave_up, erro de reconcile).           |
 
 ---
 
 ## 5. Fluxo passo a passo — quando cada função roda
 
 ### Fase 0 — Signup (uma vez)
+
 1. Front chama `supabase.auth.signUp` com `role='barbershop'` + metadata.
 2. O INSERT em `auth.users` dispara **`handle_new_barbershop_user`**, que na mesma
    transação valida telefone, gera slug único e cria `profiles`, `barbershops`,
@@ -105,6 +108,7 @@ stateDiagram-v2
 3. Durante o trial o acesso é liberado por **`is_barbershop_active`** (ramo trial).
 
 ### Fase 1 — Checkout (dono logado no manager, JWT)
+
 4. A página chama **`getMySubscription`**; o front decide se mostra checkout.
 5. (Opcional) valida cupom via RPC **`validate_coupon`**.
 6. Conforme o ciclo do plano, o front chama **uma** edge function:
@@ -112,6 +116,7 @@ stateDiagram-v2
    - Plano **SEMIANNUALLY/YEARLY** → **`buy-pack`**.
 
 ### Fase 2 — Dentro da edge function (ordem de execução)
+
 7. `getUser()` (valida JWT) → valida body → `isValidCpfCnpj`.
 8. **`asaas_rate_limit_hit`** (8/min por usuário).
 9. Carrega `barbershops` (confere `owner_id`), `addresses`, `plans` (confere
@@ -133,6 +138,7 @@ stateDiagram-v2
     e fica pendente (`incomplete`). Em falha pós-reserva, **`decrement_coupon_usage`**.
 
 ### Fase 3 — Confirmação assíncrona (webhook)
+
 18. Asaas chama **`asaas-webhook`** (auth por header `asaas-access-token`,
     comparação em tempo constante).
 19. Dedup por `processed_at` + registro em `webhook_events`.
@@ -142,11 +148,13 @@ stateDiagram-v2
 22. Erros transitórios viram retry (HTTP 500) até `MAX_ATTEMPTS=5`; depois `gave_up`.
 
 ### Fase 4 — Rede de segurança (cron)
+
 23. **`reconcile-subscriptions`** (chamada por cron com `x-reconcile-secret`) relê
     eventos presos (`processed_at` nulo ou `gave_up`, com >5 min) e reaplica o
     efeito a partir do payload salvo — com a **mesma** lógica do webhook.
 
 ### Acesso (o tempo todo)
+
 24. **`is_barbershop_active`** decide o acesso, inclusive no RLS `gate_inserts` de
     `barbershop_members`.
 
@@ -154,26 +162,27 @@ stateDiagram-v2
 
 ## 6. Mensal vs. Pacote
 
-| | Mensal (`create-monthly-subscription`) | Pacote (`buy-pack`) |
-| --- | --- | --- |
-| Asaas | `POST /subscriptions` (recorrente) | `POST /payments` (avulso) |
-| `asaas_subscription_id` | preenchido | `null` |
-| Renovação | automática (Asaas cobra todo ciclo) | manual (recompra) |
-| Ciclos | MONTHLY | SEMIANNUALLY, YEARLY |
-| Parcelamento | — | cartão, `installmentCount` |
-| Localização no webhook | por `asaas_subscription_id` | por `externalReference` |
+|                         | Mensal (`create-monthly-subscription`) | Pacote (`buy-pack`)        |
+| ----------------------- | -------------------------------------- | -------------------------- |
+| Asaas                   | `POST /subscriptions` (recorrente)     | `POST /payments` (avulso)  |
+| `asaas_subscription_id` | preenchido                             | `null`                     |
+| Renovação               | automática (Asaas cobra todo ciclo)    | manual (recompra)          |
+| Ciclos                  | MONTHLY                                | SEMIANNUALLY, YEARLY       |
+| Parcelamento            | —                                      | cartão, `installmentCount` |
+| Localização no webhook  | por `asaas_subscription_id`            | por `externalReference`    |
 
 ---
 
 ## 7. Webhook em detalhe (eventos → efeito)
 
-| Grupo | Eventos | Efeito |
-| --- | --- | --- |
-| **Confirmação** | `PAYMENT_CONFIRMED`, `PAYMENT_RECEIVED` | `status='active'`; `current_period_end = max(atual, dueDate + ciclo)` |
-| **Estorno** | `PAYMENT_REFUNDED`, `PAYMENT_CHARGEBACK_REQUESTED`, `PAYMENT_REVERSED` | `status='past_due'` **+** encurta `current_period_end` p/ `now+2d` (nunca estende) + `ops_alerts` |
-| **Atraso** | `PAYMENT_OVERDUE` | `status='past_due'` (sem mexer no período) + `ops_alerts` |
+| Grupo           | Eventos                                                                | Efeito                                                                                            |
+| --------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Confirmação** | `PAYMENT_CONFIRMED`, `PAYMENT_RECEIVED`                                | `status='active'`; `current_period_end = max(atual, dueDate + ciclo)`                             |
+| **Estorno**     | `PAYMENT_REFUNDED`, `PAYMENT_CHARGEBACK_REQUESTED`, `PAYMENT_REVERSED` | `status='past_due'` **+** encurta `current_period_end` p/ `now+2d` (nunca estende) + `ops_alerts` |
+| **Atraso**      | `PAYMENT_OVERDUE`                                                      | `status='past_due'` (sem mexer no período) + `ops_alerts`                                         |
 
 Detalhes:
+
 - **Pacote sem `asaas_subscription_id`** é processado via `externalReference`
   apenas em eventos de **confirmação** ou **estorno** (atraso/“sem assinatura”
   são ignorados como terminais).
@@ -190,6 +199,7 @@ Detalhes:
 > Contexto: houve um bug em que uma assinatura renovava por **2×** o tempo comprado.
 
 A correção combina três peças:
+
 1. **Âncora estável no `dueDate`** (nunca `now()`): reprocessar o mesmo pagamento
    gera sempre o **mesmo** `candidate = dueDate + ciclo`.
 2. **`current_period_end = max(atual, candidate)`**: nunca soma ciclo em cima de
@@ -236,6 +246,7 @@ qualquer momento**. Rate limit adicional por usuário em `asaas_rate_limits`.
 ## 11. Acesso / gating
 
 **`is_barbershop_active(barbershop_id)`** (fonte única) retorna `true` se:
+
 - `status <> 'canceled'` **e** `now() < current_period_end + grace_period_days`
   (default **6** dias); **ou**
 - `status='trialing'` e `now() < trial_ends_at`.
@@ -247,6 +258,7 @@ qualquer momento**. Rate limit adicional por usuário em `asaas_rate_limits`.
 ## 12. Operação (crons, alertas, segredos)
 
 **Crons (pg_cron):**
+
 - `cleanup-unverified-users` (03:00) — remove usuários não verificados >48h,
   apagando os filhos da barbearia na ordem correta (anti-FK).
 - `prune-webhook-events` (03:00) — apaga eventos processados >90d.
@@ -269,18 +281,18 @@ SQL em [`supabase/critical-fixes.sql`](../supabase/critical-fixes.sql),
 [`supabase/medium-light-fixes.sql`](../supabase/medium-light-fixes.sql) e
 [`supabase/fix-pix-renewal.sql`](../supabase/fix-pix-renewal.sql).
 
-| # | Sev | Correção |
-| --- | --- | --- |
-| 1 | 🔴 | `handle_new_barbershop_user` com `SET search_path` (anti hijack) |
-| 2 | 🔴 | `claim_subscription_provisioning` sem `asaas_subscription_id IS NULL` → libera troca mensal→pacote |
-| 3 | 🔴 | `reconcile-subscriptions` passa a cobrir pagamentos de **pacote** (paridade com o webhook) |
-| 4 | 🔴 | Cupom: `increment/decrement_coupon_usage` atômicos (não estoura `max_uses`) |
-| 5 | 🟡 | `cleanup_unverified_users` apaga filhos antes da barbearia (anti-FK) |
-| 6 | 🟡 | Estorno/chargeback → `past_due` **+ encurta período p/ now+2d** (webhook + reconcile, recorrente **e** pacote) |
-| 8 | 🟡 | `has_active_access` passa a delegar a `is_barbershop_active` (fonte única) |
-| 9 | 🟡 | Renovação **antecipada via PIX** preserva os dias restantes (coluna `pending_period_end`) |
-| 10 | 🟢 | `reconcile` fail-closed se `RECONCILE_SECRET` ausente |
-| 11 | 🟢 | `validate_coupon` revogado de `anon`/`PUBLIC` (anti-enumeração) |
+| #   | Sev | Correção                                                                                                       |
+| --- | --- | -------------------------------------------------------------------------------------------------------------- |
+| 1   | 🔴  | `handle_new_barbershop_user` com `SET search_path` (anti hijack)                                               |
+| 2   | 🔴  | `claim_subscription_provisioning` sem `asaas_subscription_id IS NULL` → libera troca mensal→pacote             |
+| 3   | 🔴  | `reconcile-subscriptions` passa a cobrir pagamentos de **pacote** (paridade com o webhook)                     |
+| 4   | 🔴  | Cupom: `increment/decrement_coupon_usage` atômicos (não estoura `max_uses`)                                    |
+| 5   | 🟡  | `cleanup_unverified_users` apaga filhos antes da barbearia (anti-FK)                                           |
+| 6   | 🟡  | Estorno/chargeback → `past_due` **+ encurta período p/ now+2d** (webhook + reconcile, recorrente **e** pacote) |
+| 8   | 🟡  | `has_active_access` passa a delegar a `is_barbershop_active` (fonte única)                                     |
+| 9   | 🟡  | Renovação **antecipada via PIX** preserva os dias restantes (coluna `pending_period_end`)                      |
+| 10  | 🟢  | `reconcile` fail-closed se `RECONCILE_SECRET` ausente                                                          |
+| 11  | 🟢  | `validate_coupon` revogado de `anon`/`PUBLIC` (anti-enumeração)                                                |
 
 ---
 

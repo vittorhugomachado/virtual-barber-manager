@@ -11,6 +11,7 @@ Project ref: `fjfrybzaeghouslsyhgl` · URL: `https://fjfrybzaeghouslsyhgl.supaba
 ---
 
 ## Passo 1 — SQL: anote o estado atual e jogue o período pra frente
+
 ```sql
 -- ANOTE estes valores para restaurar depois:
 select id, status, current_period_end, asaas_subscription_id
@@ -24,6 +25,7 @@ where barbershop_id = '<BARBERSHOP_ID>';
 ```
 
 ## Passo 2 — PowerShell: dispara o webhook de ESTORNO
+
 ```powershell
 $ref          = "fjfrybzaeghouslsyhgl"
 $token        = "<ASAAS_WEBHOOK_TOKEN>"          # o mesmo configurado na function
@@ -50,13 +52,15 @@ Invoke-RestMethod -Method Post `
   -Headers @{ "asaas-access-token" = $token; "Content-Type" = "application/json" } `
   -Body $body
 ```
+
 **Esperado:** resposta `{ processed = True; event = PAYMENT_REFUNDED }`.
-(Token errado → `401 unauthorized`. Se a function exigir JWT, desligue *Verify JWT* na dashboard.)
+(Token errado → `401 unauthorized`. Se a function exigir JWT, desligue _Verify JWT_ na dashboard.)
 
 > Para testar uma **assinatura recorrente** em vez de pack, adicione no `payment`:
 > `subscription = "<asaas_subscription_id>"` (o valor que você anotou no passo 1).
 
 ## Passo 3 — SQL: verifica que encurtou
+
 ```sql
 select status,
        current_period_end,
@@ -65,9 +69,11 @@ select status,
 from public.subscriptions
 where barbershop_id = '<BARBERSHOP_ID>';
 ```
+
 **PASS** se `virou_past_due = true` **e** `encurtou_ok = true`.
 
 ## Passo 4 — SQL: restaura o estado e limpa os registros de teste
+
 ```sql
 update public.subscriptions
 set status = '<STATUS_ORIGINAL>', current_period_end = '<PERIODO_ORIGINAL>'  -- valores do passo 1
@@ -80,7 +86,8 @@ delete from public.webhook_events where asaas_event_id  like 'evt_test_refund_%'
 ---
 
 ## Testes manuais pela UI (rápidos)
-- **#2 mensal→pacote:** logado como dono de uma **assinatura mensal ativa**, abra *Assinar* →
+
+- **#2 mensal→pacote:** logado como dono de uma **assinatura mensal ativa**, abra _Assinar_ →
   deve **conseguir** chegar no checkout e comprar um pacote (antes redirecionava/bloqueava).
 - **#4 cupom:** aplique um cupom válido num checkout → `uses_count` sobe **exatamente 1**
   (confira em `select code, uses_count from coupons`). Cupom no limite → erro `coupon_exhausted`.

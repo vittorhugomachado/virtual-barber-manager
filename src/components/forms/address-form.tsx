@@ -419,27 +419,29 @@ export function AddressForm({
                 />
               </div>
 
-              <Controller
-                name="country"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid} className="w-36">
-                    <FieldLabel htmlFor="addr-country">País</FieldLabel>
-                    <Input
-                      {...field}
-                      id="addr-country"
-                      placeholder="Brasil"
-                      aria-invalid={fieldState.invalid}
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
+              {!fixedButtons && (
+                <Controller
+                  name="country"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid} className="w-36">
+                      <FieldLabel htmlFor="addr-country">País</FieldLabel>
+                      <Input
+                        {...field}
+                        id="addr-country"
+                        placeholder="Brasil"
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
+                  )}
+                />
+              )}
             </FieldGroup>
 
-            {mapEmbedUrl && (
+            {!fixedButtons && mapEmbedUrl && (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <MapPin className="h-3.5 w-3.5" />

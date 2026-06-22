@@ -8,7 +8,7 @@
         height={63}
         loading="eager"
         decoding="async"
-        className="hidden dark:block object-contain"
+        className="hidden dark:block object-contain h-full w-auto"
       />
       <img
         src="/logo-light.png"
@@ -17,7 +17,7 @@
         height={61}
         loading="eager"
         decoding="async"
-        className="object-contain dark:hidden"
+        className="object-contain dark:hidden h-full w-auto"
       />
     </div>
   );

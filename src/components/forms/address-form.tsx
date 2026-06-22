@@ -239,12 +239,22 @@ export function AddressForm({
       className={`w-full max-w-180 lg:mx-auto md:px-16 flex flex-col gap-6 mb-6 ${fixedButtons ? "pb-24" : ""}`}
     >
       <Card className="bg-transparent border-none">
-        <CardHeader className="mt-3">
-          <div className="flex flex-col w-fit">
-            <CardTitle className="font-semibold text-2xl">Endereço</CardTitle>
-            <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
-          </div>
-        </CardHeader>
+        {!fixedButtons ? (
+          <CardHeader className="mt-3">
+            <div className="flex flex-col w-fit">
+              <CardTitle className="font-semibold text-2xl">Endereço</CardTitle>
+              <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
+            </div>
+          </CardHeader>
+        ) : (
+          <CardHeader className="mt-3">
+            <div className="flex mx-auto flex-col w-fit">
+              <CardTitle className="font-semibold text-2xl">
+                Qual endereço da sua barbearia?
+              </CardTitle>
+            </div>
+          </CardHeader>
+        )}
 
         {loading ? (
           <CardContent className="flex items-center gap-2 text-muted-foreground text-sm">

@@ -15,6 +15,11 @@ const DashboardPage = lazy(() =>
     default: module.DashboardPage,
   })),
 );
+const OnboardingPage = lazy(() =>
+  import("@/pages/onboarding-page").then(module => ({
+    default: module.OnboardingPage,
+  })),
+);
 const AsaasTestPage = lazy(() =>
   import("@/pages/asaas-test-page").then(module => ({
     default: module.AsaasTestPage,
@@ -222,6 +227,17 @@ export function AppRoutes() {
           </PublicPageLoader>
         }
       /> */}
+      {/* Onboarding — protegido, sem sidebar */}
+      <Route element={<ProtectedRoute />}>
+        <Route
+          path="/onboarding"
+          element={
+            <PublicPageLoader>
+              <OnboardingPage />
+            </PublicPageLoader>
+          }
+        />
+      </Route>
       {/* Rotas protegidas com sidebar */}
       <Route element={<ProtectedRoute withSidebar />}>
         <Route

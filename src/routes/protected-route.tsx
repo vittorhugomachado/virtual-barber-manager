@@ -33,6 +33,13 @@ export function ProtectedRoute({
 
   if (!isLogged || !barbershop) return <Navigate to="/entrar" />;
 
+  if (
+    memberRole === "owner" &&
+    !barbershop.onboarding_completed &&
+    pathname !== "/onboarding"
+  )
+    return <Navigate to="/onboarding" replace />;
+
   if (memberRole === "reader" && pathname !== "/agenda")
     return <Navigate to="/agenda" replace />;
 
@@ -50,5 +57,5 @@ export function ProtectedRoute({
     );
   }
 
-  return children;
+  return children ?? <Outlet />;
 }

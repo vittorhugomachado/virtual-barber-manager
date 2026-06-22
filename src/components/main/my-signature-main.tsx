@@ -368,7 +368,7 @@ export function MySignatureMain() {
               : "Resolva a pendência para manter sua barbearia ativa."}
           </p>
           <Button asChild size="lg">
-            <Link to="/assinatura">{ctaLabel}</Link>
+            <Link to="/assinar">{ctaLabel}</Link>
           </Button>
         </div>
       )}

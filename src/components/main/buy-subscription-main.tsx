@@ -35,6 +35,7 @@ type AppliedCoupon = {
   description: string | null;
 };
 
+// Formata uma data para o padrão brasileiro (DD/MM/AAAA).
 function formatSubscriptionDate(date: Date) {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
@@ -95,6 +96,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   internal_error: "Erro interno. Tente novamente mais tarde.",
 };
 
+// Converte centavos em string monetária no formato brasileiro (R$ X,XX).
 function formatMoney(cents: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -102,19 +104,23 @@ function formatMoney(cents: number) {
   }).format(cents / 100);
 }
 
+// Retorna o nome legível do ciclo de cobrança (ex: "MONTHLY" → "Mensal").
 function cycleLabel(cycle: string) {
   return CYCLE_LABEL[cycle] ?? cycle;
 }
 
+// Retorna o sufixo de periodicidade para exibição no preço (ex: "MONTHLY" → "/mes").
 function cycleSuffix(cycle: string) {
   return CYCLE_SUFFIX[cycle] ?? "/ciclo";
 }
 
+// Calcula o valor mensal equivalente de um plano para comparação de custo-benefício entre ciclos.
 function monthlyEquivalentCents(plan: Plan) {
   const months = CYCLE_MONTHS[plan.asaas_cycle] || 1;
   return Math.round(plan.price_cents / months);
 }
 
+// Extrai uma mensagem de texto de qualquer tipo de erro (Error, string ou desconhecido).
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) return error.message;
   if (typeof error === "string") return error;
@@ -125,6 +131,7 @@ type InvokeErrorWithContext = {
   context?: { json?: () => Promise<unknown> };
 };
 
+// Traduz o corpo da resposta de erro da Edge Function para uma mensagem amigável ao usuário.
 function friendlyErrorFromBody(body: unknown): string | null {
   if (!body || typeof body !== "object") return null;
   const b = body as { error?: string; message?: string };
@@ -168,6 +175,7 @@ export function BuySubscriptionMain({
   const [activePeriodEnd, setActivePeriodEnd] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Redireciona para /minha-assinatura 2 segundos após o pagamento ser confirmado.
   useEffect(() => {
     if (paymentState !== "confirmed") return;
     const t = setTimeout(() => void navigate("/minha-assinatura"), 2000);
@@ -183,6 +191,7 @@ export function BuySubscriptionMain({
   useEffect(() => {
     let mounted = true;
 
+    // Carrega planos disponíveis, assinatura ativa e dados da barbearia do usuário logado.
     async function loadData() {
       const [plansRes, userRes, subscriptionRes] = await Promise.all([
         getPlans(),
@@ -195,7 +204,7 @@ export function BuySubscriptionMain({
       if (plansRes.error) {
         setPlans([]);
         setPlansError(
-          "Nao foi possivel carregar os planos. Recarregue a pagina e tente novamente.",
+          "Não foi possível carregar os planos. Recarregue a página e tente novamente.",
         );
       } else if (plansRes.data?.length) {
         setPlans(plansRes.data);
@@ -238,6 +247,7 @@ export function BuySubscriptionMain({
     };
   }, []);
 
+  // Identifica o plano com menor custo mensal equivalente para destacar o "Melhor valor".
   const bestValuePlanId = useMemo(() => {
     if (plans.length < 2) return null;
     return plans.reduce((best, plan) =>
@@ -245,11 +255,13 @@ export function BuySubscriptionMain({
     ).id;
   }, [plans]);
 
+  // Resolve o objeto completo do plano selecionado a partir do ID.
   const selectedPlan = useMemo(
     () => plans.find(plan => plan.id === selectedPlanId) ?? null,
     [plans, selectedPlanId],
   );
 
+  // Calcula o preço final em centavos aplicando o desconto do cupom (percentual ou fixo), com mínimo de R$ 1,00.
   const finalPriceCents = useMemo(() => {
     if (!selectedPlan) return 0;
     if (!appliedCoupon) return selectedPlan.price_cents;
@@ -267,6 +279,7 @@ export function BuySubscriptionMain({
     );
   }, [selectedPlan, appliedCoupon]);
 
+  // Seleciona o plano, limpa o estado do checkout anterior e avança para o passo 2 (pagamento).
   function choosePlan(planId: string) {
     const plan = plans.find(p => p.id === planId);
     setSelectedPlanId(planId);
@@ -290,6 +303,7 @@ export function BuySubscriptionMain({
     setStep(2);
   }
 
+  // Copia o código Pix copia-e-cola para a área de transferência e exibe feedback visual por 2 segundos.
   async function copyPixPayload() {
     if (!pixData?.payload) return;
     try {
@@ -323,6 +337,7 @@ export function BuySubscriptionMain({
     let mounted = true;
     let attempts = 0;
 
+    // Consulta o status da assinatura no Supabase; marca como confirmado ou expirado após 40 tentativas (~2 min).
     async function checkPaymentConfirmation() {
       attempts += 1;
       const { data, error: subscriptionError } = await getMySubscription();
@@ -356,6 +371,7 @@ export function BuySubscriptionMain({
     };
   }, [paymentState]);
 
+  // Valida o cupom digitado via RPC do Supabase e, se válido, aplica o desconto ao pedido.
   async function handleApplyCoupon() {
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
@@ -391,6 +407,7 @@ export function BuySubscriptionMain({
     }
   }
 
+  // Valida todos os campos do formulário antes de submeter; retorna a primeira mensagem de erro ou null se tudo ok.
   function validateCheckout() {
     if (!selectedPlan) return "Selecione um plano.";
     if (!barbershopId) return "Nenhuma barbearia encontrada para o usuario.";
@@ -410,6 +427,7 @@ export function BuySubscriptionMain({
     return null;
   }
 
+  // Envia o pedido de assinatura para a Edge Function correta (mensal ou pack), trata o retorno e inicia o polling de confirmação.
   async function handleSubscribe() {
     const validationError = validateCheckout();
     if (validationError) {
@@ -486,7 +504,7 @@ export function BuySubscriptionMain({
       setSubmitting(false);
     }
   }
-  console.log(plans);
+
   return (
     <main className="min-h-screen bg-zinc-100 px-4 py-8 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -602,7 +620,7 @@ export function BuySubscriptionMain({
                         variant={current ? "outline" : "default"}
                         onClick={() => choosePlan(plan.id)}
                         disabled={!barbershopId || current}
-                        className="mt-auto w-full mt-8"
+                        className="w-full mt-8"
                       >
                         {current
                           ? `Plano atual`

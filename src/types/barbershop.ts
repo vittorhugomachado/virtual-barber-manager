@@ -11,6 +11,7 @@
   template: string;
   is_active: boolean;
   onboarding_completed: boolean;
+  onboarding_step: number;
   created_at: string;
   updated_at: string | null;
 };

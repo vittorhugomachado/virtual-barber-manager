@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/common/logo";
 import { AddressForm } from "@/components/forms/address-form";
+import { supabase } from "@/lib/supabase/supabase";
+import { useBarbershopStore } from "@/store/barbershop.store";
 
 type Step = {
   id: number;
@@ -121,10 +124,12 @@ function StepsScreen({
   currentStep,
   onNext,
   onPrev,
+  onComplete,
 }: {
   currentStep: number;
   onNext: () => void;
   onPrev: () => void;
+  onComplete: () => void;
 }) {
   const [logoReady, setLogoReady] = useState(false);
 
@@ -239,14 +244,9 @@ function StepsScreen({
                   Próximo
                 </Button>
               ) : (
-                <button
-                  onClick={() => {
-                    // TODO: setar onboarding_completed = true e redirecionar para /painel
-                  }}
-                  className="px-4 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                >
+                <Button onClick={onComplete}>
                   Concluir
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -259,17 +259,31 @@ function StepsScreen({
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export function OnboardingPage() {
-  const [phase, setPhase] = useState<"welcome" | "steps">("welcome");
+  const navigate = useNavigate();
+  const { barbershop, setBarbershop } = useBarbershopStore();
+
+  const savedStep = barbershop?.onboarding_step ?? 1;
+  const [phase, setPhase] = useState<"welcome" | "steps">(
+    savedStep > 1 ? "steps" : "welcome",
+  );
   const [welcomeLeaving, setWelcomeLeaving] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(savedStep);
 
   function handleStart() {
     setWelcomeLeaving(true);
     setTimeout(() => setPhase("steps"), 600);
   }
 
-  function goToNext() {
-    setCurrentStep(prev => Math.min(prev + 1, STEPS.length));
+  async function goToNext() {
+    const nextStep = Math.min(currentStep + 1, STEPS.length);
+    if (barbershop && nextStep > (barbershop.onboarding_step ?? 1)) {
+      await supabase
+        .from("barbershops")
+        .update({ onboarding_step: nextStep })
+        .eq("id", barbershop.id);
+      setBarbershop({ ...barbershop, onboarding_step: nextStep });
+    }
+    setCurrentStep(nextStep);
   }
 
   function goToPrev() {
@@ -281,6 +295,16 @@ export function OnboardingPage() {
     }
   }
 
+  async function handleComplete() {
+    if (!barbershop) return;
+    await supabase
+      .from("barbershops")
+      .update({ onboarding_completed: true, onboarding_step: STEPS.length })
+      .eq("id", barbershop.id);
+    setBarbershop({ ...barbershop, onboarding_completed: true });
+    navigate("/painel");
+  }
+
   if (phase === "welcome") {
     return <WelcomeScreen onStart={handleStart} leaving={welcomeLeaving} />;
   }
@@ -290,6 +314,7 @@ export function OnboardingPage() {
       currentStep={currentStep}
       onNext={goToNext}
       onPrev={goToPrev}
+      onComplete={handleComplete}
     />
   );
 }

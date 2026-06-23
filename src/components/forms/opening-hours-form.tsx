@@ -216,7 +216,6 @@ export function OpeningHoursForm({
   }
 
   const isDirty = JSON.stringify(days) !== JSON.stringify(initialDays);
-  const hasNoOpenDays = !loading && days.every(d => !d.is_open);
 
   return (
     <form
@@ -228,18 +227,24 @@ export function OpeningHoursForm({
       className={`w-full max-w-180 lg:mx-auto md:px-16 flex flex-col gap-6 mb-6 ${fixedButtons ? "pb-24" : ""}`}
     >
       <Card className="bg-transparent border-none">
-        <CardHeader className="mt-3">
-          <div className="flex flex-col w-fit">
-            <CardTitle className="font-semibold text-2xl">
-              Horário de funcionamento
-            </CardTitle>
-            <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Configure os dias e horários que a barbearia está aberta. Você pode
-            adicionar múltiplos períodos por dia.
-          </p>
-        </CardHeader>
+        {!fixedButtons ? (
+          <CardHeader className="mt-3">
+            <div className="flex flex-col w-fit">
+              <CardTitle className="font-semibold text-2xl">
+                Horário de funcionamento
+              </CardTitle>
+              <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
+            </div>
+          </CardHeader>
+        ) : (
+          <CardHeader className="mt-3">
+            <div className="flex mx-auto flex-col w-fit">
+              <CardTitle className="font-semibold text-2xl">
+                Quais os horários?
+              </CardTitle>
+            </div>
+          </CardHeader>
+        )}
 
         {loading ? (
           <CardContent className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -247,17 +252,7 @@ export function OpeningHoursForm({
             Carregando...
           </CardContent>
         ) : (
-          <CardContent className="px-3 flex flex-col gap-6">
-            {hasNoOpenDays && (
-              <div className="text-sm w-full flex justify-center items-center gap-2 rounded-full bg-yellow-500/10 text-yellow-500 px-6 py-2">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                <span className="whitespace-normal text-left text-sm">
-                  Atualize seus horários de funcionamento para disponibilizar
-                  agendamentos
-                </span>
-              </div>
-            )}
-
+          <CardContent className="flex flex-col gap-6">
             <div className="flex flex-col gap-3">
               {days.map(day => (
                 <div
@@ -318,11 +313,7 @@ export function OpeningHoursForm({
                                 <p className="text-xs text-center text-destructive">
                                   {
                                     errors[
-                                      errorKey(
-                                        day.day_of_week,
-                                        idx,
-                                        "opens_at",
-                                      )
+                                      errorKey(day.day_of_week, idx, "opens_at")
                                     ]
                                   }
                                 </p>

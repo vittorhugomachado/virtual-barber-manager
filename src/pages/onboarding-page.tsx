@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Check, Undo2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/common/logo";
@@ -140,7 +140,7 @@ function StepsScreen({
   const step = STEPS[currentStep - 1];
 
   return (
-    <div className="w-full min-h-screen bg-background flex flex-col px-6">
+    <div className="w-full min-h-screen bg-background flex flex-col">
       <div className="flex justify-center pt-8 pb-6">
         <div
           style={{
@@ -150,14 +150,14 @@ function StepsScreen({
               "transform 500ms cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 300ms",
           }}
         >
-          <Logo style="h-8" />
+          <Logo style="h-8 px-7" />
         </div>
       </div>
 
       <div className="w-full mx-auto flex-1 flex flex-col items-center justify-center">
         <div className="w-full max-w-xl">
           {/* Indicador de passos */}
-          <div className="flex items-center justify-center scale-90 min-[640px]:scale-100 gap-0.5 min-[640px]:gap-4 mb-10">
+          <div className="flex items-center justify-center scale-90 min-[640px]:scale-100 gap-0.5 min-[640px]:gap-4">
             {STEPS.map((s, index) => {
               const isCompleted = s.id < currentStep;
               const isActive = s.id === currentStep;
@@ -206,27 +206,11 @@ function StepsScreen({
           {currentStep === 1 && (
             <>
               <AddressForm onSaved={onNext} fixedButtons />
-              <button
-                type="button"
-                onClick={onPrev}
-                className="fixed top-2 left-2 px-2 py-0.5 text-xs sm:text-sm rounded-lg border border-white bg-background hover:bg-muted transition-colors"
-              >
-                voltar
-              </button>
-              <Button
-                type="submit"
-                form="address-form"
-                className="fixed w-52 bottom-10 left-1/2 -translate-x-1/2 rounded-full shadow-lg px-8"
-              >
-                Salvar endereço
-              </Button>
-              <Button
-              variant="ghost"
-                onClick={onPrev}
-                className="fixed w-fit h-fit bottom-1 py-1 left-1/2 -translate-x-1/2 rounded-full shadow-lg px-8"
-              >
-                voltar
-              </Button>
+              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg z-60">
+                <Button type="submit" form="address-form" className="w-48 px-8">
+                  Salvar endereço
+                </Button>
+              </div>
             </>
           )}
 
@@ -234,20 +218,23 @@ function StepsScreen({
           {currentStep === 2 && (
             <>
               <OpeningHoursForm onSaved={onNext} fixedButtons />
-              <button
-                type="button"
-                onClick={onPrev}
-                className="fixed top-6 left-6 px-4 py-2 text-sm rounded-lg border bg-background hover:bg-muted transition-colors"
-              >
-                Voltar
-              </button>
-              <Button
-                type="submit"
-                form="opening-hours-form"
-                className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full shadow-lg px-8"
-              >
-                Salvar horários
-              </Button>
+              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg z-60">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-20"
+                  onClick={onPrev}
+                >
+                  Voltar
+                </Button>
+                <Button
+                  type="submit"
+                  form="opening-hours-form"
+                  className="w-36 px-8"
+                >
+                  Salvar horários
+                </Button>
+              </div>
             </>
           )}
 
@@ -265,16 +252,11 @@ function StepsScreen({
               </div>
 
               <div className="flex justify-between mt-6">
-                <button
-                  onClick={onPrev}
-                  className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors"
-                >
+                <Button variant="outline" onClick={onPrev}>
                   Voltar
-                </button>
+                </Button>
                 {currentStep < STEPS.length ? (
-                  <Button onClick={onNext} className="w-26">
-                    Próximo
-                  </Button>
+                  <Button onClick={onNext}>Próximo</Button>
                 ) : (
                   <Button onClick={onComplete}>Concluir</Button>
                 )}

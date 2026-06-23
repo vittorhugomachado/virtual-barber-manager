@@ -218,8 +218,7 @@ function StepsScreen({
           {currentStep === 2 && (
             <>
               <OpeningHoursForm onSaved={onNext} fixedButtons />
-              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg 
-              ">
+              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg              ">
                 <Button
                   type="button"
                   variant="outline"

@@ -15,7 +15,7 @@ import { upsertOpeningHours } from "@/lib/supabase/opening-hours/upsert-opening-
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { DAY_LABELS } from "@/types/opening-hours";
 import type { OpeningHours } from "@/types/opening-hours";
-import { AlertTriangle, Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 
 type PeriodEntry = Omit<OpeningHours, "id">;
 
@@ -193,6 +193,10 @@ export function OpeningHoursForm({
 
   async function handleSave() {
     if (!barbershop?.id) return;
+    if (fixedButtons && !isDirty) {
+      onSaved?.();
+      return;
+    }
 
     const valid = validateDays(days);
     if (!valid) {

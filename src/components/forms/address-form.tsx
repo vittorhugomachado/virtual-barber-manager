@@ -191,6 +191,10 @@ export function AddressForm({
 
   async function onSubmit(data: FormValues) {
     if (!barbershop?.id) return;
+    if (fixedButtons && !form.formState.isDirty) {
+      onSaved?.();
+      return;
+    }
 
     const payload = {
       barbershop_id: barbershop.id,

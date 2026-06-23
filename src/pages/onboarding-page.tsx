@@ -154,10 +154,10 @@ function StepsScreen({
         </div>
       </div>
 
-      <div className="w-full mx-auto flex-1 flex flex-col items-center justify-center">
-        <div className="w-full max-w-xl">
+      <div className="w-full h-full mx-auto flex-1 flex flex-col items-center justify-between">
+        <div className="w-full h-full max-w-xl flex flex-col justify-between gap-8">
           {/* Indicador de passos */}
-          <div className="flex items-center justify-center scale-90 min-[640px]:scale-100 gap-0.5 min-[640px]:gap-4">
+          <div className="flex items-center mt-6 justify-center scale-90 min-[640px]:scale-100 gap-0.5 min-[640px]:gap-4">
             {STEPS.map((s, index) => {
               const isCompleted = s.id < currentStep;
               const isActive = s.id === currentStep;
@@ -206,7 +206,7 @@ function StepsScreen({
           {currentStep === 1 && (
             <>
               <AddressForm onSaved={onNext} fixedButtons />
-              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg z-60">
+              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg">
                 <Button type="submit" form="address-form" className="w-48 px-8">
                   Salvar endereço
                 </Button>
@@ -218,7 +218,8 @@ function StepsScreen({
           {currentStep === 2 && (
             <>
               <OpeningHoursForm onSaved={onNext} fixedButtons />
-              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg z-60">
+              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg 
+              ">
                 <Button
                   type="button"
                   variant="outline"

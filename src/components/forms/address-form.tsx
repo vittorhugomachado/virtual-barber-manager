@@ -238,7 +238,7 @@ export function AddressForm({
       onSubmit={form.handleSubmit(onSubmit)}
       className={`w-full max-w-180 lg:mx-auto md:px-16 flex flex-col gap-6 mb-6 ${fixedButtons ? "pb-24" : ""}`}
     >
-      <Card className="bg-transparent border-none">
+      <Card className="bg-transparent border-none shadow-none">
         {!fixedButtons ? (
           <CardHeader className="mt-3">
             <div className="flex flex-col w-fit">

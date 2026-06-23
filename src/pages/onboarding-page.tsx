@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Check } from "lucide-react";
+import { Check, Undo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/common/logo";
 import { AddressForm } from "@/components/forms/address-form";
+import { OpeningHoursForm } from "@/components/forms/opening-hours-form";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 
@@ -69,7 +70,6 @@ function WelcomeScreen({
   return (
     <div className="w-full min-h-screen bg-background flex flex-col items-center justify-center p-6 overflow-hidden">
       <div className="w-full max-w-sm flex flex-col items-center text-center gap-6">
-        {/* Logo — desliza para baixo e sai da tela ao clicar em começar */}
         <div
           style={{
             opacity: logoVisible ? 1 : 0,
@@ -80,7 +80,6 @@ function WelcomeScreen({
           <Logo style="h-10" />
         </div>
 
-        {/* Texto — some imediatamente ao sair */}
         <div
           className={cn(
             "flex flex-col gap-2 transition-opacity duration-100",
@@ -133,7 +132,6 @@ function StepsScreen({
 }) {
   const [logoReady, setLogoReady] = useState(false);
 
-  // Logo desliza do topo para a posição final ao montar
   useEffect(() => {
     const t = setTimeout(() => setLogoReady(true), 50);
     return () => clearTimeout(t);
@@ -143,7 +141,6 @@ function StepsScreen({
 
   return (
     <div className="w-full min-h-screen bg-background flex flex-col px-6">
-      {/* Logo desce do topo até a posição — simula continuidade do scroll */}
       <div className="flex justify-center pt-8 pb-6">
         <div
           style={{
@@ -157,11 +154,10 @@ function StepsScreen({
         </div>
       </div>
 
-      {/* Conteúdo dos passos */}
       <div className="w-full mx-auto flex-1 flex flex-col items-center justify-center">
         <div className="w-full max-w-xl">
           {/* Indicador de passos */}
-          <div className="flex items-center justify-center gap-4 mb-10">
+          <div className="flex items-center justify-center scale-90 min-[640px]:scale-100 gap-0.5 min-[640px]:gap-4 mb-10">
             {STEPS.map((s, index) => {
               const isCompleted = s.id < currentStep;
               const isActive = s.id === currentStep;
@@ -206,49 +202,84 @@ function StepsScreen({
             })}
           </div>
 
-          {/* Formulário do passo atual */}
-          {currentStep === 1 ? (
+          {/* Passo 1 — Endereço */}
+          {currentStep === 1 && (
             <>
               <AddressForm onSaved={onNext} fixedButtons />
+              <button
+                type="button"
+                onClick={onPrev}
+                className="fixed top-2 left-2 px-2 py-0.5 text-xs sm:text-sm rounded-lg border border-white bg-background hover:bg-muted transition-colors"
+              >
+                voltar
+              </button>
               <Button
                 type="submit"
                 form="address-form"
-                className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full shadow-lg px-8"
+                className="fixed w-52 bottom-10 left-1/2 -translate-x-1/2 rounded-full shadow-lg px-8"
               >
                 Salvar endereço
               </Button>
+              <Button
+              variant="ghost"
+                onClick={onPrev}
+                className="fixed w-fit h-fit bottom-1 py-1 left-1/2 -translate-x-1/2 rounded-full shadow-lg px-8"
+              >
+                voltar
+              </Button>
             </>
-          ) : (
-            <div className="border rounded-xl p-6 bg-card min-h-64">
-              <h2 className="text-lg font-medium mb-1">{step.label}</h2>
-              <p className="text-muted-foreground text-sm mb-6">
-                {step.description}
-              </p>
-              <div className="h-32 flex items-center justify-center rounded-lg border border-dashed text-muted-foreground text-sm">
-                Formulário de {step.label.toLowerCase()} em breve
-              </div>
-            </div>
           )}
 
-          {/* Navegação — oculta no step 1 (o AddressForm tem seu próprio botão) */}
-          {currentStep > 1 && (
-            <div className="flex justify-between mt-6">
+          {/* Passo 2 — Horários */}
+          {currentStep === 2 && (
+            <>
+              <OpeningHoursForm onSaved={onNext} fixedButtons />
               <button
+                type="button"
                 onClick={onPrev}
-                className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors"
+                className="fixed top-6 left-6 px-4 py-2 text-sm rounded-lg border bg-background hover:bg-muted transition-colors"
               >
                 Voltar
               </button>
-              {currentStep < STEPS.length ? (
-                <Button onClick={onNext} className="w-26">
-                  Próximo
-                </Button>
-              ) : (
-                <Button onClick={onComplete}>
-                  Concluir
-                </Button>
-              )}
-            </div>
+              <Button
+                type="submit"
+                form="opening-hours-form"
+                className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full shadow-lg px-8"
+              >
+                Salvar horários
+              </Button>
+            </>
+          )}
+
+          {/* Passos 3-5 — placeholder */}
+          {currentStep > 2 && (
+            <>
+              <div className="border rounded-xl p-6 bg-card min-h-64">
+                <h2 className="text-lg font-medium mb-1">{step.label}</h2>
+                <p className="text-muted-foreground text-sm mb-6">
+                  {step.description}
+                </p>
+                <div className="h-32 flex items-center justify-center rounded-lg border border-dashed text-muted-foreground text-sm">
+                  Formulário de {step.label.toLowerCase()} em breve
+                </div>
+              </div>
+
+              <div className="flex justify-between mt-6">
+                <button
+                  onClick={onPrev}
+                  className="px-4 py-2 text-sm rounded-lg border hover:bg-muted transition-colors"
+                >
+                  Voltar
+                </button>
+                {currentStep < STEPS.length ? (
+                  <Button onClick={onNext} className="w-26">
+                    Próximo
+                  </Button>
+                ) : (
+                  <Button onClick={onComplete}>Concluir</Button>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>

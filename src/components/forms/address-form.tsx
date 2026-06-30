@@ -190,9 +190,22 @@ export function AddressForm({
   }
 
   async function onSubmit(data: FormValues) {
-    if (!barbershop?.id) return;
-    if (fixedButtons && !form.formState.isDirty) {
-      onSaved?.();
+    console.log("🚀 onSubmit CHAMADO!", data);
+
+    // Se for fixedButtons, valida os campos obrigatórios
+    if (fixedButtons) {
+      const isValid = data.street && data.city && data.state && data.zip_code;
+
+      if (!isValid) {
+        console.log("❌ Campos obrigatórios faltando");
+        toast.error("Preencha todos os campos obrigatórios antes de continuar");
+        return; // Impede o avanço
+      }
+    }
+
+    if (!barbershop?.id) {
+      console.warn("❌ Sem barbershop.id");
+      toast.error("Erro ao salvar endereço");
       return;
     }
 
@@ -208,7 +221,7 @@ export function AddressForm({
       country: data.country,
       updated_at: new Date().toISOString(),
     };
-
+    console.log("Payload:", payload);
     let error;
 
     if (addressId) {
@@ -233,12 +246,12 @@ export function AddressForm({
 
     toast.success("Endereço salvo!");
     form.reset(data);
-    onSaved?.();
+    onSaved?.(); // Só avança se salvou com sucesso
   }
 
   return (
     <form
-      id={fixedButtons ? "address-form" : undefined}
+      id="address-form"
       onSubmit={form.handleSubmit(onSubmit)}
       className={`w-full max-w-180 lg:mx-auto md:px-16 flex flex-col gap-6 mb-6 ${fixedButtons ? "pb-24" : ""}`}
     >

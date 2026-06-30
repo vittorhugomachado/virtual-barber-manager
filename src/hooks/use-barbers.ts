@@ -7,7 +7,7 @@ export function useBarbers() {
   const { barbershop } = useBarbershopStore();
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(true);
-
+console.log("barbershop", barbershop);
   useEffect(() => {
     if (!barbershop?.id) return;
     let mounted = true;

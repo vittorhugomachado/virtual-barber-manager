@@ -28,13 +28,24 @@ export function ManageTeamMain({
   const [createOpen, setCreateOpen] = useState(false);
   const [editBarber, setEditBarber] = useState<Barber | null>(null);
 
-  const activeCount = barbers.filter(b => b.is_active).length;
+  // 🔥 No onboarding, todos os barbeiros são considerados ativos visualmente
+  const displayBarbers = fixedButtons
+    ? barbers.map(barber => ({
+        ...barber,
+        is_active: true,
+      }))
+    : barbers;
+
+  const activeCount = displayBarbers.filter(b => b.is_active).length;
 
   function notifyDashboardRefresh() {
     window.dispatchEvent(new Event(DASHBOARD_REFRESH_EVENT));
   }
 
   async function toggleActive(id: string) {
+    // 🔥 No onboarding, não permite toggle
+    if (fixedButtons) return;
+
     const target = barbers.find(b => b.id === id);
     if (!target) return;
 
@@ -56,9 +67,9 @@ export function ManageTeamMain({
     >
       {fixedButtons ? (
         <Card className="bg-transparent border-none shadow-none">
-          <CardHeader className="mt-3">
+          <CardHeader>
             <div className="flex mx-auto flex-col w-fit">
-              <CardTitle className="font-semibold text-2xl">
+              <CardTitle className="font-semibold text-2xl text-center">
                 Quem são os barbeiros?
               </CardTitle>
             </div>
@@ -73,8 +84,8 @@ export function ManageTeamMain({
             </span>
             <span className="inline-flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-red-500 inline-block" />
-              {barbers.length - activeCount} inativo
-              {barbers.length - activeCount !== 1 ? "s" : ""}
+              {displayBarbers.length - activeCount} inativo
+              {displayBarbers.length - activeCount !== 1 ? "s" : ""}
             </span>
           </p>
           {activeCount === 0 && (
@@ -88,56 +99,11 @@ export function ManageTeamMain({
         </div>
       )}
 
-      <div className="flex justify-center flex-wrap gap-4">
-        {barbers.map(barber => (
-          <Card
-            key={barber.id}
-            className={`${!barber.is_active && "bg-zinc-950"} relative w-full max-w-80 mx-auto`}
-          >
-            <CardContent className="flex flex-col items-center gap-4 pt-8 pb-6">
-              <Badge
-                className={`${barber.is_active ? "bg-green-400" : "bg-red-500"} absolute top-3 right-3 cursor-pointer select-none`}
-                variant={barber.is_active ? "default" : "secondary"}
-                onClick={() => toggleActive(barber.id)}
-              >
-                {barber.is_active ? "Ativo" : "Inativo"}
-              </Badge>
-
-              <div className="flex flex-col items-center gap-4 w-full">
-                <div
-                  className={`${!barber.is_active && "opacity-30"} flex flex-col items-center gap-4 w-full`}
-                >
-                  <Avatar className="h-23 w-23 md:h-35 md:w-35">
-                    <AvatarImage src={barber.avatar_url ?? undefined} />
-                    <AvatarFallback className="text-xl">
-                      {barber.name.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex flex-col items-center gap-1 text-center">
-                    <span className="font-semibold">{barber.name}</span>
-                    <span className="text-sm text-muted-foreground line-clamp-2">
-                      {barber.description}
-                    </span>
-                  </div>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="w-full cursor-pointer rounded-full"
-                  onClick={() => setEditBarber(barber)}
-                >
-                  <Pencil className="h-3.5 w-3.5 mr-2" />
-                  Editar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
+      {/* 🔥 Mudança: flex → grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center">
         <Card
           onClick={() => setCreateOpen(true)}
-          className="w-50 border-dashed cursor-pointer bg-zinc-200 dark:bg-zinc-900 hover:border-primary transition-colors"
+          className="w-full max-w-70 border-dashed cursor-pointer bg-zinc-200 dark:bg-zinc-900 hover:border-primary transition-colors"
         >
           <CardContent className="flex flex-col items-center justify-center gap-3 pt-8 pb-6 h-full min-h-52">
             <Button className="h-12 w-12 rounded-full flex items-center justify-center">
@@ -148,6 +114,59 @@ export function ManageTeamMain({
             </span>
           </CardContent>
         </Card>
+
+        {displayBarbers.map(barber => {
+          const isActive = fixedButtons ? true : barber.is_active;
+
+          return (
+            <Card
+              key={barber.id}
+              className={`${!isActive && "bg-zinc-950"} relative w-full max-w-70 mx-auto`}
+            >
+              <CardContent className="flex flex-col items-center gap-4 pt-8 pb-6">
+                {/* 🔥 Badge: no onboarding mostra apenas "Ativo" e não é clicável */}
+                {!fixedButtons && (
+                  <Badge
+                    className={`${isActive ? "bg-green-400" : "bg-red-500"} absolute top-3 right-3 select-none ${!fixedButtons ? "cursor-pointer" : "cursor-default"}`}
+                    variant={isActive ? "default" : "secondary"}
+                    onClick={() => toggleActive(barber.id)}
+                  >
+                    {isActive ? "Ativo" : "Inativo"}
+                  </Badge>
+                )}
+
+                <div className="flex flex-col items-center gap-4 w-full">
+                  <div
+                    className={`${!isActive && "opacity-30"} flex flex-col items-center gap-4 w-full`}
+                  >
+                    <Avatar className="h-23 w-23 md:h-35 md:w-35">
+                      <AvatarImage src={barber.avatar_url ?? undefined} />
+                      <AvatarFallback className="text-xl">
+                        {barber.name.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="flex flex-col items-center gap-1 text-center">
+                      <span className="font-semibold">{barber.name}</span>
+                      <span className="text-sm text-muted-foreground line-clamp-2">
+                        {barber.description}
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full cursor-pointer rounded-full"
+                    onClick={() => setEditBarber(barber)}
+                  >
+                    <Pencil className="h-3.5 w-3.5 mr-2" />
+                    Editar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {fixedButtons && (

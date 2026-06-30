@@ -48,6 +48,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useFutureAppointmentsCount } from "@/hooks/use-future-appointments-count";
+import { useLocation } from "react-router";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -71,6 +72,7 @@ export function UpdateBarberModal({
   onUpdated,
   onDeleted,
 }: UpdateBarberModalProps) {
+  const location = useLocation();
   const { barbershop } = useBarbershopStore();
   const { services } = useBarbershopServices();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -192,7 +194,9 @@ export function UpdateBarberModal({
 
     await saveBarberAvailability(barber.id, barbershop.id, availability);
 
-    toast.success("Barbeiro atualizado!");
+    if (location.pathname !== "/onboarding") {
+      toast.success("Barbeiro atualizado!");
+    }
     onUpdated({ ...barber, name: data.name, avatar_url: avatarUrl });
     onClose();
   }
@@ -222,7 +226,9 @@ export function UpdateBarberModal({
     }
 
     setDeleting(false);
-    toast.success("Barbeiro excluído!");
+    if (location.pathname !== "/onboarding") {
+      toast.success("Barbeiro excluído!");
+    }
     onDeleted(barber.id);
     onClose();
   }
@@ -230,7 +236,7 @@ export function UpdateBarberModal({
   return (
     <>
       <Dialog open={open} onOpenChange={o => !o && onClose()}>
-        <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto py-8">
           <DialogHeader>
             <DialogTitle className="mb-4">Editar barbeiro</DialogTitle>
           </DialogHeader>
@@ -366,38 +372,17 @@ export function UpdateBarberModal({
             )}
           </form>
 
-          <DialogFooter
-            style={{ justifyContent: "space-between" }}
-            className="flex-row flex-wrap items-center justify-between gap-2"
-          >
-            <div className="flex gap-2 w-full justify-center order-first sm:order-last sm:w-auto">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="rounded-full"
-              >
-                Cancelar
-              </Button>
-              <Button
-                className="rounded-full"
-                type="submit"
-                form="update-barber-form"
-                disabled={form.formState.isSubmitting}
-              >
-                {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
-              </Button>
-            </div>
+          <DialogFooter className="flex-col items-between justify-between gap-5">
             <AlertDialog>
-              <AlertDialogTrigger asChild className="flex">
+              <AlertDialogTrigger asChild className="flex w-full">
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="text-destructive mx-auto sm:mx-0 hover:text-destructive cursor-pointer order-last sm:order-first"
+                  className="w-fit text-destructive mx-auto hover:text-destructive cursor-pointer"
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
-                  Excluir
+                  Excluir barbeiro
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -440,6 +425,27 @@ export function UpdateBarberModal({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            <div
+              style={{ justifyContent: "space-between" }}
+              className="w-full flex gap-2 items-center sm:justify-between"
+            >
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="rounded-full w-26"
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="rounded-full w-32"
+                type="submit"
+                form="update-barber-form"
+                disabled={form.formState.isSubmitting}
+              >
+                {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -13,7 +13,7 @@ export async function createBarber({
 }: CreateBarberParams): Promise<{ id: string } | null> {
   const { data, error } = await supabase
     .from("barbers")
-    .insert({ barbershop_id: barbershopId, name, is_active: false })
+    .insert({ barbershop_id: barbershopId, name, is_active: true })
     .select("id")
     .single();
 

@@ -156,7 +156,7 @@ function StepsScreen({
       </div>
 
       <div className="w-full h-full mx-auto flex-1 flex flex-col items-center justify-between">
-        <div className="w-full h-full max-w-xl flex flex-col justify-between gap-8">
+        <div className="w-full h-full flex flex-col justify-between gap-8">
           {/* Indicador de passos */}
           <div className="flex items-center mt-6 justify-center scale-90 min-[640px]:scale-100 gap-0.5 min-[640px]:gap-4">
             {STEPS.map((s, index) => {
@@ -222,7 +222,7 @@ function StepsScreen({
                     form="address-form"
                     className="w-36 px-8"
                   >
-                    Salvar endereço
+                    Próximo
                   </Button>
                 </div>
               </div>
@@ -248,7 +248,7 @@ function StepsScreen({
                     form="opening-hours-form"
                     className="w-36 px-8"
                   >
-                    Salvar horários
+                    Próximo
                   </Button>
                 </div>
               </div>
@@ -274,7 +274,7 @@ function StepsScreen({
                     form="opening-hours-form"
                     className="w-36 px-8"
                   >
-                    Salvar barbeiros
+                    Próximo
                   </Button>
                 </div>
               </div>

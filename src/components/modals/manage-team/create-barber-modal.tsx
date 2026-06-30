@@ -129,7 +129,9 @@ export function CreateBarberModal({
 
     await saveBarberAvailability(result.id, barbershop.id, availability);
 
-    toast.success("Barbeiro criado!");
+    if (location.pathname !== "/onboarding") {
+      toast.success("Barbeiro criado!");
+    }
     onCreated({
       id: result.id,
       barbershop_id: barbershop.id,
@@ -275,17 +277,17 @@ export function CreateBarberModal({
             />
           </form>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-reverse-col gap-2 sm:flex-row items-center sm:justify-between">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="rounded-full"
+              className="rounded-full w-26"
             >
               Cancelar
             </Button>
             <Button
-              className="rounded-full"
+              className="rounded-full w-32"
               type="submit"
               form="create-barber-form"
               disabled={form.formState.isSubmitting}

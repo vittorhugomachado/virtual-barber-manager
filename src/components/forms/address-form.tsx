@@ -181,7 +181,7 @@ export function AddressForm({
       form.setValue("state", data.uf ?? "", { shouldDirty: true });
       form.setValue("country", "Brasil", { shouldDirty: true });
       form.clearErrors(["street", "neighborhood", "city", "state"]);
-      toast.success("Endereço preenchido automaticamente");
+      if (!fixedButtons) toast.success("Endereço preenchido automaticamente");
     } catch {
       toast.error("Erro ao buscar CEP");
     } finally {
@@ -244,7 +244,7 @@ export function AddressForm({
       return;
     }
 
-    toast.success("Endereço salvo!");
+    if (!fixedButtons) toast.success("Endereço salvo!");
     form.reset(data);
     onSaved?.(); // Só avança se salvou com sucesso
   }
@@ -264,9 +264,9 @@ export function AddressForm({
             </div>
           </CardHeader>
         ) : (
-          <CardHeader className="mt-3">
+          <CardHeader>
             <div className="flex mx-auto flex-col w-fit">
-              <CardTitle className="font-semibold text-2xl">
+              <CardTitle className="font-semibold text-2xl text-center">
                 Qual endereço da sua barbearia?
               </CardTitle>
             </div>

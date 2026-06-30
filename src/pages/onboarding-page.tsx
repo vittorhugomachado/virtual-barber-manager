@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/common/logo";
 import { AddressForm } from "@/components/forms/address-form";
 import { OpeningHoursForm } from "@/components/forms/opening-hours-form";
+import { ManageTeamMain } from "@/components/main/manage-team-main";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 
@@ -22,8 +23,8 @@ const STEPS: Step[] = [
     description: "Onde sua barbearia fica localizada",
   },
   { id: 2, label: "Horários", description: "Dias e horários de funcionamento" },
-  { id: 3, label: "Serviços", description: "O que você oferece e os preços" },
-  { id: 4, label: "Barbeiros", description: "Sua equipe de profissionais" },
+  { id: 3, label: "Barbeiros", description: "Sua equipe de profissionais" },
+  { id: 4, label: "Serviços", description: "O que você oferece e os preços" },
   {
     id: 5,
     label: "Página",
@@ -207,9 +208,23 @@ function StepsScreen({
             <>
               <AddressForm onSaved={onNext} fixedButtons />
               <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg">
-                <Button type="submit" form="address-form" className="w-48 px-8">
-                  Salvar endereço
-                </Button>
+                <div className="flex justify-between w-full max-w-xl px-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-20"
+                    onClick={onPrev}
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    type="submit"
+                    form="address-form"
+                    className="w-36 px-8"
+                  >
+                    Salvar endereço
+                  </Button>
+                </div>
               </div>
             </>
           )}
@@ -218,7 +233,7 @@ function StepsScreen({
           {currentStep === 2 && (
             <>
               <OpeningHoursForm onSaved={onNext} fixedButtons />
-              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg              ">
+              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg">
                 <div className="flex justify-between w-full max-w-xl px-3">
                   <Button
                     type="button"
@@ -240,8 +255,13 @@ function StepsScreen({
             </>
           )}
 
-          {/* Passos 3-5 — placeholder */}
-          {currentStep > 2 && (
+          {/* Passo 3 — Barbeiros */}
+          {currentStep === 3 && (
+            <ManageTeamMain fixedButtons onSaved={onNext} onPrev={onPrev} />
+          )}
+
+          {/* Passos 4-5 — placeholder */}
+          {currentStep > 3 && (
             <>
               <div className="border rounded-xl p-6 bg-card min-h-64">
                 <h2 className="text-lg font-medium mb-1">{step.label}</h2>

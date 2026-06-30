@@ -16,6 +16,16 @@ import { useBarbershopStore } from "@/store/barbershop.store";
 import { DAY_LABELS } from "@/types/opening-hours";
 import type { OpeningHours } from "@/types/opening-hours";
 import { Loader2, Plus, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type PeriodEntry = Omit<OpeningHours, "id">;
 
@@ -93,6 +103,7 @@ export function OpeningHoursForm({
   const [days, setDays] = useState<DayConfig[]>(DEFAULT_DAYS);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -191,12 +202,12 @@ export function OpeningHoursForm({
     return Object.keys(newErrors).length === 0;
   }
 
-  async function handleSave() {
+  function isAllDaysClosed(currentDays: DayConfig[]): boolean {
+    return currentDays.every(day => !day.is_open);
+  }
+
+  async function performSave(shouldCallOnSaved: boolean = true) {
     if (!barbershop?.id) return;
-    if (fixedButtons && !isDirty) {
-      onSaved?.();
-      return;
-    }
 
     const valid = validateDays(days);
     if (!valid) {
@@ -216,217 +227,277 @@ export function OpeningHoursForm({
 
     toast.success("Horários salvos!");
     setInitialDays(days);
-    onSaved?.();
+    if (shouldCallOnSaved) {
+      onSaved?.();
+    }
+  }
+
+  async function handleSave() {
+    if (!barbershop?.id) return;
+
+    // Se fixedButtons e não há alterações, verifica se todos estão fechados
+    if (fixedButtons && !isDirty) {
+      // Se todos os dias estão fechados, mostra o modal
+      if (isAllDaysClosed(days)) {
+        setShowConfirmDialog(true);
+        return;
+      }
+      onSaved?.();
+      return;
+    }
+
+    // Verifica se todos os dias estão fechados
+    if (isAllDaysClosed(days)) {
+      setShowConfirmDialog(true);
+      return;
+    }
+
+    await performSave();
   }
 
   const isDirty = JSON.stringify(days) !== JSON.stringify(initialDays);
 
   return (
-    <form
-      id={fixedButtons ? "opening-hours-form" : undefined}
-      onSubmit={e => {
-        e.preventDefault();
-        handleSave();
-      }}
-      className={`w-full max-w-180 lg:mx-auto md:px-16 flex flex-col gap-6 mb-6 ${fixedButtons ? "pb-24" : ""}`}
-    >
-      <Card className="bg-transparent border-none shadow-none">
-        {!fixedButtons ? (
-          <CardHeader className="mt-3">
-            <div className="flex flex-col w-fit">
-              <CardTitle className="font-semibold text-2xl">
-                Horário de funcionamento
-              </CardTitle>
-              <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
-            </div>
-          </CardHeader>
-        ) : (
-          <CardHeader className="mt-3">
-            <div className="flex mx-auto flex-col w-fit">
-              <CardTitle className="font-semibold text-2xl">
-                Quais os horários?
-              </CardTitle>
-            </div>
-          </CardHeader>
-        )}
+    <>
+      <form
+        id={fixedButtons ? "opening-hours-form" : undefined}
+        onSubmit={e => {
+          e.preventDefault();
+          handleSave();
+        }}
+        className={`w-full max-w-180 lg:mx-auto md:px-16 flex flex-col gap-6 mb-6 ${fixedButtons ? "pb-24" : ""}`}
+      >
+        <Card className="bg-transparent border-none shadow-none">
+          {!fixedButtons ? (
+            <CardHeader className="mt-3">
+              <div className="flex flex-col w-fit">
+                <CardTitle className="font-semibold text-2xl">
+                  Horário de funcionamento
+                </CardTitle>
+                <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
+              </div>
+            </CardHeader>
+          ) : (
+            <CardHeader className="mt-3">
+              <div className="flex mx-auto flex-col w-fit">
+                <CardTitle className="font-semibold text-2xl">
+                  Quais os horários?
+                </CardTitle>
+              </div>
+            </CardHeader>
+          )}
 
-        {loading ? (
-          <CardContent className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Carregando...
-          </CardContent>
-        ) : (
-          <CardContent className="flex flex-col gap-6">
-            <div className="flex flex-col gap-3">
-              {days.map(day => (
-                <div
-                  key={day.day_of_week}
-                  className="flex flex-col gap-3 p-4 rounded-lg border"
-                >
-                  <div className="flex items-center gap-3">
-                    <Switch
-                      checked={day.is_open}
-                      onCheckedChange={v => toggleDay(day.day_of_week, v)}
-                      className="cursor-pointer"
-                    />
-                    <span className="text-sm font-medium">
-                      {DAY_LABELS[day.day_of_week]}
-                    </span>
-                  </div>
+          {loading ? (
+            <CardContent className="flex items-center gap-2 text-muted-foreground text-sm mx-auto mt-18">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Carregando...
+            </CardContent>
+          ) : (
+            <CardContent className="flex flex-col gap-6">
+              <div className="flex flex-col gap-3">
+                {days.map(day => (
+                  <div
+                    key={day.day_of_week}
+                    className="flex flex-col gap-3 p-4 rounded-lg border"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={day.is_open}
+                        onCheckedChange={v => toggleDay(day.day_of_week, v)}
+                        className="cursor-pointer"
+                      />
+                      <span className="text-sm font-medium">
+                        {DAY_LABELS[day.day_of_week]}
+                      </span>
+                    </div>
 
-                  {day.is_open ? (
-                    <>
-                      <p className="text-sm text-muted-foreground pl-3 flex gap-2 items-center">
-                        <span className="inline-block rounded-full w-2 h-2 bg-green-600" />
-                        Aberto
-                      </p>
-                      <div className="flex flex-col items-center gap-2">
-                        {day.periods.map((period, idx) => (
-                          <div
-                            key={idx}
-                            className={`w-full min-w-66 max-w-95 ml-6 flex items-start gap-2 relative ${day.periods.length > 1 ? "pr-14" : "pr-6"}`}
+                    {day.is_open ? (
+                      <>
+                        <p className="text-sm text-muted-foreground pl-3 flex gap-2 items-center">
+                          <span className="inline-block rounded-full w-2 h-2 bg-green-600" />
+                          Aberto
+                        </p>
+                        <div className="flex flex-col items-center gap-2">
+                          {day.periods.map((period, idx) => (
+                            <div
+                              key={idx}
+                              className={`w-full min-w-66 max-w-95 ml-6 flex items-start gap-2 relative ${day.periods.length > 1 ? "pr-14" : "pr-6"}`}
+                            >
+                              <div className="flex-1 flex flex-col gap-1">
+                                <Select
+                                  value={period.opens_at}
+                                  onValueChange={v =>
+                                    updatePeriod(
+                                      day.day_of_week,
+                                      idx,
+                                      "opens_at",
+                                      v,
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger
+                                    className={`w-full ${errors[errorKey(day.day_of_week, idx, "opens_at")] ? "border-destructive" : ""}`}
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {TIME_OPTIONS.map(t => (
+                                      <SelectItem key={t} value={t}>
+                                        {t}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                {errors[
+                                  errorKey(day.day_of_week, idx, "opens_at")
+                                ] && (
+                                  <p className="text-xs text-center text-destructive">
+                                    {
+                                      errors[
+                                        errorKey(
+                                          day.day_of_week,
+                                          idx,
+                                          "opens_at",
+                                        )
+                                      ]
+                                    }
+                                  </p>
+                                )}
+                              </div>
+
+                              <span className="text-sm text-muted-foreground shrink-0 mb-auto mt-2">
+                                até
+                              </span>
+
+                              <div className="flex-1 flex flex-col gap-1">
+                                <Select
+                                  value={period.closes_at}
+                                  onValueChange={v =>
+                                    updatePeriod(
+                                      day.day_of_week,
+                                      idx,
+                                      "closes_at",
+                                      v,
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger
+                                    className={`w-full ${errors[errorKey(day.day_of_week, idx, "closes_at")] ? "border-destructive" : ""}`}
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {TIME_OPTIONS.map(t => (
+                                      <SelectItem key={t} value={t}>
+                                        {t}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                {errors[
+                                  errorKey(day.day_of_week, idx, "closes_at")
+                                ] && (
+                                  <p className="text-xs text-center text-destructive">
+                                    {
+                                      errors[
+                                        errorKey(
+                                          day.day_of_week,
+                                          idx,
+                                          "closes_at",
+                                        )
+                                      ]
+                                    }
+                                  </p>
+                                )}
+                              </div>
+
+                              {day.periods.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive shrink-0 cursor-pointer absolute right-4"
+                                  onClick={() =>
+                                    removePeriod(day.day_of_week, idx)
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground cursor-pointer"
+                            onClick={() => addPeriod(day.day_of_week)}
                           >
-                            <div className="flex-1 flex flex-col gap-1">
-                              <Select
-                                value={period.opens_at}
-                                onValueChange={v =>
-                                  updatePeriod(
-                                    day.day_of_week,
-                                    idx,
-                                    "opens_at",
-                                    v,
-                                  )
-                                }
-                              >
-                                <SelectTrigger
-                                  className={`w-full ${errors[errorKey(day.day_of_week, idx, "opens_at")] ? "border-destructive" : ""}`}
-                                >
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {TIME_OPTIONS.map(t => (
-                                    <SelectItem key={t} value={t}>
-                                      {t}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {errors[
-                                errorKey(day.day_of_week, idx, "opens_at")
-                              ] && (
-                                <p className="text-xs text-center text-destructive">
-                                  {
-                                    errors[
-                                      errorKey(day.day_of_week, idx, "opens_at")
-                                    ]
-                                  }
-                                </p>
-                              )}
-                            </div>
+                            <Plus className="h-3.5 w-3.5 mr-1" />
+                            Período
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-sm text-muted-foreground pl-3 flex gap-2 items-center">
+                        <span className="inline-block rounded-full w-2 h-2 bg-red-600" />
+                        Fechado
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
 
-                            <span className="text-sm text-muted-foreground shrink-0 mb-auto mt-2">
-                              até
-                            </span>
-
-                            <div className="flex-1 flex flex-col gap-1">
-                              <Select
-                                value={period.closes_at}
-                                onValueChange={v =>
-                                  updatePeriod(
-                                    day.day_of_week,
-                                    idx,
-                                    "closes_at",
-                                    v,
-                                  )
-                                }
-                              >
-                                <SelectTrigger
-                                  className={`w-full ${errors[errorKey(day.day_of_week, idx, "closes_at")] ? "border-destructive" : ""}`}
-                                >
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {TIME_OPTIONS.map(t => (
-                                    <SelectItem key={t} value={t}>
-                                      {t}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {errors[
-                                errorKey(day.day_of_week, idx, "closes_at")
-                              ] && (
-                                <p className="text-xs text-center text-destructive">
-                                  {
-                                    errors[
-                                      errorKey(
-                                        day.day_of_week,
-                                        idx,
-                                        "closes_at",
-                                      )
-                                    ]
-                                  }
-                                </p>
-                              )}
-                            </div>
-
-                            {day.periods.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive shrink-0 cursor-pointer absolute right-4"
-                                onClick={() =>
-                                  removePeriod(day.day_of_week, idx)
-                                }
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="text-muted-foreground cursor-pointer"
-                          onClick={() => addPeriod(day.day_of_week)}
-                        >
-                          <Plus className="h-3.5 w-3.5 mr-1" />
-                          Período
-                        </Button>
-                      </div>
+              {!fixedButtons && (
+                <Button
+                  type="submit"
+                  disabled={saving || !isDirty}
+                  className="self-end cursor-pointer rounded-full mx-auto"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Salvando...
                     </>
                   ) : (
-                    <p className="text-sm text-muted-foreground pl-3 flex gap-2 items-center">
-                      <span className="inline-block rounded-full w-2 h-2 bg-red-600" />
-                      Fechado
-                    </p>
+                    "Salvar horários"
                   )}
-                </div>
-              ))}
-            </div>
+                </Button>
+              )}
+            </CardContent>
+          )}
+        </Card>
+      </form>
 
-            {!fixedButtons && (
-              <Button
-                type="submit"
-                disabled={saving || !isDirty}
-                className="self-end cursor-pointer rounded-full mx-auto"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  "Salvar horários"
-                )}
-              </Button>
-            )}
-          </CardContent>
-        )}
-      </Card>
-    </form>
+      {/* Modal de confirmação */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ Atenção</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você definiu todos os dias como <strong>fechado</strong>. Tem
+              certeza que deseja salvar assim?
+              <br />
+              <br />
+              Isso significa que sua barbearia não estará disponível para
+              agendamentos em nenhum dia da semana.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar e editar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setShowConfirmDialog(false);
+                await performSave(true);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Sim, salvar assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

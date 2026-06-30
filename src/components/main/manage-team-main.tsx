@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertTriangle, Pencil, Plus } from "lucide-react";
-import { useBarbershopStore } from "@/store/barbershop.store";
 import { toggleActiveBarber } from "@/lib/supabase/barbers/toggle-active-barber";
 import { useBarbers } from "@/hooks/use-barbers";
 import { ManageTeamSkeleton } from "../skeleton/manage-team-skeleton";
@@ -25,7 +24,6 @@ export function ManageTeamMain({
   onSaved,
   onPrev,
 }: ManageTeamMainProps) {
-  const { barbershop } = useBarbershopStore();
   const { barbers, setBarbers, loading } = useBarbers();
   const [createOpen, setCreateOpen] = useState(false);
   const [editBarber, setEditBarber] = useState<Barber | null>(null);
@@ -54,7 +52,7 @@ export function ManageTeamMain({
 
   return (
     <main
-      className={`w-full max-w-325 flex flex-col gap-6 px-6 md:px-12 mx-auto mt-8 ${fixedButtons ? "pb-24" : "pb-12"}`}
+      className={`w-full max-w-325 flex flex-col gap-6 px-6 md:px-12 mx-auto mt-4 ${fixedButtons ? "pb-24" : "pb-12"}`}
     >
       {fixedButtons ? (
         <Card className="bg-transparent border-none shadow-none">
@@ -90,7 +88,7 @@ export function ManageTeamMain({
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="flex justify-center flex-wrap gap-4">
         {barbers.map(barber => (
           <Card
             key={barber.id}

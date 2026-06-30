@@ -261,7 +261,7 @@ export function AddressForm({
         )}
 
         {loading ? (
-          <CardContent className="flex items-center gap-2 text-muted-foreground text-sm">
+          <CardContent className="flex items-center gap-2 text-muted-foreground text-sm mx-auto mt-18">
             <Loader2 className="h-4 w-4 animate-spin" />
             Carregando...
           </CardContent>

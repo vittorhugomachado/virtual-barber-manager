@@ -93,7 +93,7 @@ export function ManageServicesMain({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <Card
           onClick={() => setCreateOpen(true)}
-          className="border-dashed cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
+          className="w-full max-w-70 border-dashed cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
         >
           <CardContent className="flex flex-col items-center justify-center gap-3 pt-8 pb-6 h-full min-h-52">
             <Button className="h-12 w-12 rounded-full flex items-center justify-center">
@@ -111,7 +111,7 @@ export function ManageServicesMain({
           return (
             <Card
               key={service.id}
-              className={`${!isActive && "bg-zinc-950"} relative pt-0 h-full`}
+              className={`${!isActive && "bg-zinc-950"} relative w-full max-w-70 pt-0 h-full`}
             >
               <CardContent className="flex flex-col gap-3 p-0 pb-4 h-full">
                 {!fixedButtons && (

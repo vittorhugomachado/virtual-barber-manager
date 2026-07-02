@@ -47,7 +47,7 @@ Este projeto **não possui um backend próprio**. Todo o banco de dados, autenti
 ### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/seu-usuario/virtual-barber-frontend.git
+git clone https://github.com/seu-usuário/virtual-barber-frontend.git
 cd virtual-barber-frontend
 ```
 

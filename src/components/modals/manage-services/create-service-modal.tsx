@@ -45,15 +45,15 @@ function parsePriceInput(value: string) {
 }
 
 const formSchema = z.object({
-  name: z.string().min(1, "Nome e obrigatorio"),
+  name: z.string().min(1, "Nome é obrigatório"),
   description: z
     .string()
     .max(100, "Descricao deve ter no maximo 100 caracteres")
     .optional(),
-  price: z.number({ error: "Preco e obrigatorio" }).min(0, "Preco invalido"),
+  price: z.number({ error: "Preo é obrigatório" }).min(0, "Preço inválido"),
   duration_min: z
-    .number({ error: "Duracao e obrigatoria" })
-    .min(1, "Duracao invalida"),
+    .number({ error: "Duração e obrigatória" })
+    .min(1, "Duração inválida"),
   barberIds: z.array(z.string()),
 });
 
@@ -73,7 +73,7 @@ export function CreateServiceModal({
   const location = useLocation();
   const isOnboarding = location.pathname === "/onboarding";
   const { barbershop } = useBarbershopStore();
-  const { barbers } = useBarbers();
+  const { barbers } = useBarbers({ enabled: open });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
@@ -189,8 +189,8 @@ export function CreateServiceModal({
             })}
             className="mb-4 flex flex-col gap-6"
           >
-            <div className="flex items-center gap-4">
-              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+            <div className="flex flex-wrap justify-center items-center gap-4">
+              <div className="aspect-video w-32 md:w-40 shrink-0 overflow-hidden rounded-lg bg-muted">
                 {imagePreview ? (
                   <img
                     src={imagePreview}
@@ -432,5 +432,3 @@ export function CreateServiceModal({
     </>
   );
 }
-
-

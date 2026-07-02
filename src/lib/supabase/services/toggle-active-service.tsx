@@ -12,9 +12,9 @@ export async function toggleActiveService(
 
   if (error) {
     if (error.message.includes("service_plan_limit_exceeded")) {
-      toast.error("Limite de serviços atingido. Faça upgrade do plano.");
+      toast.error("Limite de serviï¿½os atingido. Faï¿½a upgrade do plano.");
     } else {
-      toast.error("Erro ao atualizar serviço");
+      toast.error("Erro ao atualizar serviï¿½o");
     }
     return false;
   }

@@ -3,12 +3,16 @@ import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import type { Barber } from "@/types/barber";
 
-export function useBarbers() {
+export function useBarbers({ enabled = true }: { enabled?: boolean } = {}) {
   const { barbershop } = useBarbershopStore();
   const [barbers, setBarbers] = useState<Barber[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(enabled);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     if (!barbershop?.id) return;
     let mounted = true;
 
@@ -22,8 +26,12 @@ export function useBarbers() {
         if (data) {
           // Ordenar pegando a data mais recente entre updated_at e created_at
           const sortedData = [...data].sort((a, b) => {
-            const dateA = a.updated_at ? new Date(a.updated_at) : new Date(a.created_at);
-            const dateB = b.updated_at ? new Date(b.updated_at) : new Date(b.created_at);
+            const dateA = a.updated_at
+              ? new Date(a.updated_at)
+              : new Date(a.created_at);
+            const dateB = b.updated_at
+              ? new Date(b.updated_at)
+              : new Date(b.created_at);
             return dateB.getTime() - dateA.getTime();
           });
           setBarbers(sortedData);
@@ -34,9 +42,7 @@ export function useBarbers() {
     return () => {
       mounted = false;
     };
-  }, [barbershop?.id]);
-
-  console.log(barbers);
+  }, [barbershop?.id, enabled]);
 
   return { barbers, setBarbers, loading };
 }

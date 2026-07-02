@@ -64,7 +64,7 @@ const formSchema = z.object({
     .string()
     .max(100, "Descricao deve ter no maximo 100 caracteres")
     .optional(),
-  price: z.number({ error: "Preco e obrigatorio" }).min(0, "Preco invalido"),
+  price: z.number({ error: "Preço é obrigatório" }).min(0, "Preço inválido"),
   duration_min: z
     .number({ error: "Duracao e obrigatoria" })
     .min(1, "Duracao invalida"),
@@ -91,7 +91,7 @@ export function UpdateServiceModal({
   const location = useLocation();
   const isOnboarding = location.pathname === "/onboarding";
   const { barbershop } = useBarbershopStore();
-  const { barbers } = useBarbers();
+  const { barbers } = useBarbers({ enabled: open });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
@@ -252,12 +252,12 @@ export function UpdateServiceModal({
   return (
     <>
       <Dialog open={open} onOpenChange={nextOpen => !nextOpen && onClose()}>
-        <DialogContent className="max-h-[90vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto">
+        <DialogContent className="max-w-md w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto py-8">
           <DialogHeader>
-            <DialogTitle className="mb-4">Editar servico</DialogTitle>
+            <DialogTitle className="mb-4">Editar serviço</DialogTitle>
           </DialogHeader>
           <DialogDescription className="sr-only">
-            Editar servico
+            Editar serviço
           </DialogDescription>
           <form
             id="update-service-form"
@@ -265,10 +265,10 @@ export function UpdateServiceModal({
               const first = Object.values(errors)[0];
               if (first?.message) toast.error(first.message as string);
             })}
-            className="mb-4 flex flex-col gap-6 px-1"
+            className="flex flex-col gap-6 mb-4"
           >
-            <div className="flex items-center gap-4">
-              <div className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
+            <div className="flex flex-wrap justify-center items-center gap-4">
+              <div className="aspect-video w-32 md:w-40 shrink-0 overflow-hidden rounded-lg bg-muted">
                 {imagePreview ? (
                   <img
                     src={imagePreview}
@@ -489,17 +489,17 @@ export function UpdateServiceModal({
             )}
           </form>
 
-          <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <DialogFooter className="flex-col items-between justify-between gap-5">
             <AlertDialog>
-              <AlertDialogTrigger asChild>
+              <AlertDialogTrigger asChild className="flex w-full">
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="cursor-pointer text-destructive hover:text-destructive"
+                  className="w-fit text-destructive mx-auto hover:text-destructive cursor-pointer"
                 >
                   <Trash2 className="mr-1 h-4 w-4" />
-                  Excluir
+                  Excluir servico
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -543,17 +543,20 @@ export function UpdateServiceModal({
               </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex justify-center gap-2">
+            <div
+              style={{ justifyContent: "space-between" }}
+              className="w-full flex gap-2 items-center sm:justify-between"
+            >
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="rounded-full"
+                className="rounded-full w-26"
               >
                 Cancelar
               </Button>
               <Button
-                className="rounded-full"
+                className="rounded-full w-32"
                 type="submit"
                 form="update-service-form"
                 disabled={form.formState.isSubmitting}
@@ -580,5 +583,3 @@ export function UpdateServiceModal({
     </>
   );
 }
-
-

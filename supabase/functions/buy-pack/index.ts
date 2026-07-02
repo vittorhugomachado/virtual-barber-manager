@@ -69,7 +69,7 @@ type RequestBody = {
 };
 
 // Cria cobranca unica no Asaas (POST /payments).
-// installmentCount > 1 ativa parcelamento no cartao (PIX ignora — sempre 1x).
+// installmentCount > 1 ativa parcelamento no cartão (PIX ignora — sempre 1x).
 async function createOneTimePayment(params: {
   customer: string;
   billingType: BillingType;
@@ -104,7 +104,7 @@ async function createOneTimePayment(params: {
   };
 
   if (params.billingType === "CREDIT_CARD" && params.creditCard) {
-    // Parcelamento: so para cartao e quando > 1 parcela.
+    // Parcelamento: so para cartão e quando > 1 parcela.
     const installments =
       params.installmentCount && params.installmentCount > 1
         ? params.installmentCount
@@ -180,7 +180,7 @@ Deno.serve(async req => {
   const mobilePhone = digits(body.mobile_phone) || undefined;
   const couponCode = body.coupon_code?.trim().toUpperCase() || undefined;
   const remoteIp = getRemoteIp(req);
-  // Parcelamento: valido apenas para cartao; ignorado para PIX.
+  // Parcelamento: valido apenas para cartão; ignorado para PIX.
   const installmentCount =
     billingType === "CREDIT_CARD" &&
     typeof body.installment_count === "number" &&
@@ -434,7 +434,7 @@ Deno.serve(async req => {
     const months = CYCLE_MONTHS[plan.asaas_cycle] ?? 6;
     const isConfirmed = CONFIRMING_STATUSES.has(payment.status ?? "");
     // #9: fim PRESERVANDO os dias restantes — vira current_period_end na hora se
-    // confirmado (cartao), ou fica como pending_period_end p/ o webhook usar no
+    // confirmado (cartão), ou fica como pending_period_end p/ o webhook usar no
     // PIX. pending_period_end NAO libera acesso sozinho.
     const computedEnd = computeNewPeriodEnd(
       sub.current_period_end,

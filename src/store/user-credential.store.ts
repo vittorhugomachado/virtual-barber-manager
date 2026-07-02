@@ -4,7 +4,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase/supabase";
 
 /**
- * Fonte unica da credencial do usuario logado para decisao de UI.
+ * Fonte unica da credencial do usuário logado para decisao de UI.
  *
  * Seguranca:
  * - A RLS continua sendo a autoridade real de acesso. Os flags abaixo
@@ -12,8 +12,8 @@ import { supabase } from "@/lib/supabase/supabase";
  * - O cache persistido serve somente para renderizar a UI mais rapido.
  * - Nao persistimos token de sessao, nem dados da barbearia (telefone,
  *   email, clientes, agenda) ou o objeto `barbershop` completo.
- * - `memberUsername` (parte local do email do proprio usuario logado) e
- *   persistido por conveniencia de UI; e PII do proprio usuario no
+ * - `memberUsername` (parte local do email do proprio usuário logado) e
+ *   persistido por conveniencia de UI; e PII do proprio usuário no
  *   sessionStorage dele, nao um segredo.
  */
 

@@ -29,7 +29,7 @@ type Member = {
 
 /**
  * Pagina provisoria de diagnostico: exibe apenas a credencial atual do
- * usuario logado para validar o fluxo do store. Substituir pela dashboard
+ * usuário logado para validar o fluxo do store. Substituir pela dashboard
  * real quando as credenciais estiverem resolvendo corretamente.
  */
 export function DashboardPage() {

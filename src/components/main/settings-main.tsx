@@ -12,7 +12,7 @@
 //   { id: "endereco", label: "Endereço" },
 //   { id: "horarios", label: "Horários" },
 //   { id: "galeria", label: "Galeria" },
-//   { id: "usuarios", label: "Usuários" },
+//   { id: "usuários", label: "Usuários" },
 // ] as const;
 //
 // function SettingsNav({
@@ -148,7 +148,7 @@
 //         </DeferredSection>
 //       </div>
 //       <Separator className="my-4 max-w-180 px-6 sm:mx-auto md:px-16" />
-//       <div id="usuarios" className="w-full scroll-mt-14">
+//       <div id="usuários" className="w-full scroll-mt-14">
 //         <DeferredSection fallback={<UsersSectionSkeleton />}>
 //           <UsersSection />
 //         </DeferredSection>

@@ -72,7 +72,7 @@ const billingOptions: Array<{
   label: string;
   icon: typeof QrCode;
 }> = [
-  { type: "CREDIT_CARD", label: "Cartao", icon: CreditCard },
+  { type: "CREDIT_CARD", label: "cartão", icon: CreditCard },
   { type: "PIX", label: "Pix", icon: QrCode },
 ];
 
@@ -80,7 +80,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   subscription_already_exists: "Voce ja possui uma assinatura.",
   provisioning_in_progress:
     "Ja estamos processando sua assinatura. Aguarde um instante.",
-  invalid_cpf_cnpj: "CPF ou CNPJ invalido.",
+  invalid_cpf_cnpj: "CPF ou CNPJ inválido.",
   invalid_credit_card_expiry:
     "Data de validade do cartão inválida. Use o formato MM/AA.",
   missing_cpf_cnpj: "Informe o CPF ou CNPJ.",
@@ -353,7 +353,7 @@ export function BuySubscriptionMain({
         return;
       }
 
-      // ~2 min (40 x 3s) sem confirmar -> PIX/cartao nao aprovam mais.
+      // ~2 min (40 x 3s) sem confirmar -> PIX/cartão nao aprovam mais.
       // Para tudo e oferece recomecar a escolha.
       if (attempts >= 40) {
         setPaymentState("timedout");
@@ -410,17 +410,17 @@ export function BuySubscriptionMain({
   // Valida todos os campos do formulário antes de submeter; retorna a primeira mensagem de erro ou null se tudo ok.
   function validateCheckout() {
     if (!selectedPlan) return "Selecione um plano.";
-    if (!barbershopId) return "Nenhuma barbearia encontrada para o usuario.";
+    if (!barbershopId) return "Nenhuma barbearia encontrada para o usuário.";
     if (!holderName.trim()) return "Informe o nome do titular.";
     if (!cpfCnpj.trim()) return "Informe o CPF ou CNPJ.";
-    if (!isValidCpfCnpj(cpfCnpj)) return "CPF ou CNPJ invalido.";
-    if (!barbershopEmail.trim()) return "Sua barbearia esta sem email.";
+    if (!isValidCpfCnpj(cpfCnpj)) return "CPF ou CNPJ inválido.";
+    if (!barbershopEmail.trim()) return "Sua barbearia está sem email.";
 
     if (billingType === "CREDIT_CARD") {
       if (cardNumber.replace(/\D/g, "").length < 13) {
-        return "Informe o numero do cartao.";
+        return "Informe o numero do cartão.";
       }
-      if (!cardExpiry.trim()) return "Informe a validade do cartao.";
+      if (!cardExpiry.trim()) return "Informe a validade do cartão.";
       if (cardCcv.replace(/\D/g, "").length < 3) return "Informe o CVV.";
     }
 
@@ -917,7 +917,7 @@ export function BuySubscriptionMain({
                       </div>
 
                       <p className="text-xs text-zinc-500 sm:col-span-2">
-                        Os dados do cartao serao enviados diretamente para a
+                        Os dados do cartão serao enviados diretamente para a
                         Edge Function e nao devem ser salvos no banco.
                       </p>
                     </div>

@@ -6,7 +6,7 @@
 // Chamada PELO DONO logado no manager (verify_jwt = true).
 //
 // Fluxo:
-//   1. Autentica o usuario (JWT do Supabase).
+//   1. Autentica o usuário (JWT do Supabase).
 //   2. Valida que ele e DONO da barbershop.
 //   3. Le o plano do banco — deve ser MONTHLY. Preco/ciclo nunca vem do request.
 //   4. Cria/reusa customer no Asaas.
@@ -22,7 +22,7 @@
 //     ainda valido) ou do now (se ja expirou), preservando dias restantes.
 //
 // Seguranca:
-//   - Nunca salva numero do cartao nem CVV.
+//   - Nunca salva numero do cartão nem CVV.
 //   - Escrita via service_role.
 //   - Customer/assinatura usam externalReference = barbershopId para idempotencia.
 // ============================================================================

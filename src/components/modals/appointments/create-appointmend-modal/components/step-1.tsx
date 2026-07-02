@@ -155,7 +155,7 @@
 //
 //     const digits = newPhone.replace(/\D/g, "");
 //     if (digits.length < 10) {
-//       setPhoneError("Telefone invalido. Digite DDD + numero.");
+//       setPhoneError("Telefone inválido. Digite DDD + numero.");
 //       setSubmitting(false);
 //       return;
 //     }

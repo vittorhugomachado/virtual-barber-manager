@@ -224,7 +224,7 @@
 //
 //   async function handleCreateMember(values: CreateMemberData) {
 //     if (!barbershop || memberRole !== "owner") {
-//       toast.error("Apenas o proprietario pode adicionar usuarios.");
+//       toast.error("Apenas o proprietario pode adicionar usuários.");
 //       return;
 //     }
 //
@@ -291,7 +291,7 @@
 //
 //   async function handleRemoveMember(memberId: string) {
 //     if (memberRole !== "owner") {
-//       toast.error("Apenas o proprietario pode remover usuarios.");
+//       toast.error("Apenas o proprietario pode remover usuários.");
 //       return;
 //     }
 //
@@ -326,13 +326,13 @@
 //
 //   async function handleEditMember(values: EditMemberData) {
 //     if (!editMember || memberRole !== "owner") {
-//       toast.error("Apenas o proprietario pode editar usuarios.");
+//       toast.error("Apenas o proprietario pode editar usuários.");
 //       return;
 //     }
 //
 //     if (values.username && !usernameSchema.safeParse(values.username).success) {
 //       toast.error(
-//         "O nome de usuario deve ter 3 a 30 caracteres e usar apenas letras minusculas, numeros e _.",
+//         "O nome de usuário deve ter 3 a 30 caracteres e usar apenas letras minusculas, numeros e _.",
 //       );
 //       return;
 //     }
@@ -399,7 +399,7 @@
 //
 //         {memberRole !== "owner" && (
 //           <p className="px-3 text-sm text-muted-foreground">
-//             Apenas o proprietario da barbearia pode gerenciar usuarios.
+//             Apenas o proprietario da barbearia pode gerenciar usuários.
 //           </p>
 //         )}
 //

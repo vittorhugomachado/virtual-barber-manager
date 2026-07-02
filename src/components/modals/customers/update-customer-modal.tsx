@@ -44,7 +44,7 @@
 //   phone: z
 //     .string()
 //     .min(1, "Telefone e obrigatorio")
-//     .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Formato invalido: (XX) XXXXX-XXXX"),
+//     .regex(/^\(\d{2}\) \d{5}-\d{4}$/, "Formato inválido: (XX) XXXXX-XXXX"),
 // });
 //
 // type FormValues = z.infer<typeof formSchema>;

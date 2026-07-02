@@ -259,28 +259,7 @@ function StepsScreen({
 
           {/* Passo 3 — Barbeiros */}
           {currentStep === 3 && (
-            <>
-              <ManageTeamMain fixedButtons onSaved={onNext} onPrev={onPrev} />
-              <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center gap-2 bg-zinc-200 dark:bg-zinc-900 px-3 py-3 shadow-lg">
-                <div className="flex justify-between w-full max-w-xl px-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-20"
-                    onClick={onPrev}
-                  >
-                    Voltar
-                  </Button>
-                  <Button
-                    type="submit"
-                    form="opening-hours-form"
-                    className="w-36 px-8"
-                  >
-                    Próximo
-                  </Button>
-                </div>
-              </div>
-            </>
+            <ManageTeamMain fixedButtons onSaved={onNext} onPrev={onPrev} />
           )}
 
           {/* Passos 4-5 — placeholder */}

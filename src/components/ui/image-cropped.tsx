@@ -140,7 +140,7 @@ export function ImageCropper({
             type="button"
             variant="outline"
             onClick={onCancel}
-            className="rounded-full"
+            className="rounded-full mx-auto"
           >
             Cancelar
           </Button>
@@ -148,7 +148,7 @@ export function ImageCropper({
             type="button"
             disabled={isProcessing}
             onClick={handleConfirm}
-            className="rounded-full"
+            className="rounded-full mx-auto"
           >
             {isProcessing ? "Processando..." : "Confirmar"}
           </Button>

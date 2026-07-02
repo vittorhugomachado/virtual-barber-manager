@@ -1,4 +1,4 @@
-﻿// export const planLimits: Record<string, number> = {
+// export const planLimits: Record<string, number> = {
 //   iniciante: 1,
 //   profissional: 5,
 //   master: Infinity,

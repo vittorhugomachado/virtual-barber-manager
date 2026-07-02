@@ -7,6 +7,7 @@ import { Logo } from "@/components/common/logo";
 import { AddressForm } from "@/components/forms/address-form";
 import { OpeningHoursForm } from "@/components/forms/opening-hours-form";
 import { ManageTeamMain } from "@/components/main/manage-team-main";
+import { ManageServicesMain } from "@/components/main/manage-services-main";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 
@@ -262,8 +263,13 @@ function StepsScreen({
             <ManageTeamMain fixedButtons onSaved={onNext} onPrev={onPrev} />
           )}
 
-          {/* Passos 4-5 — placeholder */}
-          {currentStep > 3 && (
+          {/* Passo 4 — Serviços */}
+          {currentStep === 4 && (
+            <ManageServicesMain fixedButtons onSaved={onNext} onPrev={onPrev} />
+          )}
+
+          {/* Passo 5 — placeholder */}
+          {currentStep === 5 && (
             <>
               <div className="border rounded-xl p-6 bg-card min-h-64">
                 <h2 className="text-lg font-medium mb-1">{step.label}</h2>

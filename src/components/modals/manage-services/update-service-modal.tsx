@@ -263,7 +263,9 @@ export function UpdateServiceModal({
             id="update-service-form"
             onSubmit={form.handleSubmit(onSubmit, errors => {
               const first = Object.values(errors)[0];
-              if (first?.message) toast.error(first.message as string);
+              if (!isOnboarding && first?.message) {
+                toast.error(first.message as string);
+              }
             })}
             className="flex flex-col gap-6 mb-4"
           >

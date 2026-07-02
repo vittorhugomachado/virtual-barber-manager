@@ -185,7 +185,9 @@ export function CreateServiceModal({
             id="create-service-form"
             onSubmit={form.handleSubmit(onSubmit, errors => {
               const first = Object.values(errors)[0];
-              if (first?.message) toast.error(first.message as string);
+              if (!isOnboarding && first?.message) {
+                toast.error(first.message as string);
+              }
             })}
             className="mb-4 flex flex-col gap-6"
           >
@@ -395,12 +397,12 @@ export function CreateServiceModal({
               </div>
             )}
 
-            <DialogFooter>
+            <DialogFooter className="flex flex-reverse-col gap-2 sm:flex-row items-center sm:justify-between">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="rounded-full"
+                className="rounded-full w-26"
               >
                 Cancelar
               </Button>
@@ -408,9 +410,9 @@ export function CreateServiceModal({
                 type="submit"
                 form="create-service-form"
                 disabled={form.formState.isSubmitting}
-                className="rounded-full"
+                className="rounded-full w-32"
               >
-                {form.formState.isSubmitting ? "Criando..." : "Criar servico"}
+                {form.formState.isSubmitting ? "Criando..." : "Criar serviço"}
               </Button>
             </DialogFooter>
           </form>

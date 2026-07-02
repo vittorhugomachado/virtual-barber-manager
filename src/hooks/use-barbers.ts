@@ -7,7 +7,7 @@ export function useBarbers() {
   const { barbershop } = useBarbershopStore();
   const [barbers, setBarbers] = useState<Barber[]>([]);
   const [loading, setLoading] = useState(true);
-console.log("barbershop", barbershop);
+
   useEffect(() => {
     if (!barbershop?.id) return;
     let mounted = true;
@@ -16,9 +16,18 @@ console.log("barbershop", barbershop);
       .from("barbers")
       .select("*")
       .eq("barbershop_id", barbershop.id)
+      .order("updated_at", { ascending: false, nullsFirst: false })
       .then(({ data }) => {
         if (!mounted) return;
-        if (data) setBarbers(data);
+        if (data) {
+          // Ordenar pegando a data mais recente entre updated_at e created_at
+          const sortedData = [...data].sort((a, b) => {
+            const dateA = a.updated_at ? new Date(a.updated_at) : new Date(a.created_at);
+            const dateB = b.updated_at ? new Date(b.updated_at) : new Date(b.created_at);
+            return dateB.getTime() - dateA.getTime();
+          });
+          setBarbers(sortedData);
+        }
         setLoading(false);
       });
 
@@ -26,6 +35,8 @@ console.log("barbershop", barbershop);
       mounted = false;
     };
   }, [barbershop?.id]);
+
+  console.log(barbers);
 
   return { barbers, setBarbers, loading };
 }

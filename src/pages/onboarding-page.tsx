@@ -212,8 +212,10 @@ function StepsScreen({
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-20"
+                    disabled
+                    className="w-20 opacity-0"
                     onClick={onPrev}
+                    style={{ opacity: 0, pointerEvents: "none" }}
                   >
                     Voltar
                   </Button>

@@ -73,6 +73,7 @@ export function UpdateBarberModal({
   onDeleted,
 }: UpdateBarberModalProps) {
   const location = useLocation();
+  const isOnboarding = location.pathname === "/onboarding";
   const { barbershop } = useBarbershopStore();
   const { services } = useBarbershopServices();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -85,7 +86,10 @@ export function UpdateBarberModal({
     Record<string, string>
   >({});
   const { count: futureCount, loading: countLoading } =
-    useFutureAppointmentsCount("barber_id", open ? (barber?.id ?? null) : null);
+    useFutureAppointmentsCount(
+      "barber_id",
+      !isOnboarding && open ? (barber?.id ?? null) : null,
+    );
 
   const {
     availability,
@@ -194,7 +198,7 @@ export function UpdateBarberModal({
 
     await saveBarberAvailability(barber.id, barbershop.id, availability);
 
-    if (location.pathname !== "/onboarding") {
+    if (!isOnboarding) {
       toast.success("Barbeiro atualizado!");
     }
     onUpdated({ ...barber, name: data.name, avatar_url: avatarUrl });
@@ -226,7 +230,7 @@ export function UpdateBarberModal({
     }
 
     setDeleting(false);
-    if (location.pathname !== "/onboarding") {
+    if (!isOnboarding) {
       toast.success("Barbeiro excluído!");
     }
     onDeleted(barber.id);

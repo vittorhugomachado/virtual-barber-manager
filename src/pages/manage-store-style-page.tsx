@@ -1,5 +1,5 @@
-// import { ManagePageStyleMain } from "@/components/main/manage-store-style";
+﻿import { ManagePageStyleMain } from "@/components/main/manage-store-style";
 
-// export function ManageStoreStylePage() {
-//   return <ManagePageStyleMain />;
-// }
+export function ManageStoreStylePage() {
+  return <ManagePageStyleMain />;
+}

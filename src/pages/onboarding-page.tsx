@@ -8,6 +8,7 @@ import { AddressForm } from "@/components/forms/address-form";
 import { OpeningHoursForm } from "@/components/forms/opening-hours-form";
 import { ManageTeamMain } from "@/components/main/manage-team-main";
 import { ManageServicesMain } from "@/components/main/manage-services-main";
+import { ManagePageStyleMain } from "@/components/main/manage-store-style";
 import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 
@@ -139,8 +140,6 @@ function StepsScreen({
     return () => clearTimeout(t);
   }, []);
 
-  const step = STEPS[currentStep - 1];
-
   return (
     <div className="w-full min-h-screen bg-background flex flex-col">
       <div className="flex justify-center pt-8 pb-6">
@@ -268,30 +267,13 @@ function StepsScreen({
             <ManageServicesMain fixedButtons onSaved={onNext} onPrev={onPrev} />
           )}
 
-          {/* Passo 5 — placeholder */}
+          {/* Passo 5 — Página */}
           {currentStep === 5 && (
-            <>
-              <div className="border rounded-xl p-6 bg-card min-h-64">
-                <h2 className="text-lg font-medium mb-1">{step.label}</h2>
-                <p className="text-muted-foreground text-sm mb-6">
-                  {step.description}
-                </p>
-                <div className="h-32 flex items-center justify-center rounded-lg border border-dashed text-muted-foreground text-sm">
-                  Formulário de {step.label.toLowerCase()} em breve
-                </div>
-              </div>
-
-              <div className="flex justify-between mt-6">
-                <Button variant="outline" onClick={onPrev}>
-                  Voltar
-                </Button>
-                {currentStep < STEPS.length ? (
-                  <Button onClick={onNext}>Próximo</Button>
-                ) : (
-                  <Button onClick={onComplete}>Concluir</Button>
-                )}
-              </div>
-            </>
+            <ManagePageStyleMain
+              fixedButtons
+              onSaved={onComplete}
+              onPrev={onPrev}
+            />
           )}
         </div>
       </div>

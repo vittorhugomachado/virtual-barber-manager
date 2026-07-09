@@ -5,6 +5,7 @@ export function ColorField({
   label,
   value,
   onChange,
+  onMobileOpen,
   className = "",
   labelClassName = "",
   inputClassName = "",
@@ -12,6 +13,7 @@ export function ColorField({
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onMobileOpen?: () => void;
   className?: string;
   labelClassName?: string;
   inputClassName?: string;
@@ -29,8 +31,19 @@ export function ColorField({
         type="color"
         value={value}
         onChange={event => onChange(event.target.value)}
-        className={`h-8 w-8 shrink-0 cursor-pointer rounded-full p-1 ${inputClassName}`}
+        className={`hidden h-8 w-8 shrink-0 cursor-pointer rounded-full p-1 md:block ${inputClassName}`}
       />
+      <button
+        type="button"
+        aria-label={`Selecionar ${label}`}
+        onClick={onMobileOpen}
+        className={`h-8 w-8 shrink-0 rounded-full border border-neutral-700 p-1 md:hidden ${inputClassName}`}
+      >
+        <span
+          className="block size-full rounded-full"
+          style={{ backgroundColor: value }}
+        />
+      </button>
     </div>
   );
 }

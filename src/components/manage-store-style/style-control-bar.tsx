@@ -2,7 +2,7 @@
 import { ColorField } from "./color-field";
 import { Button } from "../ui/button";
 import { Spinner } from "../ui/spinner";
-import type { FontOption, StoreStyle } from "@/types/store-style";
+import type { StoreStyle } from "@/types/store-style";
 import { BarbershopGallery } from "../common/barbershop-gallery";
 import {
   Dialog,
@@ -21,18 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
-import { Label } from "../ui/label";
-
-const FONT_OPTIONS: { value: FontOption; label: string }[] = [
-  { value: "inter", label: "Inter" },
-];
 
 export function StyleControlBar({
   style,
@@ -58,7 +46,6 @@ export function StyleControlBar({
   showGalleryButton?: boolean;
   compact?: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryHasChanges, setGalleryHasChanges] = useState(false);
   const [discardWarningOpen, setDiscardWarningOpen] = useState(false);
@@ -83,9 +70,9 @@ export function StyleControlBar({
   return (
     <>
       <div
-        className={`fixed right-2 z-20 w-fit h-fit flex flex-col items-center gap-2 ${
+        className={`fixed inset-x-2 z-20 flex items-end gap-2 md:inset-x-auto md:right-2 md:w-fit md:flex-col md:items-center ${
           compact
-            ? "bottom-24 md:bottom-24"
+            ? "bottom-20 md:bottom-24"
             : "bottom-4 md:top-1/2 md:-translate-y-1/2"
         }`}
       >
@@ -95,62 +82,45 @@ export function StyleControlBar({
             variant="secondary"
             size="sm"
             onClick={() => setGalleryOpen(true)}
-            className="w-20 py-2 rounded-full shadow-lg whitespace-normal wrap-break-word text-center h-auto"
+            className="h-12 w-24 shrink-0 rounded-full py-2 text-center shadow-lg whitespace-normal wrap-break-word md:h-auto md:w-20"
           >
             <span className="leading-tight">Editar galeria</span>
           </Button>
         )}
-        <div
-          className={`${isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 hidden md:block"}  transition-all duration-300 md:translate-x-0 md:opacity-100`}
-        >
-          <div className="mx-auto flex flex-col items-center w-full max-w-xl gap-4 rounded-xl border pt-6 px-0.5 shadow-2xl backdrop-blur border-neutral-800 bg-neutral-950/95 text-neutral-50 pb-18">
+        <div className="min-w-0 flex-1 md:flex-none">
+          <div className="mx-auto flex w-full max-w-76 items-center gap-0 overflow-x-auto rounded-xl border border-neutral-800 bg-neutral-950/95 px-2 py-2 md:py-3 text-neutral-50 shadow-2xl backdrop-blur md:w-full md:max-w-xl md:flex-col md:gap-4 md:overflow-visible md:px-2 md:pb-18 md:pt-6">
             <ColorField
               label="Primária"
               value={style.primary_color}
               onChange={value => onChange("primary_color", value)}
+              className="w-14 flex-none md:w-full md:flex-1"
+              labelClassName="text-[12px] md:text-xs"
             />
             <ColorField
               label="Texto"
               value={style.text_color}
               onChange={value => onChange("text_color", value)}
+              className="w-12 flex-none md:w-full md:flex-1"
+              labelClassName="text-[12px] md:text-xs"
             />
             <ColorField
               label="Texto botão"
               value={style.text_button_color}
               onChange={value => onChange("text_button_color", value)}
+              className="w-16 flex-none md:w-full md:flex-1"
+              labelClassName="text-[12px] md:text-xs"
             />
             <ColorField
               label="Fundo"
               value={style.background_color}
               onChange={value => onChange("background_color", value)}
+              className="w-12 flex-none md:w-full md:flex-1"
+              labelClassName="text-[12px] md:text-xs"
             />
-
-            <div className="min-w-0 flex-1 w-full px-2 flex flex-col items-center space-y-1">
-              <Label className="text-xs text-neutral-500">
-                Fonte do título
-              </Label>
-              <Select
-                value={style.title_font}
-                onValueChange={value =>
-                  onChange("title_font", value as FontOption)
-                }
-              >
-                <SelectTrigger className="w-full bg-neutral-900 border-neutral-700 text-neutral-50">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {FONT_OPTIONS.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
             <Button
               type="button"
-              className="h-10 w-[95%] mx-0.5 scale-90 shrink-0 rounded-md md:mb-1 absolute bottom-1 md:bottom-0"
+              className="h-10 w-13 shrink-0 rounded-md text-[13.5px] md:text-sm md:absolute md:bottom-0 ml-auto md:mx-0.5 px-1 md:mb-1 md:w-[95%] md:scale-90 md:px-2"
               disabled={isLoading || isSaving || !hasChanges}
               onClick={onSave}
             >
@@ -158,12 +128,6 @@ export function StyleControlBar({
             </Button>
           </div>
         </div>
-        <button
-          onClick={() => setIsOpen(prev => !prev)}
-          className="bottom-4 text-sm right-4 min-w-10 h-10 z-30 flex items-center justify-center md:hidden bg-linear-to-br from-red-600 via-green-600 to-purple-700 text-black font-semibold p-3 rounded-full shadow-lg"
-        >
-          {isOpen ? "fechar" : "Editar cores"}
-        </button>
       </div>
 
       {showGalleryButton && (

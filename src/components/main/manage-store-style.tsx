@@ -179,6 +179,40 @@ export function ManagePageStyleMain({
       },
       previewOrigin,
     );
+    hidePreviewScrollbars();
+  }
+
+  function hidePreviewScrollbars() {
+    let doc: Document | null = null;
+
+    try {
+      doc = iframeRef.current?.contentDocument ?? null;
+    } catch {
+      return;
+    }
+
+    if (!doc) return;
+
+    let scrollbarStyle = doc.getElementById("virtual-preview-scrollbar-style");
+    if (!scrollbarStyle) {
+      scrollbarStyle = doc.createElement("style");
+      scrollbarStyle.id = "virtual-preview-scrollbar-style";
+      doc.head.appendChild(scrollbarStyle);
+    }
+
+    scrollbarStyle.textContent = `
+      html, body {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      html::-webkit-scrollbar,
+      body::-webkit-scrollbar,
+      *::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+      }
+    `;
   }
 
   function reloadPreview() {
@@ -190,14 +224,22 @@ export function ManagePageStyleMain({
       className={`relative h-full min-h-[70vh] overflow-hidden border`}
       style={{ backgroundColor: style.background_color }}
     >
-      <iframe
-        key={previewKey}
-        ref={iframeRef}
-        title="Preview da loja"
-        className={fixedButtons ? "h-screen w-full pb-15" : "h-dvh w-full"}
-        src={previewUrl}
-        onLoad={sendPreviewStyle}
-      />
+      <div
+        className={
+          fixedButtons
+            ? "h-screen w-full overflow-hidden pb-15"
+            : "h-dvh w-full overflow-hidden"
+        }
+      >
+        <iframe
+          key={previewKey}
+          ref={iframeRef}
+          title="Preview da loja"
+          className="h-[calc(100%+18px)] w-[calc(100%+18px)] border-0"
+          src={previewUrl}
+          onLoad={sendPreviewStyle}
+        />
+      </div>
 
       <StyleControlBar
         style={style}

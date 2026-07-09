@@ -162,7 +162,7 @@ export function StyleControlBar({
           onClick={() => setIsOpen(prev => !prev)}
           className="bottom-4 text-sm right-4 min-w-10 h-10 z-30 flex items-center justify-center md:hidden bg-linear-to-br from-red-600 via-green-600 to-purple-700 text-black font-semibold p-3 rounded-full shadow-lg"
         >
-          {isOpen ? "×" : "Editar cores"}
+          {isOpen ? "fechar" : "Editar cores"}
         </button>
       </div>
 

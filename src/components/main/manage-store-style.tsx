@@ -155,7 +155,7 @@ export function ManagePageStyleMain({
     setInitialStyle(style);
     if (showToast) {
       toast.success("Estilo da loja salvo!", {
-        description: "As alteracoes foram aplicadas no banco.",
+        description: "As alterações foram aplicadas no banco.",
       });
     }
     setPreviewKey(current => current + 1);
@@ -187,14 +187,14 @@ export function ManagePageStyleMain({
 
   return (
     <div
-      className={`relative h-full min-h-[70vh] overflow-hidden border ${fixedButtons ? "pb-20" : ""}`}
+      className={`relative h-full min-h-[70vh] overflow-hidden border`}
       style={{ backgroundColor: style.background_color }}
     >
       <iframe
         key={previewKey}
         ref={iframeRef}
         title="Preview da loja"
-        className={fixedButtons ? "h-[70vh] w-full" : "h-dvh w-full"}
+        className={fixedButtons ? "h-screen w-full pb-15" : "h-dvh w-full"}
         src={previewUrl}
         onLoad={sendPreviewStyle}
       />

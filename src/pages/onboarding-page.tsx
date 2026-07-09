@@ -142,7 +142,7 @@ function StepsScreen({
 
   return (
     <div className="w-full min-h-screen bg-background flex flex-col">
-      <div className="flex justify-center pt-8 pb-6">
+      {/* <div className="flex justify-center pt-8 pb-6">
         <div
           style={{
             opacity: logoReady ? 1 : 0,
@@ -153,55 +153,58 @@ function StepsScreen({
         >
           <Logo style="h-8 px-7" />
         </div>
-      </div>
+      </div> */}
 
       <div className="w-full h-full mx-auto flex-1 flex flex-col items-center justify-between">
         <div className="w-full h-full flex flex-col justify-between gap-8">
           {/* Indicador de passos */}
-          <div className="flex items-center mt-6 justify-center scale-90 min-[640px]:scale-100 gap-0.5 min-[640px]:gap-4">
-            {STEPS.map((s, index) => {
-              const isCompleted = s.id < currentStep;
-              const isActive = s.id === currentStep;
+          {currentStep !== 5 && (
+            <div className="flex items-center mt-6 justify-center scale-90 min-[640px]:scale-100 gap-0.5 min-[640px]:gap-4">
+              {STEPS.map((s, index) => {
+                const isCompleted = s.id < currentStep;
+                const isActive = s.id === currentStep;
 
-              return (
-                <div key={s.id} className="flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={cn(
-                        "size-8 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-colors",
-                        isCompleted &&
-                          "bg-[#0458EE] border-[#0458EE] text-primary-foreground",
-                        isActive && "border-primary text-primary bg-background",
-                        !isCompleted &&
-                          !isActive &&
-                          "border-muted-foreground/30 text-muted-foreground/50 bg-background",
-                      )}
-                    >
-                      {isCompleted ? <Check className="size-4" /> : s.id}
+                return (
+                  <div key={s.id} className="flex items-center">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={cn(
+                          "size-8 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-colors",
+                          isCompleted &&
+                            "bg-[#0458EE] border-[#0458EE] text-primary-foreground",
+                          isActive &&
+                            "border-primary text-primary bg-background",
+                          !isCompleted &&
+                            !isActive &&
+                            "border-muted-foreground/30 text-muted-foreground/50 bg-background",
+                        )}
+                      >
+                        {isCompleted ? <Check className="size-4" /> : s.id}
+                      </div>
+                      <span
+                        className={cn(
+                          "text-xs mt-1.5 font-medium",
+                          isActive
+                            ? "text-foreground"
+                            : "text-muted-foreground/50",
+                        )}
+                      >
+                        {s.label}
+                      </span>
                     </div>
-                    <span
-                      className={cn(
-                        "text-xs mt-1.5 font-medium",
-                        isActive
-                          ? "text-foreground"
-                          : "text-muted-foreground/50",
-                      )}
-                    >
-                      {s.label}
-                    </span>
+                    {index < STEPS.length - 1 && (
+                      <div
+                        className={cn(
+                          "h-px flex-1 mx-2 mb-5 transition-colors",
+                          isCompleted ? "bg-primary" : "bg-muted-foreground/20",
+                        )}
+                      />
+                    )}
                   </div>
-                  {index < STEPS.length - 1 && (
-                    <div
-                      className={cn(
-                        "h-px flex-1 mx-2 mb-5 transition-colors",
-                        isCompleted ? "bg-primary" : "bg-muted-foreground/20",
-                      )}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Passo 1 — Endereço */}
           {currentStep === 1 && (

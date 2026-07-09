@@ -149,70 +149,72 @@ function MobileColorPicker({
         ref={pickerRef}
         className={`fixed left-3 right-3 z-30 rounded-xl border border-neutral-800 bg-neutral-950 p-3 text-neutral-50 shadow-2xl md:hidden ${pickerBottom}`}
       >
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <span className="text-sm font-medium">{label}</span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-md px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
-        >
-          Fechar
-        </button>
-      </div>
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <span className="text-sm font-medium">{label}</span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
+          >
+            Fechar
+          </button>
+        </div>
 
-      <div
-        className="relative h-36 touch-none overflow-hidden rounded-lg"
-        style={{ backgroundColor: `hsl(${h} 100% 50%)` }}
-        onPointerDown={event => {
-          event.currentTarget.setPointerCapture(event.pointerId);
-          updateSaturationValue(event);
-        }}
-        onPointerMove={event => {
-          if (event.buttons !== 1) return;
-          updateSaturationValue(event);
-        }}
-      >
-        <div className="absolute inset-0 bg-linear-to-r from-white to-transparent" />
-        <div className="absolute inset-0 bg-linear-to-t from-black to-transparent" />
         <div
-          className="absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow"
-          style={{ left: `${s * 100}%`, top: `${(1 - v) * 100}%` }}
-        />
-      </div>
+          className="relative h-36 touch-none overflow-hidden rounded-lg"
+          style={{ backgroundColor: `hsl(${h} 100% 50%)` }}
+          onPointerDown={event => {
+            event.currentTarget.setPointerCapture(event.pointerId);
+            updateSaturationValue(event);
+          }}
+          onPointerMove={event => {
+            if (event.buttons !== 1) return;
+            updateSaturationValue(event);
+          }}
+        >
+          <div className="absolute inset-0 bg-linear-to-r from-white to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black to-transparent" />
+          <div
+            className="absolute size-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow"
+            style={{ left: `${s * 100}%`, top: `${(1 - v) * 100}%` }}
+          />
+        </div>
 
-      <input
-        type="range"
-        min={0}
-        max={360}
-        value={Math.round(h)}
-        onChange={event => onChange(hsvToHex(Number(event.target.value), s, v))}
-        className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full accent-white"
-        style={{
-          background:
-            "linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
-        }}
-      />
-
-      <div className="mt-3 flex items-center gap-2">
-        <span
-          className="size-8 rounded-full border border-neutral-700"
-          style={{ backgroundColor: value }}
-        />
         <input
-          value={hexInput}
-          onChange={event => {
-            const next = event.target.value.toUpperCase();
-            setHexInput(next);
-            if (/^#[0-9A-F]{6}$/.test(next)) onChange(next);
+          type="range"
+          min={0}
+          max={360}
+          value={Math.round(h)}
+          onChange={event =>
+            onChange(hsvToHex(Number(event.target.value), s, v))
+          }
+          className="mt-3 h-2 w-full cursor-pointer appearance-none rounded-full accent-white"
+          style={{
+            background:
+              "linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
           }}
-          onBlur={() => {
-            if (!/^#[0-9A-F]{6}$/.test(hexInput)) {
-              setHexInput(value.toUpperCase());
-            }
-          }}
-          className="h-9 min-w-0 flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-3 text-sm uppercase"
         />
-      </div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <span
+            className="size-8 rounded-full border border-neutral-700"
+            style={{ backgroundColor: value }}
+          />
+          <input
+            value={hexInput}
+            onChange={event => {
+              const next = event.target.value.toUpperCase();
+              setHexInput(next);
+              if (/^#[0-9A-F]{6}$/.test(next)) onChange(next);
+            }}
+            onBlur={() => {
+              if (!/^#[0-9A-F]{6}$/.test(hexInput)) {
+                setHexInput(value.toUpperCase());
+              }
+            }}
+            className="h-9 min-w-0 flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-3 text-sm uppercase"
+          />
+        </div>
       </div>
     </>
   );
@@ -285,7 +287,7 @@ export function StyleControlBar({
           </Button>
         )}
         <div className="min-w-0 flex-1 md:flex-none">
-          <div className="mx-auto flex w-full max-w-76 items-center gap-0 overflow-x-auto rounded-xl border border-neutral-800 bg-neutral-950/95 px-2 py-2 text-neutral-50 shadow-2xl backdrop-blur md:w-full md:max-w-xl md:flex-col md:gap-4 md:overflow-visible md:px-2 md:pb-18 md:pt-6 md:py-3">
+          <div className="mx-auto flex w-full max-w-76 items-center gap-0 overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950/95 px-2 py-2 text-neutral-50 shadow-2xl backdrop-blur md:w-full md:max-w-xl md:flex-col md:gap-4 md:overflow-visible md:px-2 md:pb-18 md:pt-6 md:py-3">
             {COLOR_FIELDS.map(field => (
               <ColorField
                 key={field.key}

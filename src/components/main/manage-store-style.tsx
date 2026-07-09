@@ -104,6 +104,7 @@ export function ManagePageStyleMain({
       {
         type: "BARBERSHOP_PREVIEW_STYLE",
         style,
+        transparentScrollbars: true,
       },
       previewOrigin,
     );
@@ -176,6 +177,7 @@ export function ManagePageStyleMain({
       {
         type: "BARBERSHOP_PREVIEW_STYLE",
         style,
+        transparentScrollbars: true,
       },
       previewOrigin,
     );
@@ -201,18 +203,47 @@ export function ManagePageStyleMain({
     }
 
     scrollbarStyle.textContent = `
-      html, body {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+      html,
+      body,
+      [class*="overflow-x"],
+      [class*="overflow-auto"] {
+        scrollbar-width: auto;
+        scrollbar-color: transparent transparent;
       }
 
       html::-webkit-scrollbar,
       body::-webkit-scrollbar,
       *::-webkit-scrollbar {
-        width: 0 !important;
-        height: 0 !important;
+        width: 10px !important;
+        height: 10px !important;
+        background: transparent !important;
+      }
+
+      html::-webkit-scrollbar-track,
+      body::-webkit-scrollbar-track,
+      *::-webkit-scrollbar-track,
+      html::-webkit-scrollbar-thumb,
+      body::-webkit-scrollbar-thumb,
+      *::-webkit-scrollbar-thumb,
+      html::-webkit-scrollbar-button,
+      body::-webkit-scrollbar-button,
+      *::-webkit-scrollbar-button,
+      html::-webkit-scrollbar-corner,
+      body::-webkit-scrollbar-corner,
+      *::-webkit-scrollbar-corner {
+        background: transparent !important;
+        border-color: transparent !important;
       }
     `;
+
+    doc.querySelectorAll<HTMLElement>("*").forEach(element => {
+      const hasHorizontalScroll = element.scrollWidth > element.clientWidth;
+      const hasVerticalScroll = element.scrollHeight > element.clientHeight;
+
+      if (hasHorizontalScroll || hasVerticalScroll) {
+        element.style.scrollbarColor = "transparent transparent";
+      }
+    });
   }
 
   function reloadPreview() {

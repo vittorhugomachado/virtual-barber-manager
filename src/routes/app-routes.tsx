@@ -2,12 +2,11 @@
 import { Routes, Route, useLocation } from "react-router";
 import { PublicRoute } from "./public-route";
 import { ProtectedRoute } from "./protected-route";
-// import { ManageTeamSkeleton } from "@/components/skeleton/manage-team-skeleton";
-// import { ServicesSkeleton } from "@/components/skeleton/services-skeleton";
+import { ManageTeamSkeleton } from "@/components/skeleton/manage-team-skeleton";
+import { ServicesSkeleton } from "@/components/skeleton/services-skeleton";
 // import { CustomersSkeleton } from "@/components/skeleton/customers-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
-import { ManageStoreStylePage } from "@/pages/manage-store-style-page";
 import { SettingsSkeleton } from "@/components/skeleton/settings-skeleton";
 // import { ReportsSkeleton } from "@/components/skeleton/reports-skeleton";
 
@@ -81,21 +80,21 @@ const SignupPendingPage = lazy(() =>
 //     default: module.SettingPage,
 //   })),
 // );
-// const ManageServicePage = lazy(() =>
-//   import("@/pages/manage-service-page").then(module => ({
-//     default: module.ManageServicePage,
-//   })),
-// );
-// const ManageStoreStylePage = lazy(() =>
-//   import("@/pages/manage-store-style-page").then(module => ({
-//     default: module.ManageStoreStylePage,
-//   })),
-// );
-// const ManageTeamPage = lazy(() =>
-//   import("@/pages/manage-team-page").then(module => ({
-//     default: module.ManageTeamPage,
-//   })),
-// );
+const ManageServicePage = lazy(() =>
+  import("@/pages/manage-service-page").then(module => ({
+    default: module.ManageServicePage,
+  })),
+);
+const ManageStoreStylePage = lazy(() =>
+  import("@/pages/manage-store-style-page").then(module => ({
+    default: module.ManageStoreStylePage,
+  })),
+);
+const ManageTeamPage = lazy(() =>
+  import("@/pages/manage-team-page").then(module => ({
+    default: module.ManageTeamPage,
+  })),
+);
 // const ReportsPage = lazy(() =>
 //   import("@/pages/reports-page").then(module => ({
 //     default: module.ReportsPage,
@@ -305,22 +304,6 @@ export function AppRoutes() {
             </ProtectedPageLoader>
           }
         />
-        {/* <Route
-          path="/agenda"
-          element={
-            <ProtectedPageLoader fallback={<DashboardSkeleton />}>
-              <AppointmentsPage />
-            </ProtectedPageLoader>
-          }
-        />
-        <Route
-          path="/clientes"
-          element={
-            <ProtectedPageLoader fallback={<CustomersSkeleton />}>
-              <CustomersPage />
-            </ProtectedPageLoader>
-          }
-        />
         <Route
           path="/equipe"
           element={
@@ -337,6 +320,23 @@ export function AppRoutes() {
             </ProtectedPageLoader>
           }
         />
+        {/* <Route
+          path="/agenda"
+          element={
+            <ProtectedPageLoader fallback={<DashboardSkeleton />}>
+              <AppointmentsPage />
+            </ProtectedPageLoader>
+          }
+        />
+        <Route
+          path="/clientes"
+          element={
+            <ProtectedPageLoader fallback={<CustomersSkeleton />}>
+              <CustomersPage />
+            </ProtectedPageLoader>
+          }
+        />
+
 
         <Route
           path="/relatorios"

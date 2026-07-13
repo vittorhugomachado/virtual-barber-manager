@@ -2,13 +2,13 @@
 import { Routes, Route, useLocation } from "react-router";
 import { PublicRoute } from "./public-route";
 import { ProtectedRoute } from "./protected-route";
-// import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
-// import { SettingsSkeleton } from "@/components/skeleton/settings-skeleton";
 // import { ManageTeamSkeleton } from "@/components/skeleton/manage-team-skeleton";
 // import { ServicesSkeleton } from "@/components/skeleton/services-skeleton";
 // import { CustomersSkeleton } from "@/components/skeleton/customers-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
+import { ManageStoreStylePage } from "@/pages/manage-store-style-page";
+import { SettingsSkeleton } from "@/components/skeleton/settings-skeleton";
 // import { ReportsSkeleton } from "@/components/skeleton/reports-skeleton";
 
 const DashboardPageDev = lazy(() =>
@@ -297,6 +297,14 @@ export function AppRoutes() {
             </ProtectedPageLoader>
           }
         />
+        <Route
+          path="/editar-pagina"
+          element={
+            <ProtectedPageLoader fallback={<SettingsSkeleton />}>
+              <ManageStoreStylePage />
+            </ProtectedPageLoader>
+          }
+        />
         {/* <Route
           path="/agenda"
           element={
@@ -329,15 +337,7 @@ export function AppRoutes() {
             </ProtectedPageLoader>
           }
         />
-        <Route
-          path="/editar-pagina"
-          element={
-            <ProtectedPageLoader fallback={<SettingsSkeleton />}>
-              <ManageStoreStylePage />
-              <ManageStoreStylePage />
-            </ProtectedPageLoader>
-          }
-        />
+
         <Route
           path="/relatorios"
           element={

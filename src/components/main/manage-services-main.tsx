@@ -63,7 +63,7 @@ export function ManageServicesMain({
       {fixedButtons ? (
         <div className="flex flex-col items-center gap-1 mt-2">
           <h2 className="font-semibold text-2xl text-center">
-            Quais servicos voce oferece?
+            Quais serviços você oferece?
           </h2>
         </div>
       ) : (

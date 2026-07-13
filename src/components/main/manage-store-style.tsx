@@ -1,7 +1,7 @@
 ﻿import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import type { StoreStyle } from "@/types/store-style";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { StyleControlBar } from "../manage-store-style/style-control-bar";
 import { Button } from "../ui/button";
@@ -35,6 +35,7 @@ export function ManagePageStyleMain({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [storeStyleId, setStoreStyleId] = useState<string | null>(null);
   const [style, setStyle] = useState(DEFAULT_STYLE);
+  const latestStyleRef = useRef(style);
   const [initialStyle, setInitialStyle] = useState(DEFAULT_STYLE);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -48,6 +49,8 @@ export function ManagePageStyleMain({
     style.title_font !== initialStyle.title_font;
 
   const previewUrl = getPreviewUrl(barbershop?.slug ?? "");
+
+  latestStyleRef.current = style;
 
   useEffect(() => {
     let cancelled = false;
@@ -99,16 +102,28 @@ export function ManagePageStyleMain({
     };
   }, [barbershop?.id]);
 
-  useEffect(() => {
+  const postPreviewStyle = useCallback(() => {
     iframeRef.current?.contentWindow?.postMessage(
       {
         type: "BARBERSHOP_PREVIEW_STYLE",
-        style,
+        style: latestStyleRef.current,
         transparentScrollbars: true,
       },
       previewOrigin,
     );
-  }, [style]);
+  }, []);
+
+  const syncPreviewStyle = useCallback(() => {
+    postPreviewStyle();
+    window.setTimeout(postPreviewStyle, 50);
+    window.setTimeout(postPreviewStyle, 150);
+    window.setTimeout(postPreviewStyle, 400);
+  }, [postPreviewStyle]);
+
+  useEffect(() => {
+    if (isStyleLoading) return;
+    syncPreviewStyle();
+  }, [isStyleLoading, style, syncPreviewStyle]);
 
   function updateStyle<K extends keyof typeof DEFAULT_STYLE>(
     key: K,
@@ -173,14 +188,7 @@ export function ManagePageStyleMain({
   }
 
   function sendPreviewStyle() {
-    iframeRef.current?.contentWindow?.postMessage(
-      {
-        type: "BARBERSHOP_PREVIEW_STYLE",
-        style,
-        transparentScrollbars: true,
-      },
-      previewOrigin,
-    );
+    syncPreviewStyle();
     hidePreviewScrollbars();
   }
 

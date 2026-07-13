@@ -1,4 +1,5 @@
-﻿import { useState, useEffect } from "react";
+﻿/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";

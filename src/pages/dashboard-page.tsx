@@ -15,24 +15,24 @@ type Member = {
   username: string;
 };
 
-// import { BarbershopDashboardMain } from "@/components/main/dashboard-main";
-// import { HeaderPage } from "@/components/common/header-page";
-//
-// export function DashboardPage() {
-//   return (
-//     <>
-//       <HeaderPage page="Visão geral" />
-//       <BarbershopDashboardMain />
-//     </>
-//   );
-// }
+import { BarbershopDashboardMain } from "@/components/main/dashboard-main";
+import { HeaderPage } from "@/components/common/header-page";
+
+export function DashboardPage() {
+  return (
+    <>
+      <HeaderPage page="Visão geral" />
+      <BarbershopDashboardMain />
+    </>
+  );
+}
 
 /**
  * Pagina provisoria de diagnostico: exibe apenas a credencial atual do
  * usuário logado para validar o fluxo do store. Substituir pela dashboard
  * real quando as credenciais estiverem resolvendo corretamente.
  */
-export function DashboardPage() {
+export function DashboardPageDev() {
   const credential = useCredential();
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);

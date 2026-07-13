@@ -1,5 +1,5 @@
 ﻿import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router";
+import { Routes, Route, useLocation } from "react-router";
 import { PublicRoute } from "./public-route";
 import { ProtectedRoute } from "./protected-route";
 // import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
@@ -8,8 +8,14 @@ import { ProtectedRoute } from "./protected-route";
 // import { ServicesSkeleton } from "@/components/skeleton/services-skeleton";
 // import { CustomersSkeleton } from "@/components/skeleton/customers-skeleton";
 import { Spinner } from "@/components/ui/spinner";
+import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
 // import { ReportsSkeleton } from "@/components/skeleton/reports-skeleton";
 
+const DashboardPageDev = lazy(() =>
+  import("@/pages/dashboard-page").then(module => ({
+    default: module.DashboardPageDev,
+  })),
+);
 const DashboardPage = lazy(() =>
   import("@/pages/dashboard-page").then(module => ({
     default: module.DashboardPage,
@@ -20,11 +26,11 @@ const OnboardingPage = lazy(() =>
     default: module.OnboardingPage,
   })),
 );
-const AsaasTestPage = lazy(() =>
-  import("@/pages/asaas-test-page").then(module => ({
-    default: module.AsaasTestPage,
-  })),
-);
+// const AsaasTestPage = lazy(() =>
+//   import("@/pages/asaas-test-page").then(module => ({
+//     default: module.AsaasTestPage,
+//   })),
+// );
 const BuySubscriptionPage = lazy(() =>
   import("@/pages/buy-subscription-page").then(module => ({
     default: module.BuySubscriptionPage,
@@ -106,41 +112,41 @@ const SignupPendingPage = lazy(() =>
 //   })),
 // );
 
-// const skeletons: Record<string, React.ReactNode> = {
-//   "/": <DashboardSkeleton />,
-//   "/agenda": <DashboardSkeleton />,
-//   "/clientes": <CustomersSkeleton />,
-//   "/equipe": <ManageTeamSkeleton />,
-//   "/servicos": <ServicesSkeleton />,
-//   "/editar-pagina": <SettingsSkeleton />,
-//   "/relatorios": <DashboardSkeleton />,
-//   "/configuracoes": <SettingsSkeleton />,
-// };
+const skeletons: Record<string, React.ReactNode> = {
+  "/": <DashboardSkeleton />,
+  "/agenda": <DashboardSkeleton />,
+  // "/clientes": <CustomersSkeleton />,
+  // "/equipe": <ManageTeamSkeleton />,
+  // "/servicos": <ServicesSkeleton />,
+  // "/editar-pagina": <SettingsSkeleton />,
+  // "/relatorios": <DashboardSkeleton />,
+  // "/configuracoes": <SettingsSkeleton />,
+};
 
-// function ProtectedRouteWithSkeleton({
-//   children,
-// }: {
-//   children?: React.ReactNode;
-// }) {
-//   const { pathname } = useLocation();
-//   const skeleton = skeletons[pathname] ?? <DashboardSkeleton />;
+function ProtectedRouteWithSkeleton({
+  children,
+}: {
+  children?: React.ReactNode;
+}) {
+  const { pathname } = useLocation();
+  const skeleton = skeletons[pathname] ?? <DashboardSkeleton />;
 
-//   return (
-//     <ProtectedRoute withSidebar skeleton={skeleton}>
-//       {children}
-//     </ProtectedRoute>
-//   );
-//}
+  return (
+    <ProtectedRoute withSidebar skeleton={skeleton}>
+      {children}
+    </ProtectedRoute>
+  );
+}
 
-// function ProtectedPageLoader({
-//   fallback,
-//   children,
-// }: {
-//   fallback: React.ReactNode;
-//   children: React.ReactNode;
-// }) {
-//   return <Suspense fallback={fallback}>{children}</Suspense>;
-// }
+function ProtectedPageLoader({
+  fallback,
+  children,
+}: {
+  fallback: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return <Suspense fallback={fallback}>{children}</Suspense>;
+}
 
 function PublicPageLoader({ children }: { children: React.ReactNode }) {
   return (
@@ -244,7 +250,7 @@ export function AppRoutes() {
           path="/painel"
           element={
             <PublicPageLoader>
-              <DashboardPage />
+              <DashboardPageDev />
             </PublicPageLoader>
           }
         />
@@ -269,7 +275,7 @@ export function AppRoutes() {
           import.meta.env.DEV é `false` no build de produção, então estas rotas
           NÃO existem em prod (404). Evita expor a página de cobrança e o
           diagnóstico de credenciais publicamente. (M1) */}
-      {import.meta.env.DEV && (
+      {/* {import.meta.env.DEV && (
         <>
           <Route
             path="/teste-asaas"
@@ -280,9 +286,9 @@ export function AppRoutes() {
             }
           />
         </>
-      )}
+      )} */}
       {/* Rotas protegidas com sidebar */}
-      {/* <Route element={<ProtectedRouteWithSkeleton />}>
+      <Route element={<ProtectedRouteWithSkeleton />}>
         <Route
           path="/"
           element={
@@ -291,7 +297,7 @@ export function AppRoutes() {
             </ProtectedPageLoader>
           }
         />
-        <Route
+        {/* <Route
           path="/agenda"
           element={
             <ProtectedPageLoader fallback={<DashboardSkeleton />}>
@@ -327,7 +333,7 @@ export function AppRoutes() {
           path="/editar-pagina"
           element={
             <ProtectedPageLoader fallback={<SettingsSkeleton />}>
-              {/* <ManageStoreStylePage />
+              <ManageStoreStylePage />
               <ManageStoreStylePage />
             </ProtectedPageLoader>
           }
@@ -347,8 +353,8 @@ export function AppRoutes() {
               <SettingPage />
             </ProtectedPageLoader>
           }
-        />
-      </Route> */}
+        /> */}
+      </Route>
     </Routes>
   );
 }

@@ -1,58 +1,32 @@
-﻿// import { supabase } from "../supabase";
-// import type { Customer } from "@/types/customer";
-//
-// type CreateCustomerParams = {
-//   barbershopId: string;
-//   name: string;
-//   phone: string;
-// };
-//
-// type CreateCustomerResult =
-//   | { status: "created"; customer: Customer }
-//   | { status: "conflict"; existing: Customer }
-//   | { status: "error" };
-//
-// export async function createCustomer({
-//   barbershopId,
-//   name,
-//   phone,
-// }: CreateCustomerParams): Promise<CreateCustomerResult> {
-//   const normalizedPhone = phone.replace(/\D/g, "");
-//
-//   const { data: existingCustomer, error: existingError } = await supabase
-//     .from("customers")
-//     .select("*")
-//     .eq("barbershop_id", barbershopId)
-//     .eq("phone", normalizedPhone)
-//     .maybeSingle();
-//
-//   if (existingError) {
-//     return { status: "error" };
-//   }
-//
-//   if (existingCustomer) {
-//     return { status: "conflict", existing: existingCustomer };
-//   }
-//
-//   const { data, error } = await supabase
-//     .from("customers")
-//     .insert({ barbershop_id: barbershopId, name, phone: normalizedPhone })
-//     .select("*")
-//     .single();
-//
-//   if (error) {
-//     if (error.code === "23505") {
-//       const { data: existing } = await supabase
-//         .from("customers")
-//         .select("*")
-//         .eq("barbershop_id", barbershopId)
-//         .eq("phone", normalizedPhone)
-//         .single();
-//
-//       if (existing) return { status: "conflict", existing };
-//     }
-//     return { status: "error" };
-//   }
-//
-//   return { status: "created", customer: data };
-// }
+﻿import { supabase } from "../supabase";
+import type { Customer } from "@/types/customer";
+
+type CreateCustomerParams = {
+  barbershopId: string;
+  name: string;
+  phone: string;
+};
+
+type CreateCustomerResult =
+  | { status: "created"; customer: Customer }
+  | { status: "conflict"; existing: Customer }
+  | { status: "invalid"; field: "name" | "phone" }
+  | { status: "error"; message: string };
+
+export async function createCustomer({
+  barbershopId,
+  name,
+  phone,
+}: CreateCustomerParams): Promise<CreateCustomerResult> {
+  const { data, error } = await supabase.rpc("create_customer", {
+    p_barbershop_id: barbershopId,
+    p_name: name,
+    p_phone: phone,
+  });
+
+  if (error) {
+    return { status: "error", message: error.message };
+  }
+
+  return data as CreateCustomerResult;
+}

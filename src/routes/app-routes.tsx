@@ -4,7 +4,7 @@ import { PublicRoute } from "./public-route";
 import { ProtectedRoute } from "./protected-route";
 import { ManageTeamSkeleton } from "@/components/skeleton/manage-team-skeleton";
 import { ServicesSkeleton } from "@/components/skeleton/services-skeleton";
-// import { CustomersSkeleton } from "@/components/skeleton/customers-skeleton";
+import { CustomersSkeleton } from "@/components/skeleton/customers-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
 import { SettingsSkeleton } from "@/components/skeleton/settings-skeleton";
@@ -105,11 +105,11 @@ const ReportsPage = lazy(() =>
 //     default: module.AppointmentsPage,
 //   })),
 // );
-// const CustomersPage = lazy(() =>
-//   import("@/pages/customers-page").then(module => ({
-//     default: module.CustomersPage,
-//   })),
-// );
+const CustomersPage = lazy(() =>
+  import("@/pages/customers-page").then(module => ({
+    default: module.CustomersPage,
+  })),
+);
 
 const skeletons: Record<string, React.ReactNode> = {
   "/": <DashboardSkeleton />,
@@ -328,14 +328,6 @@ export function AppRoutes() {
             </ProtectedPageLoader>
           }
         />
-        {/* <Route
-          path="/agenda"
-          element={
-            <ProtectedPageLoader fallback={<DashboardSkeleton />}>
-              <AppointmentsPage />
-            </ProtectedPageLoader>
-          }
-        />
         <Route
           path="/clientes"
           element={
@@ -344,6 +336,15 @@ export function AppRoutes() {
             </ProtectedPageLoader>
           }
         />
+        {/* <Route
+          path="/agenda"
+          element={
+            <ProtectedPageLoader fallback={<DashboardSkeleton />}>
+              <AppointmentsPage />
+            </ProtectedPageLoader>
+          }
+        />
+
 
 
 

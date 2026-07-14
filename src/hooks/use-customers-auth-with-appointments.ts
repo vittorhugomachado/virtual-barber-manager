@@ -1,123 +1,22 @@
-﻿import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/supabase";
-import { useBarbershopStore } from "@/store/barbershop.store";
-import type { Customer } from "@/types/customer";
+import { useMemo } from "react";
+import { useCustomers } from "@/hooks/use-customers";
 
+/**
+ * Compatibility selector. New customer screens should use useAllCustomers so
+ * manual and authenticated customers share one server-side query.
+ */
 export function useCustomersAuthWithAppointments() {
-  const { barbershop } = useBarbershopStore();
-  const barbershopId = barbershop?.id;
-  const [customersAuth, setCustomersAuth] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!barbershopId) return;
-
-    let active = true;
-
-    async function loadCustomersAuthWithAppointments() {
-      setLoading(true);
-
-      const { data: appointmentRows, error: appointmentsError } = await supabase
-        .from("appointments")
-        .select("customer_id, starts_at, created_at")
-        .eq("barbershop_id", barbershopId)
-        .not("customer_id", "is", null);
-
-      if (!active) return;
-
-      if (appointmentsError) {
-        console.error(
-          "[useCustomersAuthWithAppointments] appointments error:",
-          appointmentsError,
-        );
-        setCustomersAuth([]);
-        setLoading(false);
-        return;
-      }
-
-      const statsMap = new Map<
-        string,
-        { total: number; last: string | null; first_seen_at: string }
-      >();
-
-      for (const appointment of appointmentRows ?? []) {
-        const current = statsMap.get(appointment.customer_id);
-
-        if (!current) {
-          statsMap.set(appointment.customer_id, {
-            total: 1,
-            last: appointment.starts_at,
-            first_seen_at: appointment.created_at,
-          });
-          continue;
-        }
-
-        current.total += 1;
-        if (appointment.starts_at > (current.last ?? "")) {
-          current.last = appointment.starts_at;
-        }
-        if (appointment.created_at < current.first_seen_at) {
-          current.first_seen_at = appointment.created_at;
-        }
-      }
-
-      const authIds = Array.from(statsMap.keys());
-
-      if (authIds.length === 0) {
-        if (!active) return;
-        setCustomersAuth([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data: authRows, error: customersError } = await supabase
-        .from("customers")
-        .select(
-          "id, barbershop_id, name, phone, created_at, updated_at, auth, auth_user_id",
-        )
-        .eq("auth", true)
-        .in("id", authIds);
-
-      if (!active) return;
-
-      if (customersError) {
-        console.error(
-          "[useCustomersAuthWithAppointments] customers error:",
-          customersError,
-        );
-        setCustomersAuth([]);
-        setLoading(false);
-        return;
-      }
-
-      setCustomersAuth(
-        (authRows ?? []).map(row => ({
-          id: row.id,
-          barbershop_id: row.barbershop_id ?? barbershopId,
-          name: row.name?.trim() || "Cliente sem nome",
-          phone: row.phone ?? null,
-          created_at: statsMap.get(row.id)?.first_seen_at ?? row.created_at,
-          updated_at: row.updated_at ?? null,
-          auth: row.auth,
-          auth_user_id: row.auth_user_id,
-          total_appointments: statsMap.get(row.id)?.total ?? 0,
-          last_appointment: statsMap.get(row.id)?.last ?? null,
-          source: "customers_auth" as const,
-        })),
-      );
-      setLoading(false);
-    }
-
-    void loadCustomersAuthWithAppointments();
-
-    return () => {
-      active = false;
-    };
-  }, [barbershopId]);
+  const result = useCustomers();
+  const customersAuth = useMemo(
+    () =>
+      result.customers.filter(customer => customer.source === "customers_auth"),
+    [result.customers],
+  );
 
   return {
-    customersAuth: barbershopId ? customersAuth : [],
-    setCustomersAuth,
-    loading: barbershopId ? loading : false,
+    customersAuth,
+    loading: result.loading,
+    error: result.error,
+    reload: result.reload,
   };
 }

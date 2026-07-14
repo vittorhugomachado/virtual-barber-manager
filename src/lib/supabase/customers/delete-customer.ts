@@ -1,32 +1,27 @@
-﻿// import { supabase } from "../supabase";
-//
-// type DeleteCustomerResult =
-//   | { status: "deleted" }
-//   | { status: "conflict" }
-//   | { status: "error" };
-//
-// export async function deleteCustomer(
-//   id: string,
-// ): Promise<DeleteCustomerResult> {
-//   // Desvincula agendamentos passados antes de deletar (snapshots preservam os dados)
-//   const { error: unlinkError } = await supabase
-//     .from("appointments")
-//     .update({ manual_customer_id: null })
-//     .eq("manual_customer_id", id);
-//
-//   if (unlinkError) {
-//     return { status: "error" };
-//   }
-//
-//   const { error } = await supabase.from("customers").delete().eq("id", id);
-//
-//   if (!error) {
-//     return { status: "deleted" };
-//   }
-//
-//   if (error.code === "23503") {
-//     return { status: "conflict" };
-//   }
-//
-//   return { status: "error" };
-// }
+﻿import { supabase } from "../supabase";
+
+type DeleteCustomerResult =
+  | { status: "deleted"; customer_id: string }
+  | {
+      status: "conflict";
+      reason: "future_appointments";
+      future_appointments: number;
+    }
+  | { status: "not_found" }
+  | { status: "error"; message: string };
+
+export async function deleteCustomer(
+  barbershopId: string,
+  id: string,
+): Promise<DeleteCustomerResult> {
+  const { data, error } = await supabase.rpc("delete_customer", {
+    p_barbershop_id: barbershopId,
+    p_customer_id: id,
+  });
+
+  if (error) {
+    return { status: "error", message: error.message };
+  }
+
+  return data as DeleteCustomerResult;
+}

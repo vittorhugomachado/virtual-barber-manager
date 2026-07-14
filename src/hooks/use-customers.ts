@@ -1,13 +1,49 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/supabase";
+import { useCallback, useEffect, useState } from "react";
+import { getCustomers } from "@/lib/supabase/customers/get-customers";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import type { Customer } from "@/types/customer";
 
+const DEFAULT_PAGE_SIZE = 20;
+
 export function useCustomers() {
-  const { barbershop } = useBarbershopStore();
-  const barbershopId = barbershop?.id;
+  const barbershopId = useBarbershopStore(state => state.barbershop?.id);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [search, setSearchValue] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const setSearch = useCallback((value: string) => {
+    setSearchValue(value);
+    setPage(1);
+  }, []);
+
+  const reload = useCallback(() => {
+    setReloadToken(current => current + 1);
+  }, []);
+
+  const replaceCustomer = useCallback((customer: Customer) => {
+    setCustomers(current =>
+      current.map(item => (item.id === customer.id ? customer : item)),
+    );
+  }, []);
+
+  const removeCustomer = useCallback((customerId: string) => {
+    setCustomers(current => current.filter(item => item.id !== customerId));
+    setTotal(current => Math.max(0, current - 1));
+  }, []);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [search]);
 
   useEffect(() => {
     if (!barbershopId) return;
@@ -16,86 +52,36 @@ export function useCustomers() {
 
     async function loadCustomers() {
       setLoading(true);
+      setError(null);
 
-      const { data: customersData, error: customersError } = await supabase
-        .from("customers")
-        .select(
-          "id, barbershop_id, name, phone, created_at, updated_at, auth, auth_user_id",
-        )
-        .eq("barbershop_id", barbershopId)
-        .order("created_at", { ascending: false });
-
-      if (!active) return;
-
-      if (customersError) {
-        console.error("[useCustomers] customers error:", customersError);
-        setCustomers([]);
-        setLoading(false);
-        return;
-      }
-
-      const customerIds = (customersData ?? []).map(customer => customer.id);
-      const statsMap = new Map<
-        string,
-        { total: number; last: string | null }
-      >();
-
-      if (customerIds.length > 0) {
-        const { data: appointmentsData, error: appointmentsError } =
-          await supabase
-            .from("appointments")
-            .select("customer_id, starts_at")
-            .eq("barbershop_id", barbershopId)
-            .in("customer_id", customerIds)
-            .not(
-              "status",
-              "in",
-              "(cancelled_by_customer,cancelled_by_barbershop)",
-            );
-
+      try {
+        const result = await getCustomers({
+          barbershopId: barbershopId!,
+          search: debouncedSearch,
+          page,
+          pageSize: DEFAULT_PAGE_SIZE,
+        });
         if (!active) return;
+        setCustomers(result.items);
+        setTotal(result.total);
+        setTotalPages(result.total_pages);
 
-        if (appointmentsError) {
-          console.error(
-            "[useCustomers] appointments error:",
-            appointmentsError,
-          );
+        if (result.total_pages > 0 && page > result.total_pages) {
+          setPage(result.total_pages);
         }
-
-        for (const appointment of appointmentsData ?? []) {
-          if (!appointment.customer_id) continue;
-
-          const current = statsMap.get(appointment.customer_id);
-          if (!current) {
-            statsMap.set(appointment.customer_id, {
-              total: 1,
-              last: appointment.starts_at,
-            });
-            continue;
-          }
-
-          current.total += 1;
-          if (appointment.starts_at > (current.last ?? "")) {
-            current.last = appointment.starts_at;
-          }
-        }
+      } catch (cause) {
+        if (!active) return;
+        setCustomers([]);
+        setTotal(0);
+        setTotalPages(0);
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "Não foi possível carregar os clientes.",
+        );
+      } finally {
+        if (active) setLoading(false);
       }
-
-      if (!active) return;
-
-      setCustomers(
-        (customersData ?? []).map(customer => {
-          const stats = statsMap.get(customer.id);
-
-          return {
-            ...customer,
-            total_appointments: stats?.total ?? 0,
-            last_appointment: stats?.last ?? null,
-            source: "customers" as const,
-          };
-        }),
-      );
-      setLoading(false);
     }
 
     void loadCustomers();
@@ -103,11 +89,21 @@ export function useCustomers() {
     return () => {
       active = false;
     };
-  }, [barbershopId]);
+  }, [barbershopId, debouncedSearch, page, reloadToken]);
 
   return {
     customers: barbershopId ? customers : [],
-    setCustomers,
+    search,
+    setSearch,
+    page,
+    setPage,
+    pageSize: DEFAULT_PAGE_SIZE,
+    total: barbershopId ? total : 0,
+    totalPages: barbershopId ? totalPages : 0,
     loading: barbershopId ? loading : false,
+    error: barbershopId ? error : null,
+    reload,
+    replaceCustomer,
+    removeCustomer,
   };
 }

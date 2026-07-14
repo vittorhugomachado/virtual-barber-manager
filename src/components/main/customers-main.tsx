@@ -65,15 +65,15 @@ export function CustomersMain() {
 
   return (
     <main className="mx-auto mt-8 flex w-full max-w-325 flex-col gap-6 px-4 pb-12 md:px-12">
-      <div className="flex flex-col flex-wrap items-center justify-between gap-3 md:flex-row">
-        <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+      <div className="flex flex-col flex-wrap items-center justify-between gap-3">
+        <p className="inline-flex items-center gap-1 text-sm text-muted-foreground mr-auto">
           <Users className="h-4 w-4" />
           {total} cliente{total !== 1 ? "s" : ""} cadastrado
           {total !== 1 ? "s" : ""}
         </p>
 
-        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
-          <div className="relative w-full md:w-72">
+        <div className="flex flex-col-reverse md:flex-row mt-3 w-full flex-wrap justify-center md:justify-between items-center gap-2">
+          <div className="relative w-full md:max-w-92">
             <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome ou telefone"
@@ -83,7 +83,7 @@ export function CustomersMain() {
             />
           </div>
           <Button
-            className="shrink-0 cursor-pointer rounded-full"
+            className="shrink-0 cursor-pointer rounded-full w-46"
             onClick={() => setCreateOpen(true)}
           >
             <Plus className="h-4 w-4" />
@@ -182,7 +182,7 @@ export function CustomersMain() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="cursor-pointer rounded-full"
+                          className="cursor-pointer rounded-full w-10 lg:w-30"
                           onClick={() => setEditCustomer(customer)}
                           disabled={!isManualCustomer}
                           title={
@@ -197,7 +197,7 @@ export function CustomersMain() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="cursor-pointer rounded-full"
+                          className="cursor-pointer rounded-full w-10 lg:w-30"
                           onClick={() => setSelectedCustomer(customer)}
                         >
                           <CalendarDays className="h-3.5 w-3.5 lg:mr-2" />

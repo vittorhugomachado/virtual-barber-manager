@@ -82,7 +82,7 @@ export function CustomerConflictModal({
           </p>
         </div>
 
-        <DialogFooter className="flex-row flex-wrap items-center justify-center gap-2 sm:justify-between">
+        <DialogFooter className="flex-col items-center justify-center gap-2 sm:justify-between">
           {isManualCustomer ? (
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -90,7 +90,7 @@ export function CustomerConflictModal({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="cursor-pointer text-destructive hover:text-destructive"
+                  className="w-fit cursor-pointer text-destructive hover:text-destructive"
                 >
                   <Trash2 className="mr-1 h-4 w-4" />
                   Excluir cliente

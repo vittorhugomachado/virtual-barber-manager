@@ -7,7 +7,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -151,12 +150,15 @@ export function CreateCustomerModal({
             </FieldGroup>
           </form>
 
-          <DialogFooter>
+          <div
+            style={{ justifyContent: "space-between" }}
+            className="w-full flex gap-2 items-center sm:justify-between"
+          >
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="rounded-full"
+              className="rounded-full w-26"
             >
               Cancelar
             </Button>
@@ -164,11 +166,11 @@ export function CreateCustomerModal({
               type="submit"
               form="create-customer-form"
               disabled={form.formState.isSubmitting}
-              className="rounded-full"
+              className="rounded-full w-32"
             >
               {form.formState.isSubmitting ? "Criando..." : "Criar cliente"}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
       <CustomerConflictModal

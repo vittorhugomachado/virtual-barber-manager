@@ -431,7 +431,7 @@ export function UpdateBarberModal({
             </AlertDialog>
             <div
               style={{ justifyContent: "space-between" }}
-              className="w-full flex gap-2 items-center sm:justify-between"
+              className="flex gap-2"
             >
               <Button
                 type="button"

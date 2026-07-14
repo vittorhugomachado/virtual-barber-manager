@@ -203,14 +203,14 @@ export function UpdateCustomerModal({
             </FieldGroup>
           </form>
 
-          <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
+          <DialogFooter className="flex-col items-between justify-between gap-5">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="cursor-pointer text-destructive hover:text-destructive"
+                  className="w-fit text-destructive mx-auto hover:text-destructive cursor-pointer"
                 >
                   <Trash2 className="mr-1 h-4 w-4" />
                   Excluir
@@ -237,12 +237,15 @@ export function UpdateCustomerModal({
               </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex gap-2">
+            <div
+              style={{ justifyContent: "space-between" }}
+              className="flex gap-2"
+            >
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="rounded-full"
+                className="rounded-full w-26"
               >
                 Cancelar
               </Button>
@@ -250,7 +253,7 @@ export function UpdateCustomerModal({
                 type="submit"
                 form="update-customer-form"
                 disabled={form.formState.isSubmitting}
-                className="rounded-full"
+                className="rounded-full w-32"
               >
                 {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
               </Button>

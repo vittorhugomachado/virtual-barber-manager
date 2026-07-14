@@ -8,7 +8,7 @@ import { ServicesSkeleton } from "@/components/skeleton/services-skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { DashboardSkeleton } from "@/components/skeleton/dashboard-skeleton";
 import { SettingsSkeleton } from "@/components/skeleton/settings-skeleton";
-// import { ReportsSkeleton } from "@/components/skeleton/reports-skeleton";
+import { ReportsSkeleton } from "@/components/skeleton/reports-skeleton";
 
 const DashboardPageDev = lazy(() =>
   import("@/pages/dashboard-page").then(module => ({
@@ -95,11 +95,11 @@ const ManageTeamPage = lazy(() =>
     default: module.ManageTeamPage,
   })),
 );
-// const ReportsPage = lazy(() =>
-//   import("@/pages/reports-page").then(module => ({
-//     default: module.ReportsPage,
-//   })),
-// );
+const ReportsPage = lazy(() =>
+  import("@/pages/reports-page").then(module => ({
+    default: module.ReportsPage,
+  })),
+);
 // const AppointmentsPage = lazy(() =>
 //   import("@/pages/appointments-page").then(module => ({
 //     default: module.AppointmentsPage,
@@ -320,6 +320,14 @@ export function AppRoutes() {
             </ProtectedPageLoader>
           }
         />
+        <Route
+          path="/relatorios"
+          element={
+            <ProtectedPageLoader fallback={<ReportsSkeleton />}>
+              <ReportsPage />
+            </ProtectedPageLoader>
+          }
+        />
         {/* <Route
           path="/agenda"
           element={
@@ -338,14 +346,7 @@ export function AppRoutes() {
         />
 
 
-        <Route
-          path="/relatorios"
-          element={
-            <ProtectedPageLoader fallback={<ReportsSkeleton />}>
-              <ReportsPage />
-            </ProtectedPageLoader>
-          }
-        />
+
         <Route
           path="/configuracoes"
           element={

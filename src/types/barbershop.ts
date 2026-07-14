@@ -14,4 +14,5 @@
   onboarding_step: number;
   created_at: string;
   updated_at: string | null;
+  owner_name?: string;
 };

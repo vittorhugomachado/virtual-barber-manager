@@ -50,11 +50,11 @@ const ConfirmSignupPageByEmailLink = lazy(() =>
     default: module.ConfirmSignupPageByEmailLink,
   })),
 );
-// const EmailChangeConfirmedPage = lazy(() =>
-//   import("@/pages/confirmation-email-page").then(module => ({
-//     default: module.EmailChangeConfirmedPage,
-//   })),
-// );
+const EmailChangeConfirmedPage = lazy(() =>
+  import("@/pages/confirmation-email-page").then(module => ({
+    default: module.EmailChangeConfirmedPage,
+  })),
+);
 const LoginPage = lazy(() =>
   import("@/pages/login-page").then(module => ({
     default: module.LoginPage,
@@ -75,11 +75,11 @@ const SignupPendingPage = lazy(() =>
 //     default: module.ResetPasswordPage,
 //   })),
 // );
-// const SettingPage = lazy(() =>
-//   import("@/pages/settings-page").then(module => ({
-//     default: module.SettingPage,
-//   })),
-// );
+const SettingsPage = lazy(() =>
+  import("@/pages/settings-page").then(module => ({
+    default: module.SettingsPage,
+  })),
+);
 const ManageServicePage = lazy(() =>
   import("@/pages/manage-service-page").then(module => ({
     default: module.ManageServicePage,
@@ -114,12 +114,12 @@ const CustomersPage = lazy(() =>
 const skeletons: Record<string, React.ReactNode> = {
   "/": <DashboardSkeleton />,
   "/agenda": <DashboardSkeleton />,
-  // "/clientes": <CustomersSkeleton />,
-  // "/equipe": <ManageTeamSkeleton />,
-  // "/servicos": <ServicesSkeleton />,
-  // "/editar-pagina": <SettingsSkeleton />,
-  // "/relatorios": <DashboardSkeleton />,
-  // "/configuracoes": <SettingsSkeleton />,
+  "/clientes": <CustomersSkeleton />,
+  "/equipe": <ManageTeamSkeleton />,
+  "/servicos": <ServicesSkeleton />,
+  "/editar-pagina": <SettingsSkeleton />,
+  "/relatorios": <DashboardSkeleton />,
+  "/configuracoes": <SettingsSkeleton />,
 };
 
 function ProtectedRouteWithSkeleton({
@@ -223,15 +223,15 @@ export function AppRoutes() {
           </PublicPageLoader>
         }
       /> */}
-      {/* Rota de sucesso de cadastro (pública, sem sidebar) */}
-      {/* <Route
+      {/* Callback público usado pelo link de confirmação da troca de email. */}
+      <Route
         path="/auth/email-change-confirmed"
         element={
           <PublicPageLoader>
             <EmailChangeConfirmedPage />
           </PublicPageLoader>
         }
-      /> */}
+      />
       {/* Onboarding — protegido, sem sidebar */}
       <Route element={<ProtectedRoute />}>
         <Route
@@ -336,6 +336,14 @@ export function AppRoutes() {
             </ProtectedPageLoader>
           }
         />
+        <Route
+          path="/configuracoes"
+          element={
+            <ProtectedPageLoader fallback={<SettingsSkeleton />}>
+              <SettingsPage />
+            </ProtectedPageLoader>
+          }
+        />
         {/* <Route
           path="/agenda"
           element={
@@ -343,19 +351,7 @@ export function AppRoutes() {
               <AppointmentsPage />
             </ProtectedPageLoader>
           }
-        />
-
-
-
-
-        <Route
-          path="/configuracoes"
-          element={
-            <ProtectedPageLoader fallback={<SettingsSkeleton />}>
-              <SettingPage />
-            </ProtectedPageLoader>
-          }
-        /> */}
+        />*/}
       </Route>
     </Routes>
   );

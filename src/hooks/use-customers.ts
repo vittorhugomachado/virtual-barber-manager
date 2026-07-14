@@ -19,7 +19,9 @@ export function useCustomers() {
 
       const { data: customersData, error: customersError } = await supabase
         .from("customers")
-        .select("id, barbershop_id, name, phone, created_at, updated_at")
+        .select(
+          "id, barbershop_id, name, phone, created_at, updated_at, auth, auth_user_id",
+        )
         .eq("barbershop_id", barbershopId)
         .order("created_at", { ascending: false });
 
@@ -33,7 +35,10 @@ export function useCustomers() {
       }
 
       const customerIds = (customersData ?? []).map(customer => customer.id);
-      const statsMap = new Map<string, { total: number; last: string | null }>();
+      const statsMap = new Map<
+        string,
+        { total: number; last: string | null }
+      >();
 
       if (customerIds.length > 0) {
         const { data: appointmentsData, error: appointmentsError } =
@@ -51,7 +56,10 @@ export function useCustomers() {
         if (!active) return;
 
         if (appointmentsError) {
-          console.error("[useCustomers] appointments error:", appointmentsError);
+          console.error(
+            "[useCustomers] appointments error:",
+            appointmentsError,
+          );
         }
 
         for (const appointment of appointmentsData ?? []) {

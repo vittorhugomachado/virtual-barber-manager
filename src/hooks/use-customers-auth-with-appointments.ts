@@ -72,7 +72,9 @@ export function useCustomersAuthWithAppointments() {
 
       const { data: authRows, error: customersError } = await supabase
         .from("customers")
-        .select("id, name, phone, created_at, updated_at")
+        .select(
+          "id, barbershop_id, name, phone, created_at, updated_at, auth, auth_user_id",
+        )
         .eq("auth", true)
         .in("id", authIds);
 
@@ -91,11 +93,13 @@ export function useCustomersAuthWithAppointments() {
       setCustomersAuth(
         (authRows ?? []).map(row => ({
           id: row.id,
-          barbershop_id: barbershopId,
+          barbershop_id: row.barbershop_id ?? barbershopId,
           name: row.name?.trim() || "Cliente sem nome",
           phone: row.phone ?? null,
           created_at: statsMap.get(row.id)?.first_seen_at ?? row.created_at,
           updated_at: row.updated_at ?? null,
+          auth: row.auth,
+          auth_user_id: row.auth_user_id,
           total_appointments: statsMap.get(row.id)?.total ?? 0,
           last_appointment: statsMap.get(row.id)?.last ?? null,
           source: "customers_auth" as const,

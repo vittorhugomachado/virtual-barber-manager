@@ -57,6 +57,13 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+function haveSameIds(first: string[], second: string[]) {
+  if (first.length !== second.length) return false;
+  const firstSorted = [...first].sort();
+  const secondSorted = [...second].sort();
+  return firstSorted.every((id, index) => id === secondSorted[index]);
+}
+
 interface UpdateBarberModalProps {
   open: boolean;
   barber: Barber | null;
@@ -85,6 +92,9 @@ export function UpdateBarberModal({
   const [availabilityErrors, setAvailabilityErrors] = useState<
     Record<string, string>
   >({});
+  const [initialFormValues, setInitialFormValues] = useState<FormValues | null>(
+    null,
+  );
   const { count: futureCount, loading: countLoading } =
     useFutureAppointmentsCount(
       "barber_id",
@@ -93,6 +103,7 @@ export function UpdateBarberModal({
 
   const {
     availability,
+    initialAvailability,
     setAvailability,
     loading: loadingAvailability,
   } = useBarberAvailability(open ? (barber?.id ?? null) : null);
@@ -103,6 +114,10 @@ export function UpdateBarberModal({
   });
 
   const watchedName = useWatch({ control: form.control, name: "name" });
+  const watchedServiceIds = useWatch({
+    control: form.control,
+    name: "serviceIds",
+  });
 
   useEffect(() => {
     if (!barber) return;
@@ -111,10 +126,12 @@ export function UpdateBarberModal({
       .select("service_id")
       .eq("barber_id", barber.id)
       .then(({ data }) => {
-        form.reset({
+        const values = {
           name: barber.name,
           serviceIds: data?.map(d => d.service_id) ?? [],
-        });
+        };
+        form.reset(values);
+        setInitialFormValues(values);
         setAvatarPreview(barber.avatar_url);
         setAvatarFile(null);
         setRemoveAvatar(false);
@@ -125,6 +142,15 @@ export function UpdateBarberModal({
     setAvailability(next);
     setAvailabilityErrors(validateAvailability(next));
   }
+
+  const formChanged =
+    initialFormValues !== null &&
+    (watchedName !== initialFormValues.name ||
+      !haveSameIds(watchedServiceIds, initialFormValues.serviceIds));
+  const availabilityChanged =
+    JSON.stringify(availability) !== JSON.stringify(initialAvailability);
+  const hasChanges =
+    formChanged || !!avatarFile || removeAvatar || availabilityChanged;
 
   function clearError(key: string) {
     setAvailabilityErrors(prev => {
@@ -445,7 +471,7 @@ export function UpdateBarberModal({
                 className="rounded-full w-32"
                 type="submit"
                 form="update-barber-form"
-                disabled={form.formState.isSubmitting}
+                disabled={form.formState.isSubmitting || !hasChanges}
               >
                 {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
               </Button>

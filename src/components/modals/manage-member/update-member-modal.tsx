@@ -76,6 +76,10 @@ export function UpdateMemberModal({
     form.username.trim().length > 0 && !usernameValidation.success
       ? usernameValidation.error.issues[0]?.message
       : null;
+  const hasChanges =
+    form.username !== member.username ||
+    form.password.length > 0 ||
+    form.role !== member.role;
 
   function handleOpenChange(nextOpen: boolean) {
     onOpenChange(nextOpen);
@@ -236,7 +240,7 @@ export function UpdateMemberModal({
               Cancelar
             </Button>
             <Button
-              disabled={!!usernameError || isUpdating}
+              disabled={!!usernameError || isUpdating || !hasChanges}
               onClick={handleSubmit}
               className="rounded-full w-35"
             >

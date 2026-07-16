@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { useForm, Controller, type Resolver } from "react-hook-form";
+import { useForm, Controller, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
@@ -72,6 +72,17 @@ const formSchema = z.object({
 });
 
 type FormValues = z.infer<typeof formSchema>;
+type InitialFormValues = Omit<FormValues, "price" | "duration_min"> & {
+  price: number | undefined;
+  duration_min: number | undefined;
+};
+
+function haveSameIds(first: string[], second: string[]) {
+  if (first.length !== second.length) return false;
+  const firstSorted = [...first].sort();
+  const secondSorted = [...second].sort();
+  return firstSorted.every((id, index) => id === secondSorted[index]);
+}
 
 interface UpdateServiceModalProps {
   open: boolean;
@@ -98,6 +109,8 @@ export function UpdateServiceModal({
   const [cropperOpen, setCropperOpen] = useState(false);
   const [cropperImageUrl, setCropperImageUrl] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [initialFormValues, setInitialFormValues] =
+    useState<InitialFormValues | null>(null);
   const { count: futureCount, loading: countLoading } =
     useFutureAppointmentsCount(
       "service_id",
@@ -115,6 +128,17 @@ export function UpdateServiceModal({
     },
   });
 
+  const watchedValues = useWatch({ control: form.control });
+  const formChanged =
+    initialFormValues !== null &&
+    (watchedValues.name !== initialFormValues.name ||
+      (watchedValues.description ?? "") !==
+        (initialFormValues.description ?? "") ||
+      watchedValues.price !== initialFormValues.price ||
+      watchedValues.duration_min !== initialFormValues.duration_min ||
+      !haveSameIds(watchedValues.barberIds ?? [], initialFormValues.barberIds));
+  const hasChanges = formChanged || !!imageFile || removeImage;
+
   useEffect(() => {
     if (!service) return;
 
@@ -123,13 +147,15 @@ export function UpdateServiceModal({
       .select("barber_id")
       .eq("service_id", service.id)
       .then(({ data }) => {
-        form.reset({
+        const values: InitialFormValues = {
           name: service.name,
           description: service.description ?? "",
           price: service.price ?? undefined,
           duration_min: service.duration_min ?? undefined,
           barberIds: data?.map(item => item.barber_id) ?? [],
-        });
+        };
+        form.reset(values);
+        setInitialFormValues(values);
         setImagePreview(service.image_url);
         setImageFile(null);
         setRemoveImage(false);
@@ -561,7 +587,7 @@ export function UpdateServiceModal({
                 className="rounded-full w-32"
                 type="submit"
                 form="update-service-form"
-                disabled={form.formState.isSubmitting}
+                disabled={form.formState.isSubmitting || !hasChanges}
               >
                 {form.formState.isSubmitting ? "Salvando..." : "Salvar"}
               </Button>

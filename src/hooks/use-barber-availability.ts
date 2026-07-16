@@ -31,6 +31,8 @@ export function defaultAvailability(): DayAvailability[] {
 export function useBarberAvailability(barberId: string | null) {
   const [availability, setAvailability] =
     useState<DayAvailability[]>(defaultAvailability);
+  const [initialAvailability, setInitialAvailability] =
+    useState<DayAvailability[]>(defaultAvailability);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -48,6 +50,8 @@ export function useBarberAvailability(barberId: string | null) {
         .order("day_of_week")
         .order("period_order");
 
+      let nextAvailability = defaultAvailability();
+
       if (data && data.length > 0) {
         const byDay = new Map<number, typeof data>();
         for (const row of data) {
@@ -55,25 +59,26 @@ export function useBarberAvailability(barberId: string | null) {
           byDay.get(row.day_of_week)!.push(row);
         }
 
-        setAvailability(
-          defaultAvailability().map(def => {
-            const rows = byDay.get(def.day_of_week);
-            if (!rows) return def;
-            const first = rows[0];
-            return {
-              day_of_week: def.day_of_week,
-              is_day_off: first.is_day_off,
-              use_custom_hours: first.use_custom_hours,
-              periods: first.use_custom_hours
-                ? rows.map(r => ({
-                    starts_at: (r.starts_at ?? "08:00").slice(0, 5),
-                    ends_at: (r.ends_at ?? "18:00").slice(0, 5),
-                  }))
-                : [{ starts_at: "08:00", ends_at: "18:00" }],
-            };
-          }),
-        );
+        nextAvailability = defaultAvailability().map(def => {
+          const rows = byDay.get(def.day_of_week);
+          if (!rows) return def;
+          const first = rows[0];
+          return {
+            day_of_week: def.day_of_week,
+            is_day_off: first.is_day_off,
+            use_custom_hours: first.use_custom_hours,
+            periods: first.use_custom_hours
+              ? rows.map(r => ({
+                  starts_at: (r.starts_at ?? "08:00").slice(0, 5),
+                  ends_at: (r.ends_at ?? "18:00").slice(0, 5),
+                }))
+              : [{ starts_at: "08:00", ends_at: "18:00" }],
+          };
+        });
       }
+
+      setAvailability(nextAvailability);
+      setInitialAvailability(nextAvailability);
 
       setLoading(false);
     }
@@ -81,7 +86,7 @@ export function useBarberAvailability(barberId: string | null) {
     void load();
   }, [barberId]);
 
-  return { availability, setAvailability, loading };
+  return { availability, initialAvailability, setAvailability, loading };
 }
 
 // ─── Salvar ───────────────────────────────────────────────────────────────────

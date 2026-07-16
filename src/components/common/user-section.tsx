@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { useForm, Controller, type Resolver } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { toast } from "sonner";
 import {
   Plus,
@@ -9,35 +6,12 @@ import {
   Eye,
   Trash2,
   Loader2,
-  EyeOff,
   Pencil,
   CircleHelp,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
 import {
   Tooltip,
   TooltipContent,
@@ -53,14 +27,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useBarbershopStore } from "@/store/barbershop.store";
-import {
-  useCreateMember,
-  useDeleteMember,
-  useMembers,
-  useUpdateMember,
-  type Member,
-  type MemberRole,
-} from "@/hooks/use-members";
+import { useDeleteMember, useMembers, type Member } from "@/hooks/use-members";
+import { CreateMemberModal } from "@/components/modals/manage-member/create-member-modal";
+import { UpdateMemberModal } from "@/components/modals/manage-member/update-member-modal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -72,39 +41,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-type EditMemberData = {
-  username?: string;
-  password?: string;
-  role?: MemberRole;
-};
-
-type CreateMemberData = {
-  username: string;
-  password: string;
-  role: MemberRole;
-};
-
-const usernameSchema = z
-  .string()
-  .min(3, "Minimo 3 caracteres")
-  .max(30, "Maximo 30 caracteres")
-  .regex(/^[a-z0-9_]+$/, "Apenas letras minusculas, numeros e _");
-
-const createMemberSchema = z.object({
-  username: usernameSchema,
-  password: z
-    .string()
-    .min(8, "A senha deve ter pelo menos 8 caracteres")
-    .max(72, "A senha deve ter no máximo 72 caracteres"),
-  role: z.enum(["admin", "reader"]),
-});
-
 function getRoleLabel(role: "admin" | "reader") {
   return role === "admin" ? "Admin" : "Leitor";
-}
-
-function getRoleDescription(role: "admin" | "reader") {
-  return role === "admin" ? "Acesso completo" : "Apenas agenda";
 }
 
 function getRoleHelpText(role: "admin" | "reader") {
@@ -162,68 +100,12 @@ export function UsersSection() {
     reload,
     removeLocal,
   } = useMembers(barbershop?.id);
-  const { createMember } = useCreateMember();
-  const { updateMember } = useUpdateMember();
   const { deleteMember } = useDeleteMember();
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<Member | null>(null);
   const [editMember, setEditMember] = useState<Member | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [editForm, setEditForm] = useState<{
-    username: string;
-    password: string;
-    role: "admin" | "reader";
-  }>({
-    username: "",
-    password: "",
-    role: "reader",
-  });
-  const [showEditPassword, setShowEditPassword] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showCreatePassword, setShowCreatePassword] = useState(false);
-  const editUsernameValidation = usernameSchema.safeParse(editForm.username);
-  const editUsernameError =
-    editForm.username.trim().length > 0 && !editUsernameValidation.success
-      ? editUsernameValidation.error.issues[0]?.message
-      : null;
-
-  const form = useForm<CreateMemberData>({
-    resolver: zodResolver(createMemberSchema) as Resolver<CreateMemberData>,
-    defaultValues: { username: "", password: "", role: "reader" },
-  });
-
-  async function handleCreateMember(values: CreateMemberData) {
-    if (!barbershop || memberRole !== "owner") {
-      toast.error("Apenas o proprietario pode adicionar usuários.");
-      return;
-    }
-
-    try {
-      await createMember({
-        barbershopId: barbershop.id,
-        username: values.username,
-        password: values.password,
-        role: values.role,
-      });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Não foi possível adicionar.";
-
-      if (message.toLowerCase().includes("nome de usuário")) {
-        form.setError("username", { message });
-        return;
-      }
-
-      toast.error(message);
-      return;
-    }
-
-    toast.success("Usuário adicionado com sucesso.");
-    form.reset();
-    setShowCreateDialog(false);
-    reload();
-  }
 
   async function handleRemoveMember(memberId: string) {
     if (memberRole !== "owner") {
@@ -245,70 +127,6 @@ export function UsersSection() {
     } finally {
       setRemovingId(null);
     }
-  }
-
-  async function handleEditMember(values: EditMemberData) {
-    if (!editMember || memberRole !== "owner") {
-      toast.error("Apenas o proprietario pode editar usuários.");
-      return;
-    }
-
-    if (values.username && !usernameSchema.safeParse(values.username).success) {
-      toast.error(
-        "O nome de usuário deve ter 3 a 30 caracteres e usar apenas letras minusculas, numeros e _.",
-      );
-      return;
-    }
-
-    if (
-      values.password &&
-      (values.password.length < 8 || values.password.length > 72)
-    ) {
-      toast.error("A nova senha deve ter entre 8 e 72 caracteres.");
-      return;
-    }
-
-    const body: EditMemberData = {};
-
-    if (values.username && values.username !== editMember.username) {
-      body.username = values.username;
-    }
-
-    if (values.password) {
-      body.password = values.password;
-    }
-
-    if (values.role && values.role !== editMember.role) {
-      body.role = values.role;
-    }
-
-    // Se não tiver nada para atualizar
-    if (!body.username && !body.password && !body.role) {
-      toast.error("Nenhuma alteração detectada");
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      const result = await updateMember({
-        memberId: editMember.id,
-        ...body,
-      });
-      toast.success(result?.message || "Membro atualizado com sucesso!");
-    } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Não foi possível atualizar o membro.",
-      );
-      return;
-    } finally {
-      setIsUpdating(false);
-    }
-
-    setEditMember(null);
-    setShowEditDialog(false);
-    reload();
   }
 
   return (
@@ -376,11 +194,6 @@ export function UsersSection() {
                         className="h-8 w-8 cursor-pointer"
                         onClick={() => {
                           setEditMember(member);
-                          setEditForm({
-                            username: member.username,
-                            password: "",
-                            role: member.role,
-                          });
                           setShowEditDialog(true);
                         }}
                       >
@@ -417,274 +230,23 @@ export function UsersSection() {
           Novo usuário
         </Button>
 
-        {/* Dialog de criação de usuário */}
-        <Dialog
+        <CreateMemberModal
           open={showCreateDialog}
-          onOpenChange={open => {
-            setShowCreateDialog(open);
-            if (!open) {
-              form.reset();
-              setShowCreatePassword(false);
-            }
-          }}
-        >
-          {showCreateDialog && (
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Adicionar usuário</DialogTitle>
-              </DialogHeader>
-              <DialogDescription className="sr-only">
-                Criar novo usuário
-              </DialogDescription>
-              <form
-                id="add-member-form"
-                onSubmit={form.handleSubmit(handleCreateMember)}
-                className="flex flex-col gap-4 mb-2"
-              >
-                <FieldGroup>
-                  <Controller
-                    name="username"
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="member-username">
-                          Nome de usuário
-                        </FieldLabel>
-                        <Input
-                          {...field}
-                          id="member-username"
-                          autoComplete="username"
-                          placeholder="ex: joao_silva"
-                          aria-invalid={fieldState.invalid}
-                          onChange={e =>
-                            field.onChange(e.target.value.toLowerCase())
-                          }
-                        />
-                        {fieldState.invalid && (
-                          <FieldError errors={[fieldState.error]} />
-                        )}
-                      </Field>
-                    )}
-                  />
+          onOpenChange={setShowCreateDialog}
+          onCreated={reload}
+        />
 
-                  <Controller
-                    name="password"
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel htmlFor="member-password">Senha</FieldLabel>
-                        <div className="relative">
-                          <Input
-                            {...field}
-                            id="member-password"
-                            autoComplete="new-password"
-                            type={showCreatePassword ? "text" : "password"}
-                            placeholder="Mínimo 8 caracteres"
-                            aria-invalid={fieldState.invalid}
-                            className="pr-10"
-                          />
-                          <button
-                            type="button"
-                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
-                            onClick={() => setShowCreatePassword(v => !v)}
-                            tabIndex={-1}
-                          >
-                            {showCreatePassword ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </button>
-                        </div>
-                        {fieldState.invalid && (
-                          <FieldError errors={[fieldState.error]} />
-                        )}
-                      </Field>
-                    )}
-                  />
-
-                  <Controller
-                    name="role"
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel>Perfil de acesso</FieldLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">
-                              <div className="flex items-center gap-2">
-                                <Shield className="h-4 w-4" />
-                                Admin — acesso completo
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="reader">
-                              <div className="flex items-center gap-2">
-                                <Eye className="h-4 w-4" />
-                                Leitor — apenas agenda
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {fieldState.invalid && (
-                          <FieldError errors={[fieldState.error]} />
-                        )}
-                      </Field>
-                    )}
-                  />
-                </FieldGroup>
-              </form>
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowCreateDialog(false)}
-                  className="rounded-full"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  form="add-member-form"
-                  disabled={form.formState.isSubmitting}
-                  className="cursor-pointer rounded-full"
-                >
-                  {form.formState.isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Adicionar"
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          )}
-        </Dialog>
-
-        {/* Dialog de edição de usuário */}
-        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          {showEditDialog && (
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>
-                  Editar membro — @{editMember?.username}
-                </DialogTitle>
-                <DialogDescription className="sr-only">
-                  Atualize o nome de usuário, o perfil de acesso ou a senha do
-                  membro.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col gap-4">
-                <Field data-invalid={!!editUsernameError}>
-                  <FieldLabel htmlFor="edit-username">
-                    Nome de usuário
-                  </FieldLabel>
-                  <Input
-                    id="edit-username"
-                    autoComplete="username"
-                    value={editForm.username}
-                    aria-invalid={!!editUsernameError}
-                    onChange={e =>
-                      setEditForm({
-                        ...editForm,
-                        username: e.target.value.toLowerCase(),
-                      })
-                    }
-                    placeholder="Novo nome de usuário"
-                  />
-                  {editUsernameError && (
-                    <FieldError errors={[{ message: editUsernameError }]} />
-                  )}
-                </Field>
-                <div>
-                  <FieldLabel>Perfil de acesso</FieldLabel>
-                  <Select
-                    onValueChange={(value: "admin" | "reader") =>
-                      setEditForm({ ...editForm, role: value })
-                    }
-                    value={editForm.role}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          Admin — acesso completo
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="reader">
-                        <div className="flex items-center gap-2">
-                          <Eye className="h-4 w-4" />
-                          Leitor — apenas agenda
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {getRoleLabel(editForm.role)} —{" "}
-                    {getRoleDescription(editForm.role)}
-                  </p>
-                </div>
-                <div>
-                  <FieldLabel htmlFor="edit-password">
-                    Nova senha (opcional)
-                  </FieldLabel>
-                  <div className="relative">
-                    <Input
-                      id="edit-password"
-                      autoComplete="new-password"
-                      type={showEditPassword ? "text" : "password"}
-                      value={editForm.password}
-                      onChange={e =>
-                        setEditForm({ ...editForm, password: e.target.value })
-                      }
-                      placeholder="Deixe em branco para não alterar"
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 flex items-center pr-3"
-                      onClick={() => setShowEditPassword(v => !v)}
-                    >
-                      {showEditPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowEditDialog(false)}
-                  className="rounded-full"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  disabled={!!editUsernameError || isUpdating}
-                  onClick={() => handleEditMember(editForm)}
-                  className="rounded-full"
-                >
-                  {isUpdating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Salvar alterações"
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          )}
-        </Dialog>
+        {editMember && (
+          <UpdateMemberModal
+            open={showEditDialog}
+            member={editMember}
+            onOpenChange={open => {
+              setShowEditDialog(open);
+              if (!open) setEditMember(null);
+            }}
+            onUpdated={reload}
+          />
+        )}
 
         {/* Dialog de confirmação de remoção */}
         <AlertDialog

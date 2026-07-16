@@ -398,7 +398,7 @@ export function BarbershopGallery({
                           <GripVertical className="h-4 w-4 text-white" />
                         </div>
 
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3 cursor-pointer">
+                        <div className="absolute bottom-2 right-2 z-10">
                           <Button
                             type="button"
                             variant="destructive"

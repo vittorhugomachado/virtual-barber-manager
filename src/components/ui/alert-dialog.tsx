@@ -1,5 +1,6 @@
 ﻿import * as React from "react";
 import { AlertDialog as AlertDialogPrimitive } from "radix-ui";
+import { XIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,9 +46,12 @@ function AlertDialogOverlay({
 function AlertDialogContent({
   className,
   size = "default",
+  children,
+  showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
   size?: "default" | "sm";
+  showCloseButton?: boolean;
 }) {
   return (
     <AlertDialogPortal>
@@ -60,7 +64,18 @@ function AlertDialogContent({
           className,
         )}
         {...props}
-      />
+      >
+        {children}
+        {showCloseButton && (
+          <AlertDialogPrimitive.Cancel
+            data-slot="alert-dialog-close"
+            className="absolute top-4 right-4 flex items-center justify-center rounded-xs border-0 bg-[#FB2C36] p-1 text-white opacity-80 transition-opacity hover:opacity-100 cursor-pointer focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+          >
+            <XIcon />
+            <span className="sr-only">Close</span>
+          </AlertDialogPrimitive.Cancel>
+        )}
+      </AlertDialogPrimitive.Content>
     </AlertDialogPortal>
   );
 }

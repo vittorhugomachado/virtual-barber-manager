@@ -75,11 +75,6 @@ const SignupPendingPage = lazy(() =>
 //     default: module.ResetPasswordPage,
 //   })),
 // );
-const SettingsPage = lazy(() =>
-  import("@/pages/settings-page").then(module => ({
-    default: module.SettingsPage,
-  })),
-);
 const ManageServicePage = lazy(() =>
   import("@/pages/manage-service-page").then(module => ({
     default: module.ManageServicePage,
@@ -119,7 +114,6 @@ const skeletons: Record<string, React.ReactNode> = {
   "/servicos": <ServicesSkeleton />,
   "/editar-pagina": <SettingsSkeleton />,
   "/relatorios": <DashboardSkeleton />,
-  "/configuracoes": <SettingsSkeleton />,
 };
 
 function ProtectedRouteWithSkeleton({
@@ -333,14 +327,6 @@ export function AppRoutes() {
           element={
             <ProtectedPageLoader fallback={<CustomersSkeleton />}>
               <CustomersPage />
-            </ProtectedPageLoader>
-          }
-        />
-        <Route
-          path="/configuracoes"
-          element={
-            <ProtectedPageLoader fallback={<SettingsSkeleton />}>
-              <SettingsPage />
             </ProtectedPageLoader>
           }
         />

@@ -54,7 +54,7 @@ export function EmailChangeConfirmedPage() {
             </p>
             <Button
               className="w-full"
-              onClick={() => navigate("/configuracoes")}
+              onClick={() => navigate("/?modal=configuracoes")}
             >
               Voltar às configurações
             </Button>

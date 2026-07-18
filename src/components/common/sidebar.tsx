@@ -12,6 +12,7 @@ import {
   User,
   Palette,
 } from "lucide-react";
+import { useSearchParams } from "react-router";
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Logo } from "@/components/common/logo";
 import { useBarbershopStore } from "@/store/barbershop.store";
+import { GeneralSettingsModal } from "@/components/modals/settings/general-settings-modal";
 // import { useDashboard } from "@/hooks/use-dashboard";
 // import { useSettingsAlerts } from "@/hooks/use-settings-alerts";
 
@@ -44,24 +46,36 @@ const readerMenuItems = [
   { title: "Agenda", url: "/agenda", icon: CalendarDays },
 ];
 
-const configItems = [
-  { title: "Configurações", url: "/configuracoes", icon: Cog },
-];
-
 export function SidebarComponent() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { state, isMobile, setOpenMobile } = useSidebar();
   const { memberRole, memberUsername } = useBarbershopStore();
   //   const { activeServices, activeProfessionals, loading } = useDashboard();
   //   const { missingAddress, missingHours } = useSettingsAlerts();
   const visibleMenuItems =
     memberRole === "reader" ? readerMenuItems : menuItems;
-  const visibleConfigItems = memberRole === "owner" ? configItems : [];
+  const canOpenSettings = memberRole === "owner";
+  const settingsOpen =
+    canOpenSettings && searchParams.get("modal") === "configuracoes";
 
   function handleNavigate(url: string) {
     if (isMobile) setOpenMobile(false);
     navigate(url);
+  }
+
+  function handleSettingsOpenChange(open: boolean) {
+    const nextSearchParams = new URLSearchParams(searchParams);
+
+    if (open) {
+      nextSearchParams.set("modal", "configuracoes");
+      if (isMobile) setOpenMobile(false);
+    } else {
+      nextSearchParams.delete("modal");
+    }
+
+    setSearchParams(nextSearchParams, { replace: true });
   }
 
   //   function showMenuAlert(url: string) {
@@ -126,22 +140,22 @@ export function SidebarComponent() {
 
       <SidebarFooter>
         <SidebarMenu>
-          {visibleConfigItems.map(item => (
-            <SidebarMenuItem key={item.title}>
+          {canOpenSettings && (
+            <SidebarMenuItem>
               <SidebarMenuButton
-                isActive={location.pathname === item.url}
-                tooltip={item.title}
-                onClick={() => handleNavigate(item.url)}
+                isActive={settingsOpen}
+                tooltip="Configurações"
+                onClick={() => handleSettingsOpenChange(true)}
                 className="cursor-pointer"
               >
-                <item.icon />
-                <span>{item.title}</span>
+                <Cog />
+                <span>Configurações</span>
                 {/* {(missingAddress || missingHours) && (
                   <AlertTriangle className="ml-auto h-4 w-4 shrink-0 text-yellow-500" />
                 )} */}
               </SidebarMenuButton>
             </SidebarMenuItem>
-          ))}
+          )}
         </SidebarMenu>
 
         {(memberRole === "admin" || memberRole === "reader") &&
@@ -165,6 +179,13 @@ export function SidebarComponent() {
             </div>
           )}
       </SidebarFooter>
+
+      {settingsOpen && (
+        <GeneralSettingsModal
+          open={settingsOpen}
+          onOpenChange={handleSettingsOpenChange}
+        />
+      )}
     </Sidebar>
   );
 }

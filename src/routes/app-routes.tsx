@@ -95,11 +95,11 @@ const ReportsPage = lazy(() =>
     default: module.ReportsPage,
   })),
 );
-// const AppointmentsPage = lazy(() =>
-//   import("@/pages/appointments-page").then(module => ({
-//     default: module.AppointmentsPage,
-//   })),
-// );
+const AppointmentsPage = lazy(() =>
+  import("@/pages/appointments-page").then(module => ({
+    default: module.AppointmentsPage,
+  })),
+);
 const CustomersPage = lazy(() =>
   import("@/pages/customers-page").then(module => ({
     default: module.CustomersPage,
@@ -330,14 +330,14 @@ export function AppRoutes() {
             </ProtectedPageLoader>
           }
         />
-        {/* <Route
+        <Route
           path="/agenda"
           element={
             <ProtectedPageLoader fallback={<DashboardSkeleton />}>
               <AppointmentsPage />
             </ProtectedPageLoader>
           }
-        />*/}
+        />
       </Route>
     </Routes>
   );

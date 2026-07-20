@@ -2,16 +2,19 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BarbershopCalendar } from "@/components/common/barbershop-calendar";
-import { useOpeningHours } from "@/hooks/use-opening-hours";
+import type { OpeningHours } from "@/types/opening-hours";
 
 export function Step3Date({
   onBack,
   onSelect,
+  openingHours,
+  timezone,
 }: {
   onBack: () => void;
   onSelect: (date: string, dateObj: Date) => void;
+  openingHours: OpeningHours[];
+  timezone: string;
 }) {
-  const { openingHours } = useOpeningHours();
   const [selectedDateObj, setSelectedDateObj] = useState<Date | undefined>(
     undefined,
   );
@@ -23,7 +26,9 @@ export function Step3Date({
 
   function handleContinue() {
     if (!selectedDateObj) return;
-    const iso = selectedDateObj.toLocaleDateString("en-CA");
+    const iso = `${selectedDateObj.getFullYear()}-${String(
+      selectedDateObj.getMonth() + 1,
+    ).padStart(2, "0")}-${String(selectedDateObj.getDate()).padStart(2, "0")}`;
     onSelect(iso, selectedDateObj);
   }
 
@@ -52,6 +57,7 @@ export function Step3Date({
           selected={selectedDateObj}
           onSelect={handleDateSelect}
           openingHours={openingHours}
+          timezone={timezone}
         />
       </div>
 

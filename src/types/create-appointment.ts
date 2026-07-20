@@ -85,6 +85,35 @@ export interface TimeSlot {
   available: boolean;
 }
 
+export interface AppointmentBookingService {
+  id: string;
+  name: string;
+  duration_min: number | null;
+  price: number | null;
+  image_url: string | null;
+  is_active: boolean;
+}
+
+export interface AppointmentBookingBarber {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+  is_active: boolean;
+}
+
+export interface AppointmentServiceBarber {
+  service_id: string;
+  barber_id: string;
+}
+
+export interface AppointmentBookingContext {
+  timezone: string;
+  services: AppointmentBookingService[];
+  barbers: AppointmentBookingBarber[];
+  service_barbers: AppointmentServiceBarber[];
+  opening_hours: import("@/types/opening-hours").OpeningHours[];
+}
+
 export interface OpeningHourRow {
   day_of_week: number;
   opens_at: string;

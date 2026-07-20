@@ -18,11 +18,28 @@ import {
 } from "@/types/create-appointment";
 import type { AppointmentWithRelations } from "@/types/create-appointment";
 import { Skeleton } from "@/components/ui/skeleton";
-import { supabase } from "@/lib/supabase/supabase";
 import { CreateAppointmentModal } from "../modals/appointments/create-appointmend-modal/create-appointment-modal";
-import { DeleteAppointmentModal } from "../modals/appointments/delete-appointment-appointment";
+import { changeManagerAppointmentStatus } from "@/lib/supabase/appointments/appointments";
+import { useBarbershopStore } from "@/store/barbershop.store";
+import { toast } from "sonner";
+import {
+  appointmentCacheKey,
+  invalidateAppointmentCache,
+} from "@/lib/appointments-cache";
 
 type FilterType = "today" | "week" | "month" | "year" | "custom";
+
+function calendarToday(timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find(part => part.type === type)?.value ?? 0);
+  return new Date(value("year"), value("month") - 1, value("day"));
+}
 
 // ─── StatusPicker ─────────────────────────────────────────────────────────────
 type AppointmentStatus = AppointmentWithRelations["status"];
@@ -37,9 +54,14 @@ const STATUS_OPTIONS: { value: AppointmentStatus; label: string }[] = [
 function StatusPicker({
   apt,
   onStatusChange,
+  canManage,
 }: {
   apt: AppointmentWithRelations;
-  onStatusChange: (id: string, status: AppointmentStatus) => void;
+  onStatusChange: (
+    appointment: AppointmentWithRelations,
+    status: AppointmentStatus,
+  ) => Promise<void>;
+  canManage: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -56,27 +78,28 @@ function StatusPicker({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  const nowBRT = new Date(new Date().getTime() - 3 * 60 * 60 * 1000);
   const startsAt = new Date(apt.starts_at);
-  const isPast = nowBRT.getTime() - startsAt.getTime() > 40 * 60 * 1000;
+  const hasStarted = startsAt.getTime() <= Date.now();
   const options =
-    apt.status === "cancelled_by_customer"
+    !canManage || apt.status !== "scheduled"
       ? []
       : STATUS_OPTIONS.filter(o => {
           if (o.value === apt.status) return false;
-          if (isPast && o.value === "scheduled") return false;
+          if (!hasStarted && ["completed", "no_show"].includes(o.value))
+            return false;
           return true;
         });
 
   async function changeStatus(newStatus: AppointmentStatus) {
     setUpdating(true);
     setOpen(false);
-    const { error } = await supabase
-      .from("appointments")
-      .update({ status: newStatus })
-      .eq("id", apt.id);
-    if (!error) onStatusChange(apt.id, newStatus);
-    setUpdating(false);
+    try {
+      await onStatusChange(apt, newStatus);
+    } catch {
+      // O componente pai já exibe a mensagem e recarrega a agenda.
+    } finally {
+      setUpdating(false);
+    }
   }
 
   return (
@@ -114,9 +137,9 @@ function StatusPicker({
 function getDaysForFilter(
   filter: FilterType,
   customRange?: { from?: Date; to?: Date },
+  timezone = "America/Sao_Paulo",
 ): Date[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = calendarToday(timezone);
 
   if (filter === "today") {
     return [new Date(today)];
@@ -180,34 +203,31 @@ const FILTER_LABELS: Record<FilterType, string> = {
 function getRangeForFilter(
   filter: FilterType,
   customRange?: { from?: Date; to?: Date },
+  timezone = "America/Sao_Paulo",
 ): { start: Date; end: Date } {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = calendarToday(timezone);
 
   if (filter === "today") {
     const end = new Date(today);
-    end.setHours(23, 59, 59);
+    end.setDate(end.getDate() + 1);
     return { start: today, end };
   }
 
   if (filter === "week") {
     const end = new Date(today);
     end.setDate(end.getDate() + 7);
-    end.setHours(23, 59, 59);
     return { start: today, end };
   }
 
   if (filter === "month") {
     const start = new Date(today.getFullYear(), today.getMonth(), 1);
-    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    end.setHours(23, 59, 59);
+    const end = new Date(today.getFullYear(), today.getMonth() + 1, 1);
     return { start, end };
   }
 
   if (filter === "year") {
     const start = new Date(today.getFullYear(), 0, 1);
-    const end = new Date(today.getFullYear(), 11, 31);
-    end.setHours(23, 59, 59);
+    const end = new Date(today.getFullYear() + 1, 0, 1);
     return { start, end };
   }
 
@@ -215,7 +235,8 @@ function getRangeForFilter(
     const start = new Date(customRange.from);
     start.setHours(0, 0, 0, 0);
     const end = customRange.to ? new Date(customRange.to) : new Date(start);
-    end.setHours(23, 59, 59);
+    end.setHours(0, 0, 0, 0);
+    end.setDate(end.getDate() + 1);
     return { start, end };
   }
 
@@ -224,9 +245,8 @@ function getRangeForFilter(
   return { start: today, end };
 }
 
-function formatDayLabel(date: Date): string {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function formatDayLabel(date: Date, timezone: string): string {
+  const today = calendarToday(timezone);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
@@ -241,11 +261,11 @@ function formatDayLabel(date: Date): string {
   });
 }
 
-function formatTime(isoString: string): string {
+function formatTime(isoString: string, timezone: string): string {
   return new Date(isoString).toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "UTC",
+    timeZone: timezone,
   });
 }
 
@@ -261,13 +281,23 @@ function WhatsappIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function isSameDay(date: Date, isoString: string): boolean {
-  const d = new Date(isoString);
-  return (
-    d.getUTCFullYear() === date.getFullYear() &&
-    d.getUTCMonth() === date.getMonth() &&
-    d.getUTCDate() === date.getDate()
-  );
+function localDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function appointmentDateKey(isoString: string, timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(isoString));
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find(part => part.type === type)?.value ?? "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
 // ─── DaySection ───────────────────────────────────────────────────────────────
@@ -275,14 +305,20 @@ const DaySection = memo(function DaySection({
   date,
   appointments,
   onStatusChange,
+  timezone,
+  canManage,
 }: {
   date: Date;
   appointments: AppointmentWithRelations[];
-  onCancel: (apt: AppointmentWithRelations) => void;
-  onStatusChange: (id: string, status: AppointmentStatus) => void;
+  onStatusChange: (
+    appointment: AppointmentWithRelations,
+    status: AppointmentStatus,
+  ) => Promise<void>;
+  timezone: string;
+  canManage: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const label = formatDayLabel(date);
+  const label = formatDayLabel(date, timezone);
   const isToday = label === "Hoje";
 
   return (
@@ -349,11 +385,11 @@ const DaySection = memo(function DaySection({
                         <div className="flex items-center gap-1 text-sm shrink-0">
                           <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span className="font-medium">
-                            {formatTime(apt.starts_at)}
+                            {formatTime(apt.starts_at, timezone)}
                           </span>
                           <span className="text-muted-foreground">–</span>
                           <span className="text-muted-foreground">
-                            {formatTime(apt.ends_at)}
+                            {formatTime(apt.ends_at, timezone)}
                           </span>
                         </div>
                         <div className="lg:w-40 lg:ml-3 flex items-center gap-1.5 text-sm min-w-0 overflow-hidden">
@@ -401,7 +437,11 @@ const DaySection = memo(function DaySection({
                       </div>
                     </div>
                     <div className="xl:mr-4">
-                      <StatusPicker apt={apt} onStatusChange={onStatusChange} />
+                      <StatusPicker
+                        apt={apt}
+                        onStatusChange={onStatusChange}
+                        canManage={canManage}
+                      />
                     </div>
                   </div>
                 );
@@ -416,56 +456,80 @@ const DaySection = memo(function DaySection({
 
 // ─── AppointmentsMain ─────────────────────────────────────────────────────────
 export function AppointmentsMain() {
+  const memberRole = useBarbershopStore(state => state.memberRole);
+  const barbershopId = useBarbershopStore(state => state.barbershop?.id);
+  const configuredTimezone = useBarbershopStore(
+    state => state.barbershop?.timezone ?? "America/Sao_Paulo",
+  );
+  const canManage = memberRole === "owner" || memberRole === "admin";
   const [filter, setFilter] = useState<FilterType>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>(
     {},
   );
 
   const { start, end } = useMemo(
-    () => getRangeForFilter(filter, customRange),
-    [filter, customRange],
+    () => getRangeForFilter(filter, customRange, configuredTimezone),
+    [configuredTimezone, filter, customRange],
   );
-  const { appointments, setAppointments, loading, refetch } = useAppointments(
-    start,
-    end,
-  );
+  const { appointments, setAppointments, timezone, loading, error, refetch } =
+    useAppointments(start, end);
 
   const handleStatusChange = useCallback(
-    (id: string, status: AppointmentStatus) => {
-      setAppointments(prev =>
-        prev.map(apt => (apt.id === id ? { ...apt, status } : apt)),
-      );
+    async (
+      appointment: AppointmentWithRelations,
+      status: AppointmentStatus,
+    ) => {
+      try {
+        await changeManagerAppointmentStatus({
+          appointmentId: appointment.id,
+          expectedStatus: appointment.status,
+          newStatus: status,
+        });
+        setAppointments(previous =>
+          previous.map(item =>
+            item.id === appointment.id ? { ...item, status } : item,
+          ),
+        );
+        if (barbershopId) {
+          invalidateAppointmentCache(
+            appointmentCacheKey("slots", barbershopId),
+          );
+        }
+        toast.success("Status atualizado.");
+      } catch (cause) {
+        toast.error(
+          cause instanceof Error &&
+            cause.message.includes("appointment_changed")
+            ? "Este agendamento foi alterado em outro dispositivo. Atualizando a agenda."
+            : "Não foi possível alterar o status.",
+        );
+        refetch();
+        throw cause;
+      }
     },
-    [setAppointments],
-  );
-
-  const days = useMemo(
-    () =>
-      getDaysForFilter(filter, customRange).filter(day =>
-        appointments.some(apt => isSameDay(day, apt.starts_at)),
-      ),
-    [filter, customRange, appointments],
+    [barbershopId, refetch, setAppointments],
   );
 
   const appointmentsByDay = useMemo(() => {
     const map = new Map<string, AppointmentWithRelations[]>();
-    for (const day of days) {
-      map.set(
-        day.toISOString(),
-        appointments.filter(apt => isSameDay(day, apt.starts_at)),
-      );
+    for (const appointment of appointments) {
+      const key = appointmentDateKey(appointment.starts_at, timezone);
+      const current = map.get(key) ?? [];
+      current.push(appointment);
+      map.set(key, current);
     }
     return map;
-  }, [days, appointments]);
+  }, [appointments, timezone]);
+
+  const days = useMemo(
+    () =>
+      getDaysForFilter(filter, customRange, timezone).filter(day =>
+        appointmentsByDay.has(localDateKey(day)),
+      ),
+    [appointmentsByDay, customRange, filter, timezone],
+  );
 
   const [newModalOpen, setNewModalOpen] = useState(false);
-  const [cancelAppointment, setCancelAppointment] =
-    useState<AppointmentWithRelations | null>(null);
-
-  const handleCancel = useCallback((apt: AppointmentWithRelations) => {
-    setCancelAppointment(apt);
-  }, []);
-
   return (
     <main className="w-full max-w-325 flex flex-col gap-6 px-4 md:px-12 pb-12 mx-auto mt-8">
       <div className="lg:flex lg:flex-row-reverse">
@@ -473,6 +537,7 @@ export function AppointmentsMain() {
         <div className="w-fit flex flex-col sm:flex-row gap-4 items-center justify-between mx-auto lg:mr-0 mb-6">
           <Button
             className="cursor-pointer rounded-full"
+            disabled={!canManage}
             onClick={() => setNewModalOpen(true)}
           >
             <Plus className="h-4 w-4" />
@@ -521,9 +586,7 @@ export function AppointmentsMain() {
                   <input
                     type="date"
                     value={
-                      customRange.from
-                        ? customRange.from.toISOString().split("T")[0]
-                        : ""
+                      customRange.from ? localDateKey(customRange.from) : ""
                     }
                     onChange={e => {
                       const d = e.target.value
@@ -545,14 +608,10 @@ export function AppointmentsMain() {
                 <div className="relative flex items-center">
                   <input
                     type="date"
-                    value={
-                      customRange.to
-                        ? customRange.to.toISOString().split("T")[0]
-                        : ""
-                    }
+                    value={customRange.to ? localDateKey(customRange.to) : ""}
                     min={
                       customRange.from
-                        ? customRange.from.toISOString().split("T")[0]
+                        ? localDateKey(customRange.from)
                         : undefined
                     }
                     onChange={e => {
@@ -579,6 +638,13 @@ export function AppointmentsMain() {
             <Skeleton key={i} className="h-12 w-full rounded-lg" />
           ))}
         </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-20 text-destructive">
+          <span className="text-sm">Não foi possível carregar a agenda.</span>
+          <Button variant="outline" size="sm" onClick={refetch}>
+            Tentar novamente
+          </Button>
+        </div>
       ) : days.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground">
           <CalendarDays className="h-10 w-10 opacity-20" />
@@ -592,9 +658,10 @@ export function AppointmentsMain() {
             <DaySection
               key={day.toISOString()}
               date={day}
-              appointments={appointmentsByDay.get(day.toISOString()) ?? []}
-              onCancel={handleCancel}
+              appointments={appointmentsByDay.get(localDateKey(day)) ?? []}
               onStatusChange={handleStatusChange}
+              timezone={timezone}
+              canManage={canManage}
             />
           ))}
         </div>
@@ -603,13 +670,6 @@ export function AppointmentsMain() {
       <CreateAppointmentModal
         open={newModalOpen}
         onClose={() => setNewModalOpen(false)}
-        onSuccess={refetch}
-      />
-
-      <DeleteAppointmentModal
-        open={!!cancelAppointment}
-        appointment={cancelAppointment}
-        onClose={() => setCancelAppointment(null)}
         onSuccess={refetch}
       />
     </main>

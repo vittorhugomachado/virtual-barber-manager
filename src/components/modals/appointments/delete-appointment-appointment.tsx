@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
-import { supabase } from "@/lib/supabase/supabase";
+import { changeManagerAppointmentStatus } from "@/lib/supabase/appointments/appointments";
+import { useBarbershopStore } from "@/store/barbershop.store";
 import type { AppointmentWithRelations } from "@/types/create-appointment";
 import {
   AlertDialog,
@@ -19,7 +20,7 @@ interface CancelAppointmentModalProps {
   onSuccess?: () => void;
 }
 
-function formatDateTime(isoString: string): string {
+function formatDateTime(isoString: string, timezone: string): string {
   const d = new Date(isoString);
   return (
     d.toLocaleDateString("pt-BR", {
@@ -27,9 +28,14 @@ function formatDateTime(isoString: string): string {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      timeZone: timezone,
     }) +
     " às " +
-    d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    d.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: timezone,
+    })
   );
 }
 
@@ -39,6 +45,9 @@ export function DeleteAppointmentModal({
   onClose,
   onSuccess,
 }: CancelAppointmentModalProps) {
+  const timezone = useBarbershopStore(
+    state => state.barbershop?.timezone ?? "America/Sao_Paulo",
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -47,12 +56,12 @@ export function DeleteAppointmentModal({
     setError(null);
 
     try {
-      const { error: err } = await supabase
-        .from("appointments")
-        .update({ status: "cancelled_by_barbershop" })
-        .eq("id", appointment!.id);
-
-      if (err) throw err;
+      if (!appointment) return;
+      await changeManagerAppointmentStatus({
+        appointmentId: appointment.id,
+        expectedStatus: appointment.status,
+        newStatus: "cancelled_by_barbershop",
+      });
 
       onSuccess?.();
       onClose();
@@ -81,7 +90,7 @@ export function DeleteAppointmentModal({
                     {appointment.service?.name} · {appointment.barber?.name}
                   </div>
                   <div className="text-muted-foreground capitalize">
-                    {formatDateTime(appointment.starts_at)}
+                    {formatDateTime(appointment.starts_at, timezone)}
                   </div>
                 </div>
               )}

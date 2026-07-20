@@ -1,7 +1,7 @@
 ﻿import { Button } from "@/components/ui/button";
-import { useBarbers } from "@/hooks/use-barbers";
-import { useServices } from "@/hooks/use-service";
 import type {
+  AppointmentBookingBarber,
+  AppointmentBookingService,
   SelectedCustomer,
   ServiceSelection,
 } from "@/types/create-appointment";
@@ -24,6 +24,8 @@ export function ConfirmStep({
   onClose,
   submitting,
   error,
+  services,
+  barbers,
 }: {
   customer: SelectedCustomer;
   serviceSelections: ServiceSelection[];
@@ -32,10 +34,9 @@ export function ConfirmStep({
   onClose: () => void;
   submitting: boolean;
   error: string | null;
+  services: AppointmentBookingService[];
+  barbers: AppointmentBookingBarber[];
 }) {
-  const { services } = useServices();
-  const { barbers } = useBarbers();
-
   const dateLabel = new Date(`${date}T00:00:00`).toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "2-digit",

@@ -10,6 +10,7 @@
   banner_url: string | null;
   template: string;
   is_active: boolean;
+  timezone: string;
   onboarding_completed: boolean;
   onboarding_step: number;
   created_at: string;

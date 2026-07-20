@@ -1,8 +1,12 @@
-﻿import { useEffect, useState } from "react";
-import { X } from "lucide-react";
-import { supabase } from "@/lib/supabase/supabase";
-import { useServices } from "@/hooks/use-service";
+﻿import { useRef, useState } from "react";
+import { Loader2, X } from "lucide-react";
 import { useBarbershopStore } from "@/store/barbershop.store";
+import { useAppointmentBookingContext } from "@/hooks/use-appointment-booking-context";
+import { createManagerAppointments } from "@/lib/supabase/appointments/appointments";
+import {
+  appointmentCacheKey,
+  invalidateAppointmentCache,
+} from "@/lib/appointments-cache";
 import type {
   SelectedCustomer,
   ServiceSelection,
@@ -28,7 +32,12 @@ export function CreateAppointmentModal({
   onSuccess,
 }: CreateAppointmentModalProps) {
   const { barbershop } = useBarbershopStore();
-  const { services } = useServices();
+  const {
+    context,
+    loading: contextLoading,
+    error: contextError,
+  } = useAppointmentBookingContext(open);
+  const idempotencyKey = useRef(crypto.randomUUID());
 
   const [step, setStep] = useState<Step>(1);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -54,6 +63,7 @@ export function CreateAppointmentModal({
     setServiceSelections([]);
     setSubmitting(false);
     setSubmitError(null);
+    idempotencyKey.current = crypto.randomUUID();
   }
 
   function handleClose() {
@@ -61,40 +71,32 @@ export function CreateAppointmentModal({
     onClose();
   }
 
-  useEffect(() => {
-    if (!open) reset();
-  }, [open]);
-
   async function handleConfirm() {
-    if (!customer || serviceSelections.length === 0 || !date || !barbershop)
+    if (
+      !customer ||
+      serviceSelections.length === 0 ||
+      !date ||
+      !barbershop ||
+      !context
+    )
       return;
 
     setSubmitting(true);
     setSubmitError(null);
 
     try {
-      const isManualCustomer = customer.source === "customers";
-      const inserts = serviceSelections.map(sel => {
-        const service = services.find(s => s.id === sel.serviceId);
-        const durationMin = service?.duration_min ?? 30;
-        const startsAt = new Date(`${date}T${sel.time}:00Z`);
-        const endsAt = new Date(startsAt.getTime() + durationMin * 60 * 1000);
-        return {
-          barbershop_id: barbershop.id,
-          customer_id: isManualCustomer ? null : customer.id,
-          manual_customer_id: isManualCustomer ? customer.id : null,
-          barber_id: sel.barberId,
-          service_id: sel.serviceId,
-          starts_at: startsAt.toISOString(),
-          ends_at: endsAt.toISOString(),
-          status: "scheduled",
-        };
+      await createManagerAppointments({
+        barbershopId: barbershop.id,
+        customer,
+        localDate: date,
+        selections: serviceSelections,
+        idempotencyKey: idempotencyKey.current,
       });
 
-      const { error: err } = await supabase
-        .from("appointments")
-        .insert(inserts);
-      if (err) throw err;
+      invalidateAppointmentCache(
+        appointmentCacheKey("appointments", barbershop.id),
+      );
+      invalidateAppointmentCache(appointmentCacheKey("slots", barbershop.id));
 
       onSuccess?.();
       handleClose();
@@ -105,7 +107,10 @@ export function CreateAppointmentModal({
         message: pgError?.message,
         inserts: serviceSelections,
       });
-      if (pgError?.code === "23P01") {
+      if (
+        pgError?.code === "23P01" ||
+        pgError?.message?.includes("slot_unavailable")
+      ) {
         setSubmitError(
           "Horário indisponível: o profissional já possui um agendamento neste horário.",
         );
@@ -151,6 +156,7 @@ export function CreateAppointmentModal({
           </h2>
           <button
             onClick={handleClose}
+            disabled={submitting}
             className="flex items-center justify-center p-1 rounded-xs bg-[#FB2C36] text-white border-0 opacity-80 transition-opacity hover:opacity-100 cursor-pointer"
           >
             <X className="h-4 w-4" />
@@ -160,7 +166,20 @@ export function CreateAppointmentModal({
         {!showConfirm && <StepIndicator current={step} />}
 
         <div className="overflow-y-auto">
-          {!showConfirm && step === 1 && (
+          {contextLoading && (
+            <div className="flex min-h-48 items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Carregando dados do agendamento...
+            </div>
+          )}
+
+          {!contextLoading && (contextError || !context) && (
+            <p className="m-6 rounded-md bg-destructive/10 px-3 py-3 text-sm text-destructive">
+              {contextError ?? "Dados do agendamento indisponíveis."}
+            </p>
+          )}
+
+          {context && !showConfirm && step === 1 && (
             <Step1Customer
               onSelect={c => {
                 setCustomer(c);
@@ -169,8 +188,9 @@ export function CreateAppointmentModal({
             />
           )}
 
-          {!showConfirm && step === 2 && (
+          {context && !showConfirm && step === 2 && (
             <Step2Service
+              services={context.services}
               onBack={() => setStep(1)}
               onSelect={ids => {
                 setServiceIds(ids);
@@ -179,8 +199,10 @@ export function CreateAppointmentModal({
             />
           )}
 
-          {!showConfirm && step === 3 && (
+          {context && !showConfirm && step === 3 && (
             <Step3Date
+              openingHours={context.opening_hours}
+              timezone={context.timezone}
               onBack={() => setStep(2)}
               onSelect={(d, dObj) => {
                 setDate(d);
@@ -190,12 +212,14 @@ export function CreateAppointmentModal({
             />
           )}
 
-          {!showConfirm &&
+          {context &&
+            !showConfirm &&
             step === 4 &&
             serviceIds.length > 0 &&
             date &&
             dateObj && (
               <Step4BarberTime
+                context={context}
                 serviceIds={serviceIds}
                 date={date}
                 dateObj={dateObj}
@@ -211,17 +235,23 @@ export function CreateAppointmentModal({
               />
             )}
 
-          {showConfirm && customer && serviceSelections.length > 0 && date && (
-            <ConfirmStep
-              customer={customer}
-              serviceSelections={serviceSelections}
-              date={date}
-              onConfirm={handleConfirm}
-              onClose={handleClose}
-              submitting={submitting}
-              error={submitError}
-            />
-          )}
+          {context &&
+            showConfirm &&
+            customer &&
+            serviceSelections.length > 0 &&
+            date && (
+              <ConfirmStep
+                services={context.services}
+                barbers={context.barbers}
+                customer={customer}
+                serviceSelections={serviceSelections}
+                date={date}
+                onConfirm={handleConfirm}
+                onClose={handleClose}
+                submitting={submitting}
+                error={submitError}
+              />
+            )}
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 ﻿import { createClient } from "@supabase/supabase-js";
 
 import { clearSettingsCache } from "@/lib/settings-cache";
+import { clearAppointmentsCache } from "@/lib/appointments-cache";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
@@ -31,7 +32,10 @@ if (typeof window !== "undefined") {
   }
 
   supabase.auth.onAuthStateChange(event => {
-    if (event === "SIGNED_OUT") clearSettingsCache();
+    if (event === "SIGNED_OUT") {
+      clearSettingsCache();
+      clearAppointmentsCache();
+    }
 
     if (event === "PASSWORD_RECOVERY") {
       sessionStorage.setItem(

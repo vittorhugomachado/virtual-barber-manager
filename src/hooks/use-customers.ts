@@ -5,7 +5,7 @@ import type { Customer } from "@/types/customer";
 
 const DEFAULT_PAGE_SIZE = 20;
 
-export function useCustomers() {
+export function useCustomers({ pageSize = DEFAULT_PAGE_SIZE } = {}) {
   const barbershopId = useBarbershopStore(state => state.barbershop?.id);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearchValue] = useState("");
@@ -59,7 +59,7 @@ export function useCustomers() {
           barbershopId: barbershopId!,
           search: debouncedSearch,
           page,
-          pageSize: DEFAULT_PAGE_SIZE,
+          pageSize,
         });
         if (!active) return;
         setCustomers(result.items);
@@ -89,7 +89,7 @@ export function useCustomers() {
     return () => {
       active = false;
     };
-  }, [barbershopId, debouncedSearch, page, reloadToken]);
+  }, [barbershopId, debouncedSearch, page, pageSize, reloadToken]);
 
   return {
     customers: barbershopId ? customers : [],
@@ -97,7 +97,7 @@ export function useCustomers() {
     setSearch,
     page,
     setPage,
-    pageSize: DEFAULT_PAGE_SIZE,
+    pageSize,
     total: barbershopId ? total : 0,
     totalPages: barbershopId ? totalPages : 0,
     loading: barbershopId ? loading : false,

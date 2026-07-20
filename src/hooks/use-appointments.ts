@@ -1,151 +1,149 @@
-﻿import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase/supabase";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  appointmentCacheKey,
+  deleteAppointmentCache,
+  getAppointmentCache,
+  loadAppointmentCache,
+  setAppointmentCache,
+} from "@/lib/appointments-cache";
+import { getManagerAppointments } from "@/lib/supabase/appointments/appointments";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import type { AppointmentWithRelations } from "@/types/create-appointment";
 
-type AppointmentRow = Omit<AppointmentWithRelations, "customer"> & {
-  customer: null;
+type CachedAppointments = {
+  items: AppointmentWithRelations[];
+  timezone: string;
 };
 
-export function useAppointments(startDate?: Date, endDate?: Date) {
-  const { barbershop } = useBarbershopStore();
+function toLocalDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function defaultRange() {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  return { start, end };
+}
+
+export function useAppointments(startDate?: Date, endDateExclusive?: Date) {
+  const barbershop = useBarbershopStore(state => state.barbershop);
   const barbershopId = barbershop?.id;
+  const fallbackRange = useMemo(defaultRange, []);
+  const fromDate = toLocalDateKey(startDate ?? fallbackRange.start);
+  const toDateExclusive = toLocalDateKey(endDateExclusive ?? fallbackRange.end);
+  const cacheKey = barbershopId
+    ? appointmentCacheKey(
+        "appointments",
+        barbershopId,
+        fromDate,
+        toDateExclusive,
+      )
+    : null;
+  const cached = cacheKey
+    ? getAppointmentCache<CachedAppointments>(cacheKey)
+    : undefined;
+
   const [appointments, setAppointments] = useState<AppointmentWithRelations[]>(
-    [],
+    () => cached?.items ?? [],
   );
-  const [loading, setLoading] = useState(true);
-  const [tick, setTick] = useState(0);
-
-  const startIso =
-    startDate?.toISOString() ??
-    (() => {
-      const date = new Date();
-      date.setHours(0, 0, 0, 0);
-      return date.toISOString();
-    })();
-
-  const endIso =
-    endDate?.toISOString() ??
-    (() => {
-      const date = new Date();
-      date.setHours(0, 0, 0, 0);
-      date.setDate(date.getDate() + 7);
-      return date.toISOString();
-    })();
+  const [timezone, setTimezone] = useState(
+    () => cached?.timezone ?? barbershop?.timezone ?? "America/Sao_Paulo",
+  );
+  const [loading, setLoading] = useState(cached === undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
-    if (!barbershopId) return;
-
+    if (!barbershopId || !cacheKey) return;
     let active = true;
 
-    async function loadAppointments() {
-      setLoading(true);
-
-      const { data, error } = await supabase
-        .from("appointments")
-        .select(
-          `
-            *,
-            barber:barbers!appointments_barber_id_fkey(id, name, avatar_url),
-            service:services!appointments_service_id_fkey(id, name, duration_min, price)
-          `,
-        )
-        .eq("barbershop_id", barbershopId)
-        .gte("starts_at", startIso)
-        .lte("starts_at", endIso)
-        .order("starts_at");
-
-      if (error) {
-        console.error("[useAppointments] error:", error);
+    async function load() {
+      setLoading(getAppointmentCache(cacheKey!) === undefined);
+      setError(null);
+      try {
+        const result = await loadAppointmentCache<CachedAppointments>(
+          cacheKey!,
+          () =>
+            getManagerAppointments({
+              barbershopId: barbershopId!,
+              fromDate,
+              toDateExclusive,
+            }),
+          60_000,
+        );
+        if (!active) return;
+        setAppointments(result.items);
+        setTimezone(result.timezone);
+      } catch (cause) {
         if (!active) return;
         setAppointments([]);
-        setLoading(false);
-        return;
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "Não foi possível carregar os agendamentos.",
+        );
+      } finally {
+        if (active) setLoading(false);
       }
-
-      type AppointmentRowExtended = AppointmentRow & {
-        manual_customer_id: string | null;
-      };
-      const rows = (data as AppointmentRowExtended[] | null) ?? [];
-
-      const authIds = Array.from(
-        new Set(rows.map(row => row.customer_id).filter(Boolean)),
-      );
-      const manualIds = Array.from(
-        new Set(rows.map(row => row.manual_customer_id).filter(Boolean)),
-      );
-
-      const customerMap = new Map<
-        string,
-        {
-          id: string;
-          name: string;
-          phone: string | null;
-          source: "customers" | "customers_auth";
-        }
-      >();
-
-      await Promise.all([
-        authIds.length > 0
-          ? supabase
-              .from("customers")
-              .select("id, name, phone")
-              .in("id", authIds)
-              .eq("auth", true)
-              .then(({ data: authCustomers }) => {
-                for (const customer of authCustomers ?? []) {
-                  customerMap.set(customer.id, {
-                    id: customer.id,
-                    name: customer.name?.trim() || "Cliente sem nome",
-                    phone: customer.phone,
-                    source: "customers_auth",
-                  });
-                }
-              })
-          : Promise.resolve(),
-        manualIds.length > 0
-          ? supabase
-              .from("customers")
-              .select("id, name, phone")
-              .in("id", manualIds)
-              .then(({ data: manualCustomers }) => {
-                for (const customer of manualCustomers ?? []) {
-                  customerMap.set(customer.id, {
-                    id: customer.id,
-                    name: customer.name,
-                    phone: customer.phone,
-                    source: "customers",
-                  });
-                }
-              })
-          : Promise.resolve(),
-      ]);
-
-      if (!active) return;
-
-      setAppointments(
-        rows.map(row => {
-          const resolvedId = row.customer_id ?? row.manual_customer_id;
-          return {
-            ...row,
-            customer: resolvedId ? (customerMap.get(resolvedId) ?? null) : null,
-          };
-        }),
-      );
-      setLoading(false);
     }
 
-    void loadAppointments();
-
+    void load();
     return () => {
       active = false;
     };
-  }, [barbershopId, startIso, endIso, tick]);
+  }, [barbershopId, cacheKey, fromDate, reloadToken, toDateExclusive]);
+
+  useEffect(() => {
+    function refreshExpiredCache() {
+      if (cacheKey && getAppointmentCache(cacheKey) === undefined) {
+        setReloadToken(current => current + 1);
+      }
+    }
+
+    window.addEventListener("focus", refreshExpiredCache);
+    return () => window.removeEventListener("focus", refreshExpiredCache);
+  }, [cacheKey]);
+
+  const updateAppointments = useCallback(
+    (
+      updater: (
+        current: AppointmentWithRelations[],
+      ) => AppointmentWithRelations[],
+    ) => {
+      setAppointments(current => {
+        const next = updater(current);
+        if (cacheKey) {
+          setAppointmentCache<CachedAppointments>(
+            cacheKey,
+            {
+              items: next,
+              timezone,
+            },
+            60_000,
+          );
+        }
+        return next;
+      });
+    },
+    [cacheKey, timezone],
+  );
+
+  const refetch = useCallback(() => {
+    if (cacheKey) deleteAppointmentCache(cacheKey);
+    setReloadToken(current => current + 1);
+  }, [cacheKey]);
 
   return {
     appointments,
-    setAppointments,
+    setAppointments: updateAppointments,
+    timezone,
     loading,
-    refetch: () => setTick(current => current + 1),
+    error,
+    refetch,
   };
 }

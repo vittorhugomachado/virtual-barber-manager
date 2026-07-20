@@ -1,16 +1,17 @@
-﻿import { useServices } from "@/hooks/use-service";
-import { Check, ChevronLeft, Clock, Scissors } from "lucide-react";
+﻿import { Check, ChevronLeft, Clock, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import type { AppointmentBookingService } from "@/types/create-appointment";
 
 export function Step2Service({
   onBack,
   onSelect,
+  services,
 }: {
   onBack: () => void;
   onSelect: (serviceIds: string[]) => void;
+  services: AppointmentBookingService[];
 }) {
-  const { services, loading } = useServices();
   const [selected, setSelected] = useState<string[]>([]);
 
   const activeServices = services.filter(s => s.is_active);
@@ -62,9 +63,7 @@ export function Step2Service({
           )}
         </div>
 
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Carregando…</p>
-        ) : activeServices.length === 0 ? (
+        {activeServices.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Nenhum serviço disponível.
           </p>

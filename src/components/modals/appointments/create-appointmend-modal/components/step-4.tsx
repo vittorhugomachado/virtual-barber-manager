@@ -1,11 +1,16 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useBarbers } from "@/hooks/use-barbers";
-import { useOpeningHours } from "@/hooks/use-opening-hours";
-import { useServices } from "@/hooks/use-service";
-import { supabase } from "@/lib/supabase/supabase";
+import {
+  appointmentCacheKey,
+  loadAppointmentCache,
+} from "@/lib/appointments-cache";
+import { getAvailableAppointmentSlots } from "@/lib/supabase/appointments/appointments";
 import { useBarbershopStore } from "@/store/barbershop.store";
-import type { ServiceSelection, TimeSlot } from "@/types/create-appointment";
+import type {
+  AppointmentBookingContext,
+  ServiceSelection,
+  TimeSlot,
+} from "@/types/create-appointment";
 import {
   AlertCircle,
   Check,
@@ -19,43 +24,12 @@ import {
   User,
 } from "lucide-react";
 
-interface OpeningHourRow {
-  day_of_week: number;
-  opens_at: string;
-  closes_at: string;
-  is_open: boolean;
-  period_order: number;
-}
-
-interface BarberAvailabilityRow {
-  day_of_week: number;
-  is_day_off: boolean;
-  use_custom_hours: boolean;
-  starts_at: string | null;
-  ends_at: string | null;
-  period_order: number;
-}
-
-interface AppointmentRow {
-  starts_at: string;
-  ends_at: string;
-  status: string;
-}
-
 type SlotCache = Record<string, TimeSlot[]>;
 type LoadingCache = Record<string, boolean>;
 
 function timeToMinutes(time: string) {
   const [hours, minutes] = time.slice(0, 5).split(":").map(Number);
   return hours * 60 + minutes;
-}
-
-function minutesToTime(totalMinutes: number) {
-  const hours = Math.floor(totalMinutes / 60)
-    .toString()
-    .padStart(2, "0");
-  const minutes = (totalMinutes % 60).toString().padStart(2, "0");
-  return `${hours}:${minutes}`;
 }
 
 function addDays(date: Date, days: number) {
@@ -65,7 +39,22 @@ function addDays(date: Date, days: number) {
 }
 
 function toDateKey(date: Date) {
-  return date.toLocaleDateString("en-CA");
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function todayKeyInTimezone(timezone: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find(part => part.type === type)?.value ?? "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
 }
 
 function formatDateLabel(date: Date) {
@@ -74,74 +63,6 @@ function formatDateLabel(date: Date) {
     day: "2-digit",
     month: "long",
   });
-}
-
-function getShopPeriods(
-  dayOfWeek: number,
-  openingHours: OpeningHourRow[],
-): { opensAt: string; closesAt: string }[] {
-  return openingHours
-    .filter(item => item.day_of_week === dayOfWeek && item.is_open)
-    .sort((a, b) => a.period_order - b.period_order)
-    .map(item => ({
-      opensAt: item.opens_at.slice(0, 5),
-      closesAt: item.closes_at.slice(0, 5),
-    }));
-}
-
-function getBarberRestriction(
-  dayOfWeek: number,
-  barberAvailability: BarberAvailabilityRow[],
-): {
-  isDayOff: boolean;
-  customPeriods: { opensAt: string; closesAt: string }[] | null;
-} {
-  const forDay = barberAvailability
-    .filter(item => item.day_of_week === dayOfWeek)
-    .sort((a, b) => a.period_order - b.period_order);
-
-  if (forDay.some(item => item.is_day_off)) {
-    return { isDayOff: true, customPeriods: null };
-  }
-
-  const customPeriods = forDay
-    .filter(item => item.use_custom_hours && item.starts_at && item.ends_at)
-    .map(item => ({
-      opensAt: item.starts_at!.slice(0, 5),
-      closesAt: item.ends_at!.slice(0, 5),
-    }));
-
-  return {
-    isDayOff: false,
-    customPeriods: customPeriods.length > 0 ? customPeriods : null,
-  };
-}
-
-function buildSlots(
-  periods: { opensAt: string; closesAt: string }[],
-  durationMin: number,
-) {
-  const slots: string[] = [];
-
-  for (const period of periods) {
-    let current = timeToMinutes(period.opensAt);
-    const closesAt = timeToMinutes(period.closesAt);
-
-    while (current + durationMin <= closesAt) {
-      slots.push(minutesToTime(current));
-      current += 30;
-    }
-  }
-
-  return Array.from(new Set(slots));
-}
-
-function isActiveStatus(status: string) {
-  return ![
-    "cancelled_by_customer",
-    "cancelled_by_barbershop",
-    "no_show",
-  ].includes(status);
 }
 
 function groupSlotsByPeriod(slots: TimeSlot[]) {
@@ -435,6 +356,7 @@ export function Step4BarberTime({
   onBack,
   onSelect,
   onDateChange,
+  context,
 }: {
   serviceIds: string[];
   date: string;
@@ -442,18 +364,21 @@ export function Step4BarberTime({
   onBack: () => void;
   onSelect: (selections: ServiceSelection[]) => void;
   onDateChange: (date: string, dateObj: Date) => void;
+  context: AppointmentBookingContext;
 }) {
   const { barbershop } = useBarbershopStore();
-  const { openingHours } = useOpeningHours();
-  const { barbers } = useBarbers();
-  const { services } = useServices();
+  const { opening_hours: openingHours, barbers, services } = context;
 
   const [currentDate, setCurrentDate] = useState(date);
   const [currentDateObj, setCurrentDateObj] = useState(dateObj);
   const [activeServiceIds, setActiveServiceIds] = useState(serviceIds);
-  const [eligibleBarberIds, setEligibleBarberIds] = useState<
-    Record<string, string[]>
-  >({});
+  const eligibleBarberIds = useMemo(() => {
+    const result: Record<string, string[]> = {};
+    for (const relation of context.service_barbers) {
+      (result[relation.service_id] ??= []).push(relation.barber_id);
+    }
+    return result;
+  }, [context.service_barbers]);
   const [barbershopSlots, setBarbershopSlots] = useState<SlotCache>({});
   const [barbershopSlotsLoading, setBarbershopSlotsLoading] =
     useState<LoadingCache>({});
@@ -463,40 +388,7 @@ export function Step4BarberTime({
   const [selections, setSelections] = useState<
     Record<string, { barberId: string; time: string } | null>
   >({});
-
-  useEffect(() => {
-    if (activeServiceIds.length === 0) return;
-
-    let active = true;
-
-    async function loadEligibleBarbers() {
-      const { data } = await supabase
-        .from("barber_services")
-        .select("barber_id, service_id, barbers!inner(id, is_active)")
-        .in("service_id", activeServiceIds)
-        .eq("barbers.is_active", true);
-
-      if (!active) return;
-
-      const nextMap: Record<string, string[]> = {};
-
-      for (const row of data ?? []) {
-        if (!nextMap[row.service_id]) {
-          nextMap[row.service_id] = [];
-        }
-
-        nextMap[row.service_id].push(row.barber_id);
-      }
-
-      setEligibleBarberIds(nextMap);
-    }
-
-    void loadEligibleBarbers();
-
-    return () => {
-      active = false;
-    };
-  }, [activeServiceIds]);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
 
   const isShopOpen = useMemo(
     () =>
@@ -518,99 +410,37 @@ export function Step4BarberTime({
 
     const cacheKey = `${serviceId}:${barberId}:${dateKey}`;
     setBarbershopSlotsLoading(prev => ({ ...prev, [cacheKey]: true }));
+    setSlotsError(null);
 
-    const durationMin = service.duration_min ?? 30;
-    const dayOfWeek = new Date(`${dateKey}T12:00:00`).getDay();
-    const nextDateKey = toDateKey(addDays(new Date(`${dateKey}T12:00:00`), 1));
-
-    const [
-      { data: shopHours },
-      { data: barberAvailability },
-      { data: appointments },
-    ] = await Promise.all([
-      supabase
-        .from("opening_hours")
-        .select("day_of_week, opens_at, closes_at, is_open, period_order")
-        .eq("barbershop_id", barbershop.id)
-        .eq("day_of_week", dayOfWeek),
-      supabase
-        .from("barber_availability")
-        .select(
-          "day_of_week, is_day_off, use_custom_hours, starts_at, ends_at, period_order",
-        )
-        .eq("barber_id", barberId)
-        .eq("day_of_week", dayOfWeek),
-      supabase
-        .from("appointments")
-        .select("starts_at, ends_at, status")
-        .eq("barber_id", barberId)
-        .gte("starts_at", `${dateKey}T00:00:00`)
-        .lt("starts_at", `${nextDateKey}T00:00:00`),
-    ]);
-
-    // Base: períodos de funcionamento da barbearia
-    const shopPeriods = getShopPeriods(
-      dayOfWeek,
-      (shopHours as OpeningHourRow[] | null) ?? [],
+    const sharedCacheKey = appointmentCacheKey(
+      "slots",
+      barbershop.id,
+      serviceId,
+      barberId,
+      dateKey,
     );
 
-    // Restrição do barbeiro: folga ou horário personalizado
-    const barberRestriction = getBarberRestriction(
-      dayOfWeek,
-      (barberAvailability as BarberAvailabilityRow[] | null) ?? [],
-    );
-
-    // Sem horário de funcionamento → sem slots
-    if (shopPeriods.length === 0) {
+    try {
+      const slots = await loadAppointmentCache<TimeSlot[]>(
+        sharedCacheKey,
+        () =>
+          getAvailableAppointmentSlots({
+            barbershopId: barbershop.id,
+            serviceId,
+            barberId,
+            localDate: dateKey,
+          }),
+        30_000,
+      );
+      setBarbershopSlots(prev => ({ ...prev, [cacheKey]: slots }));
+    } catch {
       setBarbershopSlots(prev => ({ ...prev, [cacheKey]: [] }));
+      setSlotsError(
+        "Não foi possível verificar a disponibilidade. Tente novamente.",
+      );
+    } finally {
       setBarbershopSlotsLoading(prev => ({ ...prev, [cacheKey]: false }));
-      return;
     }
-
-    // Slots sempre baseados no horário da barbearia
-    const allSlots = buildSlots(shopPeriods, durationMin);
-    const activeAppointments = (
-      (appointments as AppointmentRow[] | null) ?? []
-    ).filter(a => isActiveStatus(a.status));
-
-    const isToday = dateKey === toDateKey(new Date());
-    const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
-
-    // Períodos em que o barbeiro está disponível (null = disponível o dia todo)
-    const barberActivePeriods: { opensAt: string; closesAt: string }[] | null =
-      barberRestriction.isDayOff
-        ? [] // folga: nenhum período disponível
-        : (barberRestriction.customPeriods ?? null);
-
-    const slots: TimeSlot[] = allSlots.map(time => {
-      const slotStart = timeToMinutes(time);
-      const slotEnd = slotStart + durationMin;
-
-      if (isToday && slotStart <= nowMinutes) {
-        return { time, available: false };
-      }
-
-      // Fora do horário do barbeiro → indisponível
-      if (barberActivePeriods !== null) {
-        const withinBarber = barberActivePeriods.some(
-          p =>
-            slotStart >= timeToMinutes(p.opensAt) &&
-            slotEnd <= timeToMinutes(p.closesAt),
-        );
-        if (!withinBarber) return { time, available: false };
-      }
-
-      const overlapsAppointment = activeAppointments.some(a => {
-        const aStart = timeToMinutes(a.starts_at.slice(11, 16));
-        const aEnd = timeToMinutes(a.ends_at.slice(11, 16));
-        return slotStart < aEnd && slotEnd > aStart;
-      });
-
-      return { time, available: !overlapsAppointment };
-    });
-
-    setBarbershopSlots(prev => ({ ...prev, [cacheKey]: slots }));
-    setBarbershopSlotsLoading(prev => ({ ...prev, [cacheKey]: false }));
   }
 
   function computeSlots(serviceId: string, barberId: string) {
@@ -708,12 +538,11 @@ export function Step4BarberTime({
     setSelections({});
     setBarbershopSlots({});
     setBarbershopSlotsLoading({});
+    setSlotsError(null);
     onDateChange(nextDate, nextDateObj);
   }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const isPrevDisabled = currentDateObj <= today;
+  const isPrevDisabled = currentDate <= todayKeyInTimezone(context.timezone);
   const allSelected =
     activeServiceIds.length > 0 &&
     activeServiceIds.every(serviceId => selections[serviceId] != null);
@@ -814,6 +643,12 @@ export function Step4BarberTime({
             );
           })}
         </div>
+      )}
+
+      {slotsError && (
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          {slotsError}
+        </p>
       )}
 
       <Button

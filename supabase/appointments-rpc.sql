@@ -565,13 +565,28 @@ BEGIN
     RAISE EXCEPTION 'appointment_changed' USING ERRCODE = '40001';
   END IF;
 
-  IF v_appointment.status::text <> 'scheduled'
-     OR p_new_status NOT IN ('completed', 'no_show', 'cancelled_by_barbershop') THEN
+  IF p_new_status = v_appointment.status::text THEN
     RAISE EXCEPTION 'invalid_status_transition' USING ERRCODE = '22023';
   END IF;
 
-  IF p_new_status IN ('completed', 'no_show') AND v_appointment.starts_at > now() THEN
-    RAISE EXCEPTION 'appointment_not_started' USING ERRCODE = '22023';
+  -- Agendamento ocorrido há mais de uma hora: permite ausência ou cancelado.
+  IF v_appointment.starts_at < now() - interval '1 hour' THEN
+    IF p_new_status NOT IN ('no_show', 'cancelled_by_barbershop') THEN
+      RAISE EXCEPTION 'invalid_status_transition' USING ERRCODE = '22023';
+    END IF;
+
+  -- Agendamento com mais de uma hora no futuro: permite agendado ou cancelado.
+  ELSIF v_appointment.starts_at > now() + interval '1 hour' THEN
+    IF p_new_status NOT IN ('scheduled', 'cancelled_by_barbershop') THEN
+      RAISE EXCEPTION 'invalid_status_transition' USING ERRCODE = '22023';
+    END IF;
+
+  -- Agendamento dentro da janela de uma hora antes ou depois do horário atual:
+  -- os quatro status administrativos são aceitos.
+  ELSIF p_new_status NOT IN (
+    'scheduled', 'completed', 'no_show', 'cancelled_by_barbershop'
+  ) THEN
+    RAISE EXCEPTION 'invalid_status_transition' USING ERRCODE = '22023';
   END IF;
 
   UPDATE public.appointments
@@ -580,6 +595,10 @@ BEGIN
   RETURNING * INTO v_appointment;
 
   RETURN jsonb_build_object('appointment', to_jsonb(v_appointment));
+EXCEPTION
+  -- Ao reativar um cancelado, preserva a proteção contra horários sobrepostos.
+  WHEN exclusion_violation THEN
+    RAISE EXCEPTION 'slot_unavailable' USING ERRCODE = '23P01';
 END;
 $function$;
 

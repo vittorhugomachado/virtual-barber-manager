@@ -22,10 +22,6 @@ import { CreateAppointmentModal } from "../modals/appointments/create-appointmen
 import { changeManagerAppointmentStatus } from "@/lib/supabase/appointments/appointments";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { toast } from "sonner";
-import {
-  appointmentCacheKey,
-  invalidateAppointmentCache,
-} from "@/lib/appointments-cache";
 
 type FilterType = "today" | "week" | "month" | "year" | "custom";
 
@@ -50,6 +46,27 @@ const STATUS_OPTIONS: { value: AppointmentStatus; label: string }[] = [
   { value: "no_show", label: "Não compareceu" },
   { value: "cancelled_by_barbershop", label: "Cancelado" },
 ];
+
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+function getAllowedStatusOptions(appointment: AppointmentWithRelations) {
+  const timeUntilStart = new Date(appointment.starts_at).getTime() - Date.now();
+  const elapsedSinceStart = -timeUntilStart;
+
+  if (elapsedSinceStart > ONE_HOUR_MS) {
+    return STATUS_OPTIONS.filter(option =>
+      ["no_show", "cancelled_by_barbershop"].includes(option.value),
+    );
+  }
+
+  if (timeUntilStart > ONE_HOUR_MS) {
+    return STATUS_OPTIONS.filter(option =>
+      ["scheduled", "cancelled_by_barbershop"].includes(option.value),
+    );
+  }
+
+  return STATUS_OPTIONS;
+}
 
 function StatusPicker({
   apt,
@@ -78,17 +95,9 @@ function StatusPicker({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
-  const startsAt = new Date(apt.starts_at);
-  const hasStarted = startsAt.getTime() <= Date.now();
-  const options =
-    !canManage || apt.status !== "scheduled"
-      ? []
-      : STATUS_OPTIONS.filter(o => {
-          if (o.value === apt.status) return false;
-          if (!hasStarted && ["completed", "no_show"].includes(o.value))
-            return false;
-          return true;
-        });
+  const options = canManage
+    ? getAllowedStatusOptions(apt).filter(option => option.value !== apt.status)
+    : [];
 
   async function changeStatus(newStatus: AppointmentStatus) {
     setUpdating(true);
@@ -457,7 +466,6 @@ const DaySection = memo(function DaySection({
 // ─── AppointmentsMain ─────────────────────────────────────────────────────────
 export function AppointmentsMain() {
   const memberRole = useBarbershopStore(state => state.memberRole);
-  const barbershopId = useBarbershopStore(state => state.barbershop?.id);
   const configuredTimezone = useBarbershopStore(
     state => state.barbershop?.timezone ?? "America/Sao_Paulo",
   );
@@ -490,24 +498,27 @@ export function AppointmentsMain() {
             item.id === appointment.id ? { ...item, status } : item,
           ),
         );
-        if (barbershopId) {
-          invalidateAppointmentCache(
-            appointmentCacheKey("slots", barbershopId),
-          );
-        }
         toast.success("Status atualizado.");
       } catch (cause) {
-        toast.error(
-          cause instanceof Error &&
-            cause.message.includes("appointment_changed")
-            ? "Este agendamento foi alterado em outro dispositivo. Atualizando a agenda."
-            : "Não foi possível alterar o status.",
-        );
+        const message = cause instanceof Error ? cause.message : "";
+        if (message.includes("appointment_changed")) {
+          toast.error(
+            "Este agendamento foi alterado em outro dispositivo. Atualizando a agenda.",
+          );
+        } else if (message.includes("slot_unavailable")) {
+          toast.error(
+            "Não foi possível reativar: este horário já está ocupado.",
+          );
+        } else if (message.includes("invalid_status_transition")) {
+          toast.error("Este status não é permitido para o horário atual.");
+        } else {
+          toast.error("Não foi possível alterar o status.");
+        }
         refetch();
         throw cause;
       }
     },
-    [barbershopId, refetch, setAppointments],
+    [refetch, setAppointments],
   );
 
   const appointmentsByDay = useMemo(() => {

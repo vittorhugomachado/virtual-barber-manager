@@ -96,7 +96,6 @@ export function CreateAppointmentModal({
       invalidateAppointmentCache(
         appointmentCacheKey("appointments", barbershop.id),
       );
-      invalidateAppointmentCache(appointmentCacheKey("slots", barbershop.id));
 
       onSuccess?.();
       handleClose();

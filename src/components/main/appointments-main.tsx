@@ -667,11 +667,13 @@ export function AppointmentsMain() {
         </div>
       )}
 
-      <CreateAppointmentModal
-        open={newModalOpen}
-        onClose={() => setNewModalOpen(false)}
-        onSuccess={refetch}
-      />
+      {newModalOpen && (
+        <CreateAppointmentModal
+          open
+          onClose={() => setNewModalOpen(false)}
+          onSuccess={refetch}
+        />
+      )}
     </main>
   );
 }

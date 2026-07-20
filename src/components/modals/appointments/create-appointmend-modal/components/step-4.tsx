@@ -1,9 +1,5 @@
 ﻿import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  appointmentCacheKey,
-  loadAppointmentCache,
-} from "@/lib/appointments-cache";
 import { getAvailableAppointmentSlots } from "@/lib/supabase/appointments/appointments";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import type {
@@ -389,6 +385,7 @@ export function Step4BarberTime({
     Record<string, { barberId: string; time: string } | null>
   >({});
   const [slotsError, setSlotsError] = useState<string | null>(null);
+  const slotRequestVersions = useMemo(() => new Map<string, number>(), []);
 
   const isShopOpen = useMemo(
     () =>
@@ -409,37 +406,31 @@ export function Step4BarberTime({
     if (!service) return;
 
     const cacheKey = `${serviceId}:${barberId}:${dateKey}`;
+    const requestVersion = (slotRequestVersions.get(cacheKey) ?? 0) + 1;
+    slotRequestVersions.set(cacheKey, requestVersion);
+    setBarbershopSlots(prev => ({ ...prev, [cacheKey]: [] }));
     setBarbershopSlotsLoading(prev => ({ ...prev, [cacheKey]: true }));
     setSlotsError(null);
 
-    const sharedCacheKey = appointmentCacheKey(
-      "slots",
-      barbershop.id,
-      serviceId,
-      barberId,
-      dateKey,
-    );
-
     try {
-      const slots = await loadAppointmentCache<TimeSlot[]>(
-        sharedCacheKey,
-        () =>
-          getAvailableAppointmentSlots({
-            barbershopId: barbershop.id,
-            serviceId,
-            barberId,
-            localDate: dateKey,
-          }),
-        30_000,
-      );
+      const slots = await getAvailableAppointmentSlots({
+        barbershopId: barbershop.id,
+        serviceId,
+        barberId,
+        localDate: dateKey,
+      });
+      if (slotRequestVersions.get(cacheKey) !== requestVersion) return;
       setBarbershopSlots(prev => ({ ...prev, [cacheKey]: slots }));
     } catch {
+      if (slotRequestVersions.get(cacheKey) !== requestVersion) return;
       setBarbershopSlots(prev => ({ ...prev, [cacheKey]: [] }));
       setSlotsError(
         "Não foi possível verificar a disponibilidade. Tente novamente.",
       );
     } finally {
-      setBarbershopSlotsLoading(prev => ({ ...prev, [cacheKey]: false }));
+      if (slotRequestVersions.get(cacheKey) === requestVersion) {
+        setBarbershopSlotsLoading(prev => ({ ...prev, [cacheKey]: false }));
+      }
     }
   }
 
@@ -485,13 +476,7 @@ export function Step4BarberTime({
 
     if (isClosing) return;
 
-    const cacheKey = `${serviceId}:${barberId}:${currentDate}`;
-    if (
-      barbershopSlots[cacheKey] === undefined &&
-      !barbershopSlotsLoading[cacheKey]
-    ) {
-      void loadBarberSlots(serviceId, barberId, currentDate);
-    }
+    void loadBarberSlots(serviceId, barberId, currentDate);
   }
 
   function handleSelectTime(serviceId: string, barberId: string, time: string) {

@@ -4,12 +4,27 @@ import { supabase } from "@/lib/supabase/supabase";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { checkEmailExists } from "@/utils/check-email-exist";
 import { verifyPassword } from "@/utils/verify-password";
+import {
+  getSettingsCache,
+  loadSettingsCache,
+  setSettingsCache,
+  settingsCacheKey,
+} from "@/lib/settings-cache";
 
 type PendingSecurityAction = "email" | "password" | null;
 
 export function useSecuritySettings() {
-  const barbershopEmail = useBarbershopStore(state => state.barbershop?.email);
-  const [currentEmail, setCurrentEmail] = useState("");
+  const barbershop = useBarbershopStore(state => state.barbershop);
+  const barbershopEmail = barbershop?.email;
+  const emailCacheKey = barbershop?.id
+    ? settingsCacheKey(barbershop.id, "security-email")
+    : null;
+  const [currentEmail, setCurrentEmail] = useState(
+    () =>
+      (emailCacheKey ? getSettingsCache<string>(emailCacheKey) : undefined) ??
+      barbershopEmail ??
+      "",
+  );
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -27,11 +42,16 @@ export function useSecuritySettings() {
     let active = true;
 
     async function fetchCurrentEmail() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const email = emailCacheKey
+        ? await loadSettingsCache(emailCacheKey, async () => {
+            const {
+              data: { user },
+            } = await supabase.auth.getUser();
+            return user?.email ?? barbershopEmail ?? "";
+          })
+        : (barbershopEmail ?? "");
       if (!active) return;
-      setCurrentEmail(user?.email ?? barbershopEmail ?? "");
+      setCurrentEmail(email);
     }
 
     void fetchCurrentEmail();
@@ -40,6 +60,9 @@ export function useSecuritySettings() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "USER_UPDATED" && session?.user?.email) {
         setCurrentEmail(session.user.email);
+        if (emailCacheKey) {
+          setSettingsCache(emailCacheKey, session.user.email);
+        }
       }
     });
 
@@ -47,7 +70,7 @@ export function useSecuritySettings() {
       active = false;
       subscription.unsubscribe();
     };
-  }, [barbershopEmail]);
+  }, [barbershopEmail, emailCacheKey]);
 
   async function handleEmailChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

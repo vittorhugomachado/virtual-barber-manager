@@ -28,7 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCreateMember, type MemberRole } from "@/hooks/use-members";
+import {
+  useCreateMember,
+  type Member,
+  type MemberRole,
+} from "@/hooks/use-members";
 import { useBarbershopStore } from "@/store/barbershop.store";
 
 type CreateMemberData = {
@@ -40,7 +44,7 @@ type CreateMemberData = {
 type CreateMemberModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreated: () => void;
+  onCreated: (member: Member) => void;
 };
 
 const createMemberSchema = z.object({
@@ -83,13 +87,15 @@ export function CreateMemberModal({
       return;
     }
 
+    let createdMember: Member;
     try {
-      await createMember({
+      const result = await createMember({
         barbershopId: barbershop.id,
         username: values.username,
         password: values.password,
         role: values.role,
       });
+      createdMember = result.member as Member;
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Não foi possível adicionar.";
@@ -105,7 +111,7 @@ export function CreateMemberModal({
 
     toast.success("Usuário adicionado com sucesso.");
     handleOpenChange(false);
-    onCreated();
+    onCreated(createdMember);
   }
 
   return (

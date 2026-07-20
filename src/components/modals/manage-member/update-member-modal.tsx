@@ -38,7 +38,7 @@ type UpdateMemberModalProps = {
   open: boolean;
   member: Member;
   onOpenChange: (open: boolean) => void;
-  onUpdated: () => void;
+  onUpdated: (member: Member) => void;
 };
 
 const usernameSchema = z
@@ -118,9 +118,11 @@ export function UpdateMemberModal({
       return;
     }
 
+    let updatedMember: Member;
     setIsUpdating(true);
     try {
       const result = await updateMember({ memberId: member.id, ...changes });
+      updatedMember = result.member as Member;
       toast.success(result?.message || "Membro atualizado com sucesso!");
     } catch (error) {
       toast.error(
@@ -134,7 +136,7 @@ export function UpdateMemberModal({
     }
 
     handleOpenChange(false);
-    onUpdated();
+    onUpdated(updatedMember);
   }
 
   return (

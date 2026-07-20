@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/supabase";
+import {
+  deleteSettingsCache,
+  getSettingsCache,
+  loadSettingsCache,
+  setSettingsCache,
+  settingsCacheKey,
+} from "@/lib/settings-cache";
 
 export type MemberRole = "admin" | "reader";
 
@@ -106,16 +113,61 @@ async function invokeMemberFunction(
 }
 
 export function useMembers(barbershopId: string | undefined) {
-  const [members, setMembers] = useState<Member[] | null>(null);
+  const initialCacheKey = barbershopId
+    ? settingsCacheKey(barbershopId, "members")
+    : null;
+  const [members, setMembers] = useState<Member[] | null>(() =>
+    initialCacheKey
+      ? (getSettingsCache<Member[]>(initialCacheKey) ?? null)
+      : null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
-  const reload = useCallback(() => setReloadToken(value => value + 1), []);
-  const removeLocal = useCallback((memberId: string) => {
-    setMembers(current =>
-      current ? current.filter(member => member.id !== memberId) : current,
-    );
-  }, []);
+  const reload = useCallback(() => {
+    if (barbershopId) {
+      deleteSettingsCache(settingsCacheKey(barbershopId, "members"));
+    }
+    setReloadToken(value => value + 1);
+  }, [barbershopId]);
+
+  const updateLocalCache = useCallback(
+    (updater: (current: Member[]) => Member[]) => {
+      setMembers(current => {
+        const next = updater(current ?? []);
+        if (barbershopId) {
+          setSettingsCache(settingsCacheKey(barbershopId, "members"), next);
+        }
+        return next;
+      });
+    },
+    [barbershopId],
+  );
+
+  const removeLocal = useCallback(
+    (memberId: string) => {
+      updateLocalCache(current =>
+        current.filter(member => member.id !== memberId),
+      );
+    },
+    [updateLocalCache],
+  );
+
+  const addLocal = useCallback(
+    (member: Member) => updateLocalCache(current => [...current, member]),
+    [updateLocalCache],
+  );
+
+  const updateLocal = useCallback(
+    (updatedMember: Member) => {
+      updateLocalCache(current =>
+        current.map(member =>
+          member.id === updatedMember.id ? updatedMember : member,
+        ),
+      );
+    },
+    [updateLocalCache],
+  );
 
   useEffect(() => {
     if (!barbershopId) return;
@@ -123,21 +175,23 @@ export function useMembers(barbershopId: string | undefined) {
 
     async function loadMembers() {
       setError(null);
-      const { data, error: queryError } = await supabase.rpc(
-        "get_barbershop_members",
-        {
-          p_barbershop_id: barbershopId,
-        },
-      );
-      if (!active) return;
-
-      if (queryError) {
+      try {
+        const cacheKey = settingsCacheKey(barbershopId!, "members");
+        const data = await loadSettingsCache<Member[]>(cacheKey, async () => {
+          const { data, error: queryError } = await supabase.rpc(
+            "get_barbershop_members",
+            { p_barbershop_id: barbershopId },
+          );
+          if (queryError) throw queryError;
+          return data ? (data as Member[]) : [];
+        });
+        if (!active) return;
+        setMembers(data);
+      } catch {
+        if (!active) return;
         setMembers([]);
         setError("Não foi possível carregar os usuários.");
-        return;
       }
-
-      setMembers(data ? (data as Member[]) : []);
     }
 
     void loadMembers();
@@ -146,7 +200,14 @@ export function useMembers(barbershopId: string | undefined) {
     };
   }, [barbershopId, reloadToken]);
 
-  return { members: barbershopId ? members : [], error, reload, removeLocal };
+  return {
+    members: barbershopId ? members : [],
+    error,
+    reload,
+    removeLocal,
+    addLocal,
+    updateLocal,
+  };
 }
 
 export function useCreateMember() {

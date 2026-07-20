@@ -82,8 +82,9 @@ function toPeriodEntries(
 export function OpeningHoursSection({ onSaved }: { onSaved?: () => void }) {
   const { barbershop } = useBarbershopStore();
   const { openingHours, loading } = useOpeningHours();
-  const [initialDays, setInitialDays] = useState<DayConfig[]>(DEFAULT_DAYS);
-  const [days, setDays] = useState<DayConfig[]>(DEFAULT_DAYS);
+  const cachedDays = loading ? DEFAULT_DAYS : toDayConfigs(openingHours);
+  const [initialDays, setInitialDays] = useState<DayConfig[]>(cachedDays);
+  const [days, setDays] = useState<DayConfig[]>(cachedDays);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 

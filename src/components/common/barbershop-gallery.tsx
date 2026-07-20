@@ -23,6 +23,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  getSettingsCache,
+  loadSettingsCache,
+  setSettingsCache,
+  settingsCacheKey,
+} from "@/lib/settings-cache";
 
 type GalleryImage = {
   id: string;
@@ -55,13 +61,23 @@ export function BarbershopGallery({
   inModal = false,
 }: BarbershopGalleryProps) {
   const { barbershop } = useBarbershopStore();
-  const [images, setImages] = useState<GalleryImage[]>([]);
+  const galleryCacheKey = barbershop?.id
+    ? settingsCacheKey(barbershop.id, "gallery")
+    : null;
+  const cachedImages = galleryCacheKey
+    ? getSettingsCache<GalleryImage[]>(galleryCacheKey)
+    : undefined;
+  const [images, setImages] = useState<GalleryImage[]>(
+    () => cachedImages ?? [],
+  );
   const [removedImages, setRemovedImages] = useState<GalleryImage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(cachedImages === undefined);
   const [addingFiles, setAddingFiles] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<GalleryImage | null>(null);
-  const [savedSignature, setSavedSignature] = useState("");
+  const [savedSignature, setSavedSignature] = useState(() =>
+    (cachedImages ?? []).map(image => image.id).join("|"),
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagesRef = useRef<GalleryImage[]>([]);
   const isLoading = barbershop?.id ? loading : false;
@@ -78,29 +94,41 @@ export function BarbershopGallery({
   }, [hasUnsavedChanges, onDirtyChange]);
 
   useEffect(() => {
-    if (!barbershop?.id) {
+    const barbershopId = barbershop?.id;
+    if (!barbershopId) {
       return;
     }
 
     let mounted = true;
 
-    supabase
-      .from("barbershop_gallery")
-      .select("id, url, order")
-      .eq("barbershop_id", barbershop.id)
-      .order("order", { ascending: true })
-      .then(({ data, error }) => {
+    const cacheKey = settingsCacheKey(barbershopId, "gallery");
+
+    async function loadGallery() {
+      try {
+        const loadedImages = await loadSettingsCache<GalleryImage[]>(
+          cacheKey,
+          async () => {
+            const { data, error } = await supabase
+              .from("barbershop_gallery")
+              .select("id, url, order")
+              .eq("barbershop_id", barbershopId)
+              .order("order", { ascending: true });
+            if (error) throw error;
+            return (data ?? []) as GalleryImage[];
+          },
+        );
         if (!mounted) return;
-        if (error) {
-          toast.error("Nao foi possivel carregar a galeria");
-        } else {
-          const loadedImages = data ?? [];
-          setImages(loadedImages);
-          setRemovedImages([]);
-          setSavedSignature(loadedImages.map(image => image.id).join("|"));
-        }
-        setLoading(false);
-      });
+        setImages(loadedImages);
+        setRemovedImages([]);
+        setSavedSignature(loadedImages.map(image => image.id).join("|"));
+      } catch {
+        if (mounted) toast.error("Nao foi possivel carregar a galeria");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    void loadGallery();
 
     return () => {
       mounted = false;
@@ -275,8 +303,13 @@ export function BarbershopGallery({
         savedImages.push(inserted);
       }
 
-      setImages(normalizeOrder(savedImages));
-      setSavedSignature(savedImages.map(image => image.id).join("|"));
+      const normalizedImages = normalizeOrder(savedImages);
+      setImages(normalizedImages);
+      setSettingsCache<GalleryImage[]>(
+        settingsCacheKey(barbershop.id, "gallery"),
+        normalizedImages,
+      );
+      setSavedSignature(normalizedImages.map(image => image.id).join("|"));
       setRemovedImages([]);
       toast.success("Imagens salvas!");
       onSaved?.();

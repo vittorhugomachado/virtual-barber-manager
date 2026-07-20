@@ -1,5 +1,10 @@
 import { supabase } from "../supabase";
 import type { OpeningHours } from "@/types/opening-hours";
+import {
+  deleteSettingsCache,
+  setSettingsCache,
+  settingsCacheKey,
+} from "@/lib/settings-cache";
 
 export async function upsertOpeningHours(
   barbershopId: string,
@@ -12,16 +17,29 @@ export async function upsertOpeningHours(
 
   if (deleteError) return false;
 
-  if (hours.length === 0) return true;
+  if (hours.length === 0) {
+    setSettingsCache<OpeningHours[]>(
+      settingsCacheKey(barbershopId, "opening-hours"),
+      [],
+    );
+    return true;
+  }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("opening_hours")
-    .insert(hours.map(h => ({ ...h, barbershop_id: barbershopId })));
+    .insert(hours.map(h => ({ ...h, barbershop_id: barbershopId })))
+    .select("*");
 
   if (error) {
+    deleteSettingsCache(settingsCacheKey(barbershopId, "opening-hours"));
     console.error("insert error:", error);
     return false;
   }
+
+  setSettingsCache<OpeningHours[]>(
+    settingsCacheKey(barbershopId, "opening-hours"),
+    (data ?? []) as OpeningHours[],
+  );
 
   return true;
 }

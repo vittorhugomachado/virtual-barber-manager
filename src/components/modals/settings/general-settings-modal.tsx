@@ -72,7 +72,12 @@ export function GeneralSettingsModal({
 }: GeneralSettingsModalProps) {
   const [activeSection, setActiveSection] =
     useState<SettingsSection>("barbearia");
-  const { missingAddress, missingHours, refetch } = useSettingsAlerts();
+  const {
+    missingAddress,
+    missingHours,
+    markAddressComplete,
+    markHoursComplete,
+  } = useSettingsAlerts(open);
 
   function renderActiveSection() {
     switch (activeSection) {
@@ -81,9 +86,9 @@ export function GeneralSettingsModal({
       case "seguranca":
         return <SecuritySettingsForm />;
       case "endereco":
-        return <AddressForm onSaved={refetch} />;
+        return <AddressForm onSaved={markAddressComplete} />;
       case "horarios":
-        return <OpeningHoursSection onSaved={refetch} />;
+        return <OpeningHoursSection onSaved={markHoursComplete} />;
       case "galeria":
         return <BarbershopGallery />;
       case "usuarios":

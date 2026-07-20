@@ -22,6 +22,12 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import {
+  getSettingsCache,
+  loadSettingsCache,
+  setSettingsCache,
+  settingsCacheKey,
+} from "@/lib/settings-cache";
 
 const BRAZIL_STATES = [
   "AC",
@@ -74,6 +80,12 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+type CachedAddress = FormValues & {
+  id: string;
+  barbershop_id: string;
+  updated_at?: string;
+};
+
 export function AddressForm({
   onSaved,
   fixedButtons = false,
@@ -82,22 +94,30 @@ export function AddressForm({
   fixedButtons?: boolean;
 }) {
   const { barbershop } = useBarbershopStore();
-  const [loading, setLoading] = useState(true);
-  const [addressId, setAddressId] = useState<string | null>(null);
+  const addressCacheKey = barbershop?.id
+    ? settingsCacheKey(barbershop.id, "address")
+    : null;
+  const cachedAddress = addressCacheKey
+    ? getSettingsCache<CachedAddress | null>(addressCacheKey)
+    : undefined;
+  const [loading, setLoading] = useState(cachedAddress === undefined);
+  const [addressId, setAddressId] = useState<string | null>(
+    cachedAddress?.id ?? null,
+  );
   const [fetchingCep, setFetchingCep] = useState(false);
   const [mapEmbedUrl, setMapEmbedUrl] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      zip_code: "",
-      street: "",
-      number: "",
-      complement: "",
-      neighborhood: "",
-      city: "",
-      state: "",
-      country: "Brasil",
+      zip_code: maskCep(cachedAddress?.zip_code ?? ""),
+      street: cachedAddress?.street ?? "",
+      number: cachedAddress?.number ?? "",
+      complement: cachedAddress?.complement ?? "",
+      neighborhood: cachedAddress?.neighborhood ?? "",
+      city: cachedAddress?.city ?? "",
+      state: cachedAddress?.state ?? "",
+      country: cachedAddress?.country ?? "Brasil",
     },
   });
 
@@ -121,15 +141,26 @@ export function AddressForm({
   }, [watched]);
 
   useEffect(() => {
-    if (!barbershop?.id) return;
+    const barbershopId = barbershop?.id;
+    if (!barbershopId) return;
     let mounted = true;
+    const cacheKey = settingsCacheKey(barbershopId, "address");
 
-    supabase
-      .from("addresses")
-      .select("*")
-      .eq("barbershop_id", barbershop.id)
-      .maybeSingle()
-      .then(({ data }) => {
+    async function loadAddress() {
+      try {
+        const data = await loadSettingsCache<CachedAddress | null>(
+          cacheKey,
+          async () => {
+            const { data, error } = await supabase
+              .from("addresses")
+              .select("*")
+              .eq("barbershop_id", barbershopId)
+              .maybeSingle();
+            if (error) throw error;
+            return data as CachedAddress | null;
+          },
+        );
+
         if (!mounted) return;
         if (data) {
           setAddressId(data.id);
@@ -153,8 +184,14 @@ export function AddressForm({
             );
           }
         }
-        setLoading(false);
-      });
+      } catch {
+        if (mounted) toast.error("Erro ao carregar o endereço");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    void loadAddress();
 
     return () => {
       mounted = false;
@@ -223,6 +260,7 @@ export function AddressForm({
     };
     console.log("Payload:", payload);
     let error;
+    let savedAddressId = addressId;
 
     if (addressId) {
       ({ error } = await supabase
@@ -236,7 +274,10 @@ export function AddressForm({
         .select("id")
         .single();
       error = insertError;
-      if (inserted) setAddressId(inserted.id);
+      if (inserted) {
+        savedAddressId = inserted.id;
+        setAddressId(inserted.id);
+      }
     }
 
     if (error) {
@@ -245,6 +286,17 @@ export function AddressForm({
     }
 
     if (!fixedButtons) toast.success("Endereço salvo!");
+    if (savedAddressId) {
+      setSettingsCache<CachedAddress>(
+        settingsCacheKey(barbershop.id, "address"),
+        {
+          id: savedAddressId,
+          ...payload,
+          zip_code: data.zip_code,
+          complement: data.complement ?? "",
+        },
+      );
+    }
     form.reset(data);
     onSaved?.(); // Só avança se salvou com sucesso
   }

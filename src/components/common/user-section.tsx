@@ -99,6 +99,8 @@ export function UsersSection() {
     error: membersError,
     reload,
     removeLocal,
+    addLocal,
+    updateLocal,
   } = useMembers(barbershop?.id);
   const { deleteMember } = useDeleteMember();
   const [removingId, setRemovingId] = useState<string | null>(null);
@@ -233,7 +235,7 @@ export function UsersSection() {
         <CreateMemberModal
           open={showCreateDialog}
           onOpenChange={setShowCreateDialog}
-          onCreated={reload}
+          onCreated={addLocal}
         />
 
         {editMember && (
@@ -244,7 +246,7 @@ export function UsersSection() {
               setShowEditDialog(open);
               if (!open) setEditMember(null);
             }}
-            onUpdated={reload}
+            onUpdated={updateLocal}
           />
         )}
 

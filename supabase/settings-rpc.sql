@@ -111,7 +111,9 @@ BEGIN
   IF v_name IS NULL OR char_length(v_name) > 30 THEN
     RETURN jsonb_build_object('status', 'invalid', 'field', 'name');
   END IF;
-  IF length(v_phone) <> 11 THEN
+  IF length(v_phone) = 11 THEN
+    v_phone := '55' || v_phone;
+  ELSIF length(v_phone) <> 13 OR NOT v_phone LIKE '55%' THEN
     RETURN jsonb_build_object('status', 'invalid', 'field', 'phone');
   END IF;
   IF char_length(v_slug) < 3 OR char_length(v_slug) > 80 THEN

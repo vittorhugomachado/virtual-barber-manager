@@ -32,6 +32,14 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+function formatPhoneForInput(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  const localPhone =
+    digits.length === 13 && digits.startsWith("55") ? digits.slice(2) : digits;
+
+  return maskPhone(localPhone);
+}
+
 export function BarbershopSettingsForm() {
   const { barbershop, setBarbershop } = useBarbershopStore();
 
@@ -41,7 +49,7 @@ export function BarbershopSettingsForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: barbershop?.name ?? "",
-      phone: maskPhone(barbershop?.phone ?? ""),
+      phone: formatPhoneForInput(barbershop?.phone ?? ""),
       slug: barbershop?.slug ?? "",
       description: barbershop?.description ?? "",
       ownerName: barbershop?.owner_name ?? "",
@@ -52,7 +60,7 @@ export function BarbershopSettingsForm() {
     if (barbershop) {
       form.reset({
         name: barbershop.name ?? "",
-        phone: maskPhone(barbershop.phone ?? ""),
+        phone: formatPhoneForInput(barbershop.phone ?? ""),
         slug: barbershop.slug ?? "",
         description: barbershop.description ?? "",
         ownerName: barbershop.owner_name ?? "",
@@ -64,10 +72,12 @@ export function BarbershopSettingsForm() {
     if (!barbershop?.id) return;
 
     try {
+      const phoneDigits = data.phone.replace(/\D/g, "");
+
       const result = await updateBarbershopSettings({
         barbershopId: barbershop.id,
         name: data.name,
-        phone: data.phone,
+        phone: phoneDigits,
         slug: data.slug ?? "",
         description: data.description,
         ownerName: data.ownerName,
@@ -79,7 +89,10 @@ export function BarbershopSettingsForm() {
           form.setError("slug", { message: "Este slug já está em uso" });
         } else if (field === "phone") {
           form.setError("phone", {
-            message: "Este celular já está cadastrado ou é inválido",
+            message:
+              result.status === "conflict"
+                ? "Este celular já está cadastrado"
+                : "Celular inválido",
           });
         } else if (field === "name") {
           form.setError("name", { message: "Nome inválido" });
@@ -99,7 +112,7 @@ export function BarbershopSettingsForm() {
       setBarbershop(result.barbershop);
       form.reset({
         name: result.barbershop.name,
-        phone: maskPhone(result.barbershop.phone ?? ""),
+        phone: formatPhoneForInput(result.barbershop.phone ?? ""),
         slug: result.barbershop.slug,
         description: result.barbershop.description ?? "",
         ownerName: result.barbershop.owner_name ?? data.ownerName,

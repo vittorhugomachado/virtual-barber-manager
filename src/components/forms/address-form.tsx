@@ -305,11 +305,11 @@ export function AddressForm({
     <form
       id="address-form"
       onSubmit={form.handleSubmit(onSubmit)}
-      className={`w-full max-w-180 lg:mx-auto md:px-16 flex flex-col gap-6 mb-6 ${fixedButtons ? "pb-24" : ""}`}
+      className="w-full max-w-180 h-full relative pb-16"
     >
       <Card className="bg-transparent border-none shadow-none">
         {!fixedButtons ? (
-          <CardHeader className="mt-3">
+          <CardHeader>
             <div className="flex flex-col w-fit">
               <CardTitle className="font-semibold text-2xl">Endereço</CardTitle>
               <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
@@ -331,8 +331,8 @@ export function AddressForm({
             Carregando...
           </CardContent>
         ) : (
-          <CardContent className="px-3 flex flex-col gap-6">
-            <FieldGroup>
+          <CardContent className="flex flex-col items-center gap-6">
+            <FieldGroup className="gap-3 max-w-106">
               <div className="flex gap-3">
                 <Controller
                   name="zip_code"
@@ -543,19 +543,18 @@ export function AddressForm({
             )}
           </CardContent>
         )}
+        {!fixedButtons && (
+          <Button
+            type="submit"
+            disabled={
+              form.formState.isSubmitting || !form.formState.isDirty || loading
+            }
+            className="w-60 mx-auto rounded-full"
+          >
+            {form.formState.isSubmitting ? "Salvando..." : "Salvar endereço"}
+          </Button>
+        )}
       </Card>
-
-      {!fixedButtons && (
-        <Button
-          type="submit"
-          disabled={
-            form.formState.isSubmitting || !form.formState.isDirty || loading
-          }
-          className="w-60 mx-auto rounded-full"
-        >
-          {form.formState.isSubmitting ? "Salvando..." : "Salvar endereço"}
-        </Button>
-      )}
     </form>
   );
 }

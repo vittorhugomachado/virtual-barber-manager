@@ -16,9 +16,9 @@ export function SecuritySettingsForm() {
 
   return (
     <>
-      <div className="w-full max-w-180 mx-auto md:px-16 mt-2 mb-18 flex flex-col gap-8">
+      <div className="w-full max-w-180 h-full relative">
         <Card className="bg-transparent border-none">
-          <CardHeader className="mt-3">
+          <CardHeader>
             <div className="flex flex-col w-fit">
               <CardTitle className="font-semibold text-2xl">
                 Segurança
@@ -30,9 +30,9 @@ export function SecuritySettingsForm() {
           <CardContent>
             <form
               onSubmit={security.handleEmailChange}
-              className="flex flex-col gap-6"
+              className="flex flex-col items-center gap-6"
             >
-              <FieldGroup className="gap-3">
+              <FieldGroup className="gap-3 max-w-106">
                 <Field>
                   <FieldLabel htmlFor="settings-security-current-email">
                     Email atual
@@ -89,9 +89,9 @@ export function SecuritySettingsForm() {
           <CardContent>
             <form
               onSubmit={security.handlePasswordChange}
-              className="flex flex-col gap-6"
+              className="flex flex-col items-center gap-6"
             >
-              <FieldGroup className="gap-3">
+              <FieldGroup className="gap-3 max-w-106">
                 <PasswordField
                   id="settings-security-new-password"
                   label="Nova senha"

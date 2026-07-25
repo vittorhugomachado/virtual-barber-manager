@@ -213,7 +213,12 @@ export function useDashboard(): DashboardData {
       if (!active) return;
 
       let channel = supabase.channel(`dashboard:${barbershopId}`);
-      for (const table of ["appointments", "customers", "services", "barbers"]) {
+      for (const table of [
+        "appointments",
+        "customers",
+        "services",
+        "barbers",
+      ]) {
         channel = channel.on(
           "postgres_changes",
           {

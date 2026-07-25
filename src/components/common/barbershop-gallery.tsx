@@ -351,12 +351,12 @@ export function BarbershopGallery({
   return (
     <div
       className={[
-        "w-full max-w-180 lg:mx-auto flex flex-col gap-6 mb-6",
+        "w-full max-w-180 flex flex-col gap-6 mb-6",
         className ?? "",
       ].join(" ")}
     >
       <Card className="bg-transparent border-none">
-        <CardHeader className="mt-3">
+        <CardHeader>
           <div className="flex flex-col w-fit">
             <CardTitle className="font-semibold text-2xl">Galeria</CardTitle>
             <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
@@ -366,7 +366,7 @@ export function BarbershopGallery({
           </p>
         </CardHeader>
 
-        <CardContent className="flex px-3 flex-col gap-4">
+        <CardContent className="flex px-6 flex-col gap-4">
           {isLoading ? (
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -492,7 +492,7 @@ export function BarbershopGallery({
                   type="button"
                   disabled={isLoading || saving || !hasUnsavedChanges}
                   onClick={saveImages}
-                  className="w-fit rounded-full"
+                  className="w-28 rounded-full"
                 >
                   {saving ? (
                     <>

@@ -284,17 +284,16 @@ export function BarbershopSettingsForm() {
             />
           </FieldGroup>
         </CardContent>
+        <div className="w-full mx-auto mt-6 rounded-full flex justify-center">
+          <Button
+            type="submit"
+            disabled={form.formState.isSubmitting || !form.formState.isDirty}
+            className="w-60 mx-auto rounded-full"
+          >
+            {form.formState.isSubmitting ? "Salvando..." : "Salvar alterações"}
+          </Button>
+        </div>
       </Card>
-
-      <div className="w-full mx-auto rounded-full absolute bottom-4 flex justify-center">
-        <Button
-          type="submit"
-          disabled={form.formState.isSubmitting || !form.formState.isDirty}
-          className="w-60 mx-auto rounded-full"
-        >
-          {form.formState.isSubmitting ? "Salvando..." : "Salvar alterações"}
-        </Button>
-      </div>
     </form>
   );
 }

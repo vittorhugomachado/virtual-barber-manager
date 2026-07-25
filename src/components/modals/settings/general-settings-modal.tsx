@@ -34,9 +34,9 @@ const AddressForm = lazy(() =>
     default: module.AddressForm,
   })),
 );
-const OpeningHoursSection = lazy(() =>
-  import("@/components/common/opening-hours-section").then(module => ({
-    default: module.OpeningHoursSection,
+const OpeningHoursForm = lazy(() =>
+  import("@/components/forms/opening-hours-form").then(module => ({
+    default: module.OpeningHoursForm,
   })),
 );
 const BarbershopGallery = lazy(() =>
@@ -88,7 +88,7 @@ export function GeneralSettingsModal({
       case "endereco":
         return <AddressForm onSaved={markAddressComplete} />;
       case "horarios":
-        return <OpeningHoursSection onSaved={markHoursComplete} />;
+        return <OpeningHoursForm onSaved={markHoursComplete} />;
       case "galeria":
         return <BarbershopGallery />;
       case "usuarios":

@@ -9,7 +9,7 @@ import {
   Pencil,
   CircleHelp,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -132,14 +132,17 @@ export function UsersSection() {
   }
 
   return (
-    <TooltipProvider delayDuration={120}>
-      <div className="w-full max-w-180 lg:mx-auto mt-2 mb-8 px-3 flex flex-col gap-4">
-        <div className="px-3">
-          <h2 className="text-xl font-semibold">Usuários</h2>
+    <Card className="bg-transparent border-none shadow-none">
+      <div className="w-full max-w-180 h-full relative pb-16">
+        <CardHeader>
+          <div className="flex flex-col w-fit">
+            <CardTitle className="font-semibold text-2xl">Usuários</CardTitle>
+            <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
+          </div>
           <p className="text-sm text-muted-foreground">
             Gerencie quem tem acesso ao painel da sua barbearia.
           </p>
-        </div>
+        </CardHeader>
 
         {memberRole !== "owner" && (
           <p className="px-3 text-sm text-muted-foreground">
@@ -147,7 +150,7 @@ export function UsersSection() {
           </p>
         )}
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col items-center gap-6">
           {members === null ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -283,6 +286,6 @@ export function UsersSection() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </TooltipProvider>
+    </Card>
   );
 }

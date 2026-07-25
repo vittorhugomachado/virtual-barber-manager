@@ -265,11 +265,11 @@ export function OpeningHoursForm({
           e.preventDefault();
           handleSave();
         }}
-        className={`w-full max-w-180 lg:mx-auto md:px-16 flex flex-col gap-6 mb-6 ${fixedButtons ? "pb-24" : ""}`}
+        className="w-full max-w-180 h-full relative pb-16"
       >
         <Card className="bg-transparent border-none shadow-none">
           {!fixedButtons ? (
-            <CardHeader className="mt-3">
+            <CardHeader>
               <div className="flex flex-col w-fit">
                 <CardTitle className="font-semibold text-2xl">
                   Horário de funcionamento
@@ -293,8 +293,8 @@ export function OpeningHoursForm({
               Carregando...
             </CardContent>
           ) : (
-            <CardContent className="flex flex-col gap-6">
-              <div className="flex flex-col gap-3">
+            <CardContent className="flex flex-col items-center w-full gap-6">
+              <div className="flex flex-col gap-3 mx-auto w-116">
                 {days.map(day => (
                   <div
                     key={day.day_of_week}

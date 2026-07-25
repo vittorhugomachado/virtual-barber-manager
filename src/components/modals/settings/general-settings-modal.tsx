@@ -146,7 +146,7 @@ export function GeneralSettingsModal({
             </nav>
           </aside>
 
-          <main className="min-h-0 flex-1 overflow-y-auto px-1 py-8 sm:px-4 md:max-h-[80vh]">
+          <main className="min-h-0 flex-1 overflow-y-auto md:max-h-[80vh]">
             <Suspense
               fallback={
                 <div className="flex min-h-48 items-center justify-center">

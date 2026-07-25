@@ -1,15 +1,10 @@
-﻿import { lazy, Suspense, useState, useEffect, useRef } from "react";
+﻿import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { handleUploadBanner } from "@/lib/supabase/storage/handle-upload-banner";
-import { handleUploadLogo } from "@/lib/supabase/storage/handle-upload-logo";
-import { validateImageFile } from "@/lib/supabase/storage/upload-image";
 import { updateBarbershopSettings } from "@/lib/supabase/settings/update-barbershop-settings";
 import { toast } from "sonner";
 import { useBarbershopStore } from "@/store/barbershop.store";
@@ -21,13 +16,6 @@ import {
 } from "@/components/ui/field";
 import { maskPhone } from "@/utils/mask-phone";
 import { Copy } from "lucide-react";
-import { getOptimizedPublicImageUrl } from "@/lib/supabase/storage/get-optimized-public-image-url";
-
-const ImageCropper = lazy(() =>
-  import("../ui/image-cropped").then(module => ({
-    default: module.ImageCropper,
-  })),
-);
 
 const formSchema = z.object({
   name: z
@@ -45,22 +33,9 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export function BarbershopSettingsForm() {
-  const [cropperOpen, setCropperOpen] = useState(false);
-  const [cropperImageUrl, setCropperImageUrl] = useState("");
-  const [cropperType, setCropperType] = useState<"logo" | "banner">("logo");
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [, setUploadingBanner] = useState(false);
-  const { barbershop, memberRole, setBarbershop } = useBarbershopStore();
-
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const { barbershop, setBarbershop } = useBarbershopStore();
 
   const DOMAIN = import.meta.env.VITE_DOMAIN;
-  const optimizedLogoUrl = getOptimizedPublicImageUrl(barbershop?.logo_url, {
-    width: 280,
-    height: 280,
-    quality: 75,
-  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -84,60 +59,6 @@ export function BarbershopSettingsForm() {
       });
     }
   }, [barbershop, form]);
-
-  async function handleImageUpload(file: File, type: "logo" | "banner") {
-    const validationError = validateImageFile(file);
-    if (validationError) {
-      toast.error(validationError);
-      return;
-    }
-
-    if (!barbershop?.id || !barbershop?.owner_id) return;
-
-    const setUploading =
-      type === "logo" ? setUploadingLogo : setUploadingBanner;
-    setUploading(true);
-
-    try {
-      const params = {
-        file,
-        barbershopId: barbershop.id,
-        ownerId: barbershop.owner_id,
-      };
-
-      const { publicUrl, error } =
-        type === "logo"
-          ? await handleUploadLogo(params)
-          : await handleUploadBanner(params);
-
-      if (error || !publicUrl) {
-        toast.error(`Erro ao atualizar ${type === "logo" ? "foto" : "banner"}`);
-        return;
-      }
-
-      setBarbershop({
-        ...barbershop,
-        ...(type === "logo"
-          ? { logo_url: publicUrl }
-          : { banner_url: publicUrl }),
-      });
-
-      toast.success(
-        type === "logo" ? "Foto atualizada!" : "Banner atualizado!",
-      );
-    } catch {
-      toast.error(
-        `Erro inesperado ao atualizar ${type === "logo" ? "foto" : "banner"}`,
-      );
-    } finally {
-      setUploading(false);
-      if (type === "logo" && logoInputRef.current) {
-        logoInputRef.current.value = "";
-      } else if (type === "banner" && bannerInputRef.current) {
-        bannerInputRef.current.value = "";
-      }
-    }
-  }
 
   async function onSubmit(data: FormValues) {
     if (!barbershop?.id) return;
@@ -208,11 +129,11 @@ export function BarbershopSettingsForm() {
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
-      className="w-full max-w-180 mx-auto md:px-16 mt-2 mb-18 flex flex-col gap-8"
+      className="w-full max-w-180 h-full relative"
     >
       {/* ── SEÇÃO: Dados da Barbearia ── */}
       <Card className="bg-transparent border-none">
-        <CardHeader className="mt-3">
+        <CardHeader>
           <div className="flex flex-col w-fit">
             <CardTitle className="font-semibold text-2xl">
               Dados da Barbearia
@@ -220,9 +141,9 @@ export function BarbershopSettingsForm() {
             <div className="w-4/5 h-px bg-[#0458EE] mt-1" />
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col gap-6">
+        <CardContent className="flex flex-col items-center gap-6">
           {/* Logo */}
-          <div className="w-full flex items-center gap-4">
+          {/* <div className="w-full flex items-center gap-4">
             <Avatar className="h-23 w-23 md:h-35 md:w-35">
               <AvatarImage
                 src={optimizedLogoUrl}
@@ -260,9 +181,9 @@ export function BarbershopSettingsForm() {
                 }}
               />
             </div>
-          </div>
+          </div> */}
 
-          <FieldGroup>
+          <FieldGroup className="max-w-106">
             <Controller
               name="name"
               control={form.control}
@@ -330,43 +251,18 @@ export function BarbershopSettingsForm() {
                           field.onChange(value);
                         }}
                       />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="shrink-0 absolute w-10 md:w-20 right-0.75 h-[85%] top-0.75"
+                        onClick={handleCopySite}
+                        style={{ fontSize: "13px", borderRadius: "0.375rem" }}
+                      >
+                        <Copy className="h-3 w-3" />
+                        <span className="hidden md:block">Copiar</span>
+                      </Button>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="shrink-0"
-                      onClick={handleCopySite}
-                      style={{ fontSize: "13px" }}
-                    >
-                      <Copy className="h-3 w-3" />
-                      <span className="hidden md:block">Copiar</span>
-                    </Button>
                   </div>
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-          </FieldGroup>
-        </CardContent>
-        <CardContent>
-          <FieldGroup>
-            <Controller
-              name="ownerName"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="settings-owner-name">
-                    Nome do proprietário
-                  </FieldLabel>
-                  <Input
-                    {...field}
-                    id="settings-owner-name"
-                    placeholder="Seu nome"
-                    aria-invalid={fieldState.invalid}
-                    disabled={memberRole !== "owner"}
-                  />
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}
@@ -377,28 +273,15 @@ export function BarbershopSettingsForm() {
         </CardContent>
       </Card>
 
-      <Button
-        type="submit"
-        disabled={form.formState.isSubmitting || !form.formState.isDirty}
-        className="w-60 mx-auto rounded-full"
-      >
-        {form.formState.isSubmitting ? "Salvando..." : "Salvar alterações"}
-      </Button>
-      {cropperOpen && (
-        <Suspense fallback={null}>
-          <ImageCropper
-            open={cropperOpen}
-            imageUrl={cropperImageUrl}
-            aspect={cropperType === "logo" ? 1 : 4}
-            cropShape={cropperType === "logo" ? "round" : "rect"}
-            onConfirm={(croppedFile: File) => {
-              setCropperOpen(false);
-              handleImageUpload(croppedFile, cropperType);
-            }}
-            onCancel={() => setCropperOpen(false)}
-          />
-        </Suspense>
-      )}
+      <div className="w-full mx-auto rounded-full absolute bottom-4 flex justify-center">
+        <Button
+          type="submit"
+          disabled={form.formState.isSubmitting || !form.formState.isDirty}
+          className="w-60 mx-auto rounded-full"
+        >
+          {form.formState.isSubmitting ? "Salvando..." : "Salvar alterações"}
+        </Button>
+      </div>
     </form>
   );
 }

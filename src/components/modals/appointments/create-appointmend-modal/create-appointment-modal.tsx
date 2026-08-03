@@ -117,6 +117,14 @@ export function CreateAppointmentModal({
         setSubmitError(
           "Dados inválidos: cliente, profissional ou serviço não encontrado. Recarregue a página e tente novamente.",
         );
+      } else if (pgError?.message?.includes("subscription_inactive")) {
+        setSubmitError(
+          "A assinatura da barbearia está inativa. Regularize o pagamento para criar novos agendamentos.",
+        );
+      } else if (pgError?.message?.includes("barbershop_inactive")) {
+        setSubmitError(
+          "A barbearia está desativada. Reative a conta para criar novos agendamentos.",
+        );
       } else if (pgError?.code === "P0001") {
         setSubmitError(
           "Horário fora do funcionamento da barbearia. Escolha um horário dentro do expediente.",

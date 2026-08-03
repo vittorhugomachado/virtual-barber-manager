@@ -511,6 +511,14 @@ export function AppointmentsMain() {
           );
         } else if (message.includes("invalid_status_transition")) {
           toast.error("Este status não é permitido para o horário atual.");
+        } else if (message.includes("subscription_inactive")) {
+          toast.error(
+            "A assinatura da barbearia está inativa. Regularize o pagamento para alterar a agenda.",
+          );
+        } else if (message.includes("barbershop_inactive")) {
+          toast.error(
+            "A barbearia está desativada. Reative a conta para alterar a agenda.",
+          );
         } else {
           toast.error("Não foi possível alterar o status.");
         }

@@ -16,6 +16,7 @@
       Hoje barbearia `incomplete` ou `past_due` continua inserindo agendamentos/clientes (produto de graça).
   - [ ] Função `is_barbershop_active(p_barbershop_id uuid)` — `security definer`, `stable`, `set search_path = ''`; retorna `now() < current_period_end + grace AND status <> 'canceled'`.
   - [ ] Policies **RLS RESTRICTIVE for insert** em `appointments`, `customers`, `barbers`, `services`.
+  - [x] Gate central nas RPCs administrativas de escrita da agenda via `assert_appointment_write_access`.
   - [ ] Decisão: gate só no **INSERT** (atrasado = somente-leitura), **não** no SELECT.
   - [ ] Teste: `current_period_end` no passado → INSERT bloqueado, SELECT ok.
   - Ref.: Fase 3 do `TODO-pagamentos.md`.

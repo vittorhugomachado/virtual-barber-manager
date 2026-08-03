@@ -112,7 +112,10 @@ BEGIN
 END;
 $function$;
 
--- Função interna: escrita é permitida somente ao proprietário ou administrador.
+-- Função interna: escrita é permitida somente ao proprietário ou administrador
+-- enquanto a assinatura estiver dentro do trial, período pago ou carência.
+-- Centralizar o gate aqui garante que toda RPC administrativa de escrita atual
+-- ou futura herde a mesma regra. A leitura da agenda continua disponível.
 CREATE OR REPLACE FUNCTION public.assert_appointment_write_access(p_barbershop_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -136,6 +139,19 @@ BEGIN
       )
   ) THEN
     RAISE EXCEPTION 'not_allowed' USING ERRCODE = '42501';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.barbershops b
+    WHERE b.id = p_barbershop_id
+      AND b.is_active
+  ) THEN
+    RAISE EXCEPTION 'barbershop_inactive' USING ERRCODE = 'P0001';
+  END IF;
+
+  IF public.is_barbershop_active(p_barbershop_id) IS NOT TRUE THEN
+    RAISE EXCEPTION 'subscription_inactive' USING ERRCODE = 'P0001';
   END IF;
 END;
 $function$;

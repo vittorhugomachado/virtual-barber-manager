@@ -65,8 +65,19 @@ export function DeleteAppointmentModal({
 
       onSuccess?.();
       onClose();
-    } catch {
-      setError("Erro ao cancelar agendamento. Tente novamente.");
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "";
+      if (message.includes("subscription_inactive")) {
+        setError(
+          "A assinatura da barbearia está inativa. Regularize o pagamento para alterar a agenda.",
+        );
+      } else if (message.includes("barbershop_inactive")) {
+        setError(
+          "A barbearia está desativada. Reative a conta para alterar a agenda.",
+        );
+      } else {
+        setError("Erro ao cancelar agendamento. Tente novamente.");
+      }
     } finally {
       setSubmitting(false);
     }

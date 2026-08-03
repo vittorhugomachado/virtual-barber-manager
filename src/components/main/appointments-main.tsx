@@ -22,6 +22,9 @@ import { CreateAppointmentModal } from "../modals/appointments/create-appointmen
 import { changeManagerAppointmentStatus } from "@/lib/supabase/appointments/appointments";
 import { useBarbershopStore } from "@/store/barbershop.store";
 import { toast } from "sonner";
+import { useOpeningHours } from "@/hooks/use-opening-hours";
+import { useBarbers } from "@/hooks/use-barbers";
+import { AppointmentsTodaySchedule } from "./appointments-today-schedule";
 
 type FilterType = "today" | "week" | "month" | "year" | "custom";
 
@@ -72,6 +75,7 @@ function StatusPicker({
   apt,
   onStatusChange,
   canManage,
+  compact = false,
 }: {
   apt: AppointmentWithRelations;
   onStatusChange: (
@@ -79,6 +83,7 @@ function StatusPicker({
     status: AppointmentStatus,
   ) => Promise<void>;
   canManage: boolean;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
@@ -112,18 +117,36 @@ function StatusPicker({
   }
 
   return (
-    <div ref={ref} className="relative">
+    <div
+      ref={ref}
+      className="relative"
+      onClick={event => event.stopPropagation()}
+      onKeyDown={event => event.stopPropagation()}
+    >
       <button
         onClick={() => options.length > 0 && setOpen(o => !o)}
         disabled={updating}
-        className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium transition-opacity ${APPOINTMENT_STATUS_COLORS[apt.status]} ${
+        title={APPOINTMENT_STATUS_LABELS[apt.status]}
+        className={`inline-flex items-center justify-center text-xs rounded-full font-medium transition-opacity ${compact ? "size-5 p-0" : "gap-1 px-2 py-1"} ${APPOINTMENT_STATUS_COLORS[apt.status]} ${
           options.length > 0
             ? "cursor-pointer hover:opacity-80"
             : "cursor-default"
         }`}
       >
-        {updating ? "..." : APPOINTMENT_STATUS_LABELS[apt.status]}
-        {options.length > 0 && <ChevronDown className="h-3 w-3 shrink-0" />}
+        {updating ? (
+          "..."
+        ) : compact ? (
+          <span className="sr-only">
+            {APPOINTMENT_STATUS_LABELS[apt.status]}
+          </span>
+        ) : (
+          APPOINTMENT_STATUS_LABELS[apt.status]
+        )}
+        {options.length > 0 && (
+          <ChevronDown
+            className={`${compact ? "size-3.5" : "size-3"} shrink-0`}
+          />
+        )}
       </button>
 
       {open && (
@@ -474,6 +497,8 @@ export function AppointmentsMain() {
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>(
     {},
   );
+  const { openingHours } = useOpeningHours();
+  const { barbers } = useBarbers({ enabled: filter === "today" });
 
   const { start, end } = useMemo(
     () => getRangeForFilter(filter, customRange, configuredTimezone),
@@ -540,13 +565,12 @@ export function AppointmentsMain() {
     return map;
   }, [appointments, timezone]);
 
-  const days = useMemo(
-    () =>
-      getDaysForFilter(filter, customRange, timezone).filter(day =>
-        appointmentsByDay.has(localDateKey(day)),
-      ),
-    [appointmentsByDay, customRange, filter, timezone],
-  );
+  const days = useMemo(() => {
+    const filterDays = getDaysForFilter(filter, customRange, timezone);
+    return filter === "today"
+      ? filterDays
+      : filterDays.filter(day => appointmentsByDay.has(localDateKey(day)));
+  }, [appointmentsByDay, customRange, filter, timezone]);
 
   const [newModalOpen, setNewModalOpen] = useState(false);
   return (
@@ -664,6 +688,22 @@ export function AppointmentsMain() {
             Tentar novamente
           </Button>
         </div>
+      ) : filter === "today" ? (
+        <AppointmentsTodaySchedule
+          date={days[0] ?? calendarToday(timezone)}
+          appointments={appointments}
+          barbers={barbers}
+          openingHours={openingHours}
+          timezone={timezone}
+          renderStatus={appointment => (
+            <StatusPicker
+              apt={appointment}
+              onStatusChange={handleStatusChange}
+              canManage={canManage}
+              compact
+            />
+          )}
+        />
       ) : days.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground">
           <CalendarDays className="h-10 w-10 opacity-20" />

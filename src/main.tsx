@@ -6,7 +6,6 @@ import { BrowserRouter } from "react-router";
 import "./index.css";
 import "./store/user-credential.store";
 import { AppRoutes } from "./routes/app-routes";
-import { TopFixedNotice } from "./components/common/top-fixed-notice";
 import { AuthProvider } from "./contexts/auth-provider";
 
 createRoot(document.getElementById("root")!).render(

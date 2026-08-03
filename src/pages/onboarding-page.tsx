@@ -1,5 +1,4 @@
-﻿/* eslint-disable @typescript-eslint/no-unused-vars */
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -134,13 +133,6 @@ function StepsScreen({
   onPrev: () => void;
   onComplete: () => void;
 }) {
-  const [logoReady, setLogoReady] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setLogoReady(true), 50);
-    return () => clearTimeout(t);
-  }, []);
-
   return (
     <div className="w-full min-h-screen bg-background flex flex-col">
       {/* <div className="flex justify-center pt-8 pb-6">

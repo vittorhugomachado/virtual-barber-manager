@@ -50,7 +50,9 @@ export function ManagePageStyleMain({
 
   const previewUrl = getPreviewUrl(barbershop?.slug ?? "");
 
-  latestStyleRef.current = style;
+  useEffect(() => {
+    latestStyleRef.current = style;
+  }, [style]);
 
   useEffect(() => {
     let cancelled = false;

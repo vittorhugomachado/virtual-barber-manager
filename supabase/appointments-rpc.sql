@@ -635,9 +635,10 @@ GRANT EXECUTE ON FUNCTION public.get_manager_appointments(uuid, date, date, inte
 GRANT EXECUTE ON FUNCTION public.create_manager_appointments(uuid, uuid, text, date, jsonb, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.change_manager_appointment_status(uuid, text, text) TO authenticated;
 
--- Depois deste ponto, navegadores não podem mais contornar as regras com CRUD direto.
--- Se outro projeto ainda grava diretamente em appointments, migre-o para uma RPC antes
--- de executar estas três linhas.
-REVOKE INSERT, UPDATE, DELETE ON TABLE public.appointments FROM anon, authenticated;
+-- Depois deste ponto, navegadores não podem mais contornar as regras com CRUD
+-- ou privilégios PostgreSQL de manutenção direta. SELECT autenticado permanece
+-- disponível sob RLS por compatibilidade; toda escrita passa pelas RPCs.
+REVOKE ALL PRIVILEGES ON TABLE public.appointments FROM anon, authenticated;
+GRANT SELECT ON TABLE public.appointments TO authenticated;
 
 COMMIT;
